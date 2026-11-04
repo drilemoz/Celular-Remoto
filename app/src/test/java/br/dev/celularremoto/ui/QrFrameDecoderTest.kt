@@ -2,13 +2,15 @@ package br.dev.celularremoto.ui
 
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
+import br.dev.celularremoto.transport.PairingCode
+import br.dev.celularremoto.transport.PairingSession
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class QrFrameDecoderTest {
     @Test fun decodeGeneratedQr() {
-        val payload = "monitorremoto://pair?v=1&host=192.168.1.4&port=37841&sid=test&secret=test"
+        val payload = PairingCode.encode(PairingSession.issue().copy(host = "192.168.1.4"))
         val size = 240
         val matrix = QRCodeWriter().encode(payload, BarcodeFormat.QR_CODE, size, size)
         val pixels = ByteArray(size * size) { idx ->
@@ -27,6 +29,7 @@ class QrFrameDecoderTest {
             clockwise[x * size + (size - 1 - y)] = padded[y * width + x]
         }
         assertEquals(payload, QrFrameDecoder.decode(clockwise, size, width))
+        PairingSession.revoke()
     }
 
     @Test fun invalidFrames() {

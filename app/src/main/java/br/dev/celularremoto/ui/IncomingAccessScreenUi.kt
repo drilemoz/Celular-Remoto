@@ -17,7 +17,7 @@ internal fun IncomingAccessActivity.renderIncomingAccessScreen(
     root.addView(action("‹ Voltar ao aplicativo", false) { onBackToMonitor() },
         LinearLayout.LayoutParams(-1, dp(52)))
     root.addView(gap(14))
-    root.addView(text("MONITOR REMOTO", 13.5f, bold = true).apply { setTextColor(accent) })
+    root.addView(text("CELULAR REMOTO", 13.5f, bold = true).apply { setTextColor(accent) })
     root.addView(gap(20))
 
     val halo = LinearLayout(this).apply {

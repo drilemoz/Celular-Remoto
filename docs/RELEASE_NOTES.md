@@ -1,3 +1,11 @@
+# Celular Remoto — 0.1.0-alpha.109
+
+**Correção do build 3:** a etapa `:app:testDebugUnitTest` executou 183 testes e falhou em um teste de QR por usar a antiga porta 37841. A versão 109 testa a adulteração da porta real declarada no protocolo (37842), exigindo que os casos negativos sejam de fato diferentes do QR válido. O esquema de QR foi atualizado de `monitorremoto://` para `celularremoto://`; gere novo QR e use esta versão nos dois aparelhos.
+
+Mantidos o workflow único, versão estrita nos dois aparelhos, autenticação AES-GCM, coleta de bateria e controle remoto. Build Gradle completo e uso em dois dispositivos ainda precisam ser confirmados.
+
+---
+
 # Celular Remoto — 0.1.0-alpha.108
 
 **Correção de compilação:** resolve o erro `BatteryScreenUi.kt:506` no compartilhamento de sessão automática de bateria (colisão entre variável `type` e `Intent.type`).

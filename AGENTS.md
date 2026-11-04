@@ -1,3 +1,11 @@
+# Celular Remoto 0.1.0-alpha.109 — Regras ativas
+
+- A alpha.109 resolve falha em `PairingCodeTest.rejectsUnexpectedQr`: não usar portas literais obsoletas em mutações de QR. Construir usando `WireProtocol.PORT` e exigir QR alterado antes de testar rejeição.
+- A identidade QR vigente é `celularremoto://pair`, porta 37842; preserve a validação estrita de esquema, versão, parâmetros, IP privado e chave temporária. QR antigo é incompatível; renovar pareamento entre as mesmas versões.
+- Preserve um único workflow `.github/workflows/android.yml` executado em `push` na `main`, com `concurrency` e APK direto em Release.
+- Próxima versão `0.1.0-alpha.110` / versionCode 110; sincronizar documentação, Novidades, testes, Gradle, AppVersion e validador em qualquer alteração.
+- Build Android na CI e testes em dois aparelhos são obrigatórios antes de declarar o APK validado.
+
 # Celular Remoto 0.1.0-alpha.108 — Regras ativas
 
 - Alpha.108 corrige colisão de `type` com `Intent.type` no `BatteryScreenUi.kt`; em `Intent(...).apply { ... }`, qualificar explicitamente a propriedade como `this.type`, principalmente quando existir uma variável `type` no escopo externo.

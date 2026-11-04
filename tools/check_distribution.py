@@ -16,7 +16,7 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.108" and code.group(1) == "108", "Versões incompatíveis"
+assert version == "0.1.0-alpha.109" and code.group(1) == "109", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/celularremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in (ui_root / 'VersionNewsUi.kt').read_text(), "Tela de versão desatualizada"
@@ -1555,3 +1555,15 @@ assert 'cancel-in-progress: true' in workflow and 'group: celular-remoto-main' i
 assert len([p for p in (root/'.github/workflows').iterdir() if p.suffix in {'.yml', '.yaml'}]) == 1, 'Deve haver exatamente um arquivo de workflow'
 assert 'github.ref == \'refs/heads/main\'' in workflow, 'Release deve estar restrita à main'
 print('PASSOU: alpha.108 Intent.type qualificado e um workflow por push na main')
+
+# alpha.109: valida a migração do esquema QR e impede testes de porta obsoletos.
+assert 'private const val SCHEME = "celularremoto"' in qr, 'Esquema de QR antigo'
+assert 'const val PORT = 37842' in (root / 'app/src/main/java/br/dev/celularremoto/transport/WireProtocol.kt').read_text(), 'Porta fora de sincronia'
+pairing_test = (root / 'app/src/test/java/br/dev/celularremoto/transport/PairingCodeTest.kt').read_text()
+assert 'port=${WireProtocol.PORT}' in pairing_test, 'Teste QR precisa usar porta real'
+assert 'assertNotEquals("O caso de teste precisa alterar o QR original"' in pairing_test, 'Teste QR deve verificar mutações'
+assert 'port=37841' not in pairing_test, 'Porta antiga não pode ser usada no teste'
+assert 'celularremoto://pair' in (root / 'docs/PAIRING_QR.md').read_text(), 'Documentação do QR antiga'
+assert 'PairingCode.encode(PairingSession.issue()' in (root / 'app/src/test/java/br/dev/celularremoto/ui/QrFrameDecoderTest.kt').read_text(), 'Decoder QR deve usar código gerado pelo protocolo real'
+assert '"CELULAR REMOTO"' in (root / 'app/src/main/java/br/dev/celularremoto/ui/IncomingAccessScreenUi.kt').read_text(), 'Nome legado na interface'
+print('PASSOU: alpha.109 testes QR dinâmicos, novo esquema e porta correta')

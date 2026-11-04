@@ -36,14 +36,20 @@ class PairingCodeTest {
     @Test fun rejectsUnexpectedQr() {
         val offer = PairingSession.issue().copy(host = "192.168.1.2")
         val qr = PairingCode.encode(offer)
+        // Use a porta real declarada no protocolo; portas hardcoded podem deixar
+        // a substituição inoperante e causar falsos negativos no teste.
+        val port = "port=${WireProtocol.PORT}"
+        assertTrue("QR deve conter a porta atual", qr.contains(port))
         listOf(
-            qr.replace("port=37841", "port=8080"),
+            qr.replace(port, "port=8080"),
             qr.replace("host=192.168.1.2", "host=8.8.8.8"),
             qr + "&v=1",
-            qr.replace("monitorremoto://", "https://"),
+            qr.replace("celularremoto://", "https://"),
+            qr.replace("celularremoto://", "monitorremoto://"),
             "https://example.org/pair?secret=foo",
         ).forEach { bad ->
-            try { PairingCode.decode(bad); fail("QR deveria ser rejeitado") }
+            assertNotEquals("O caso de teste precisa alterar o QR original", qr, bad)
+            try { PairingCode.decode(bad); fail("QR deveria ser rejeitado: $bad") }
             catch (_: IllegalArgumentException) { }
         }
         PairingSession.revoke()

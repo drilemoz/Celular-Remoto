@@ -1,3 +1,11 @@
+## 0.1.0-alpha.109 — Correção dos testes de pareamento QR (04/11/2026)
+
+- Logs da execução 3: compilação Kotlin e classes de teste concluídas; 183 testes executados, 1 falha em `PairingCodeTest.rejectsUnexpectedQr` na linha 46; o comando Gradle falhou antes da geração do APK.
+- Corrigido caso de teste que alterava uma porta obsoleta (`37841`), enquanto a porta ativa é `37842`. O caso usa `WireProtocol.PORT`, confirma que cada QR adulterado difere do original e exige rejeição dos dados inválidos.
+- Atualizado o esquema de QR para `celularremoto://pair`, seus exemplos e a documentação; QRs antigos não são aceitos, sendo necessário parear novamente na nova versão.
+- Ajustado o banner interno do aplicativo para Celular Remoto. Sem mudanças nas chaves AES-GCM, restrições de IP privado, assinatura, permissões ou workflow único.
+- Versionamento sequencial sincronizado: Gradle, AppVersion, README, Novidades, notas, arquitetura, validação e AGENTS. Compilação Android completa em CI e teste físico ainda pendentes.
+
 ## 0.1.0-alpha.108 — Correção do build e fluxo único (04/11/2026)
 
 - Corrigido o erro Kotlin `BatteryScreenUi.kt:506:17 'val' cannot be reassigned`, reproduzido nos dois jobs do GitHub Actions sobre o mesmo commit. O compartilhamento de relatório automático agora atribui explicitamente `this.type` ao `Intent`, sem colidir com a variável local que identifica a sessão.

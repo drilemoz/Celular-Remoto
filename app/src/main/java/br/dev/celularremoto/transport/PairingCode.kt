@@ -5,7 +5,7 @@ import java.net.URI
 
 /** Conteúdo de QR temporário. Somente endereços IPv4 privados na alpha.4. */
 object PairingCode {
-    private const val SCHEME = "monitorremoto"
+    private const val SCHEME = "celularremoto"
     private const val URI_HOST = "pair"
     private val sessionPattern = Regex("[A-Za-z0-9_-]{22}")
 

@@ -5,12 +5,12 @@
 1. Instale o mesmo APK nos dois celulares e conecte ambos ao **mesmo Wi-Fi** ou ao hotspot de um dos aparelhos. A internet não é necessária. Roteadores com **isolamento de clientes** podem bloquear a comunicação local.
 2. No **MONITORADO**, toque em `Ativar monitoramento` e depois em **Gerar QR Code para parear**. Se houver mais de uma interface com IP privado, escolha a que está acessível pelo CONTROLADOR (normalmente `wlan0` em Wi-Fi).
 3. No **CONTROLE**, toque em **Conectar > QR Code**, autorize a câmera quando solicitada, aponte para a tela do monitorado e confirme o IP exibido.
-4. O controlador se comunica diretamente com a porta TCP **37841** por uma credencial temporária cifrada, obtém a chave de longa duração dentro da resposta AES-256-GCM e armazena-a via Android Keystore. IP e chave são salvos; consultas posteriores não exigem novo scan enquanto a chave não for revogada.
+4. O controlador se comunica diretamente com a porta TCP **37842** por uma credencial temporária cifrada, obtém a chave de longa duração dentro da resposta AES-256-GCM e armazena-a via Android Keystore. IP e chave são salvos; consultas posteriores não exigem novo scan enquanto a chave não for revogada.
 5. Se a rede mudar e o IP do monitorado mudar, refaça o pareamento ou ajuste manualmente o IP na tela Controle. **Sem descoberta automática de rede ainda.**
 
 ## Protocolo e segurança
 
-O QR guarda `monitorremoto://pair?v=1&host=IPv4_PRIVADO&port=37841&sid=ID&secret=CHAVE_TEMPORARIA`.
+O QR guarda `celularremoto://pair?v=1&app=VERSAO&host=IPv4_PRIVADO&port=37842&sid=ID&secret=CHAVE_TEMPORARIA`.
 
 - `secret` é chave aleatória **temporária**, não é a chave permanente usada nas consultas. Sua validade é de 120 segundos em relógio monotônico e admite **uma conexão de pareamento**. Novo QR revoga o anterior; fechar a janela revoga a sessão. Parar o serviço e trocar chave também revoga a sessão.
 - O IP é restrito às faixas RFC1918. O código deve ser escaneado presencialmente e não deve ser compartilhado por mensageiro ou foto; a janela do QR usa `FLAG_SECURE` para desincentivar screenshots.
