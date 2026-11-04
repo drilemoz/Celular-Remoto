@@ -24,6 +24,7 @@ private data class SettingsGroup(val title: String, val entries: List<SettingsDe
 
 private val settingGroups = listOf(
     SettingsGroup("SEGURANÇA E PERMISSÕES", listOf(
+        SettingsDestination(R.drawable.ic_shield, "Central de permissões", "Solicite todos os acessos e confira pendências", "permissions"),
         SettingsDestination(R.drawable.ic_shield, "Segurança e pareamento", "Chaves, dispositivos e revogação", "security"),
         SettingsDestination(R.drawable.ic_shield, "Bloqueio remoto", "Permissão e confirmação para bloquear", "lock"),
         SettingsDestination(R.drawable.ic_activity, "Diagnóstico", "Status do servidor e permissões", "diagnostics"),
@@ -98,6 +99,10 @@ internal fun MainActivity.renderSettingsHome() {
     overviewRow(R.drawable.ic_remote_camera, "Câmera", checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED, "physical")
     overviewRow(R.drawable.ic_bell, "Notificações", hasListener(), "notifications")
     header.addView(overview)
+    sectionGap(header, 8)
+    header.addView(actionButton("Ver todas as permissões (${PermissionCenter.pending(this).size} pendentes)") {
+        openSettingsSection("permissions")
+    })
     content.addView(header)
     sectionGap(content, 11)
 

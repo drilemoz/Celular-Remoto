@@ -15,6 +15,8 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "Bem-vindo à atualização"))
     sectionGap(layout, 10)
     val entries = listOf(
+        "Central de permissões" to "Na primeira instalação, confira e solicite os acessos do Android. Também disponível em Configurações, com alertas de pendência no topo.",
+        "SMS e acessos especiais" to "SMS requer confirmação separada e pode ser restrito pelo instalador. Acessibilidade e notificações recebidas exigem autorização manual no Android.",
         "Pareamento QR corrigido" to "O teste de segurança agora utiliza a porta real 37842; o QR adota o esquema celularremoto. Nos dois aparelhos use a mesma versão.",
         "GitHub Actions simplificado" to "Um push na branch main inicia um único workflow de APK e Release. Builds anteriores são cancelados quando chega nova alteração.",
         "Agora: Celular Remoto" to "Nova identidade e pacote br.dev.celularremoto. É uma instalação separada: a versão antiga não transfere dados ou chaves automaticamente.",

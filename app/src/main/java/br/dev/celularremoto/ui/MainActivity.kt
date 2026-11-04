@@ -1,5 +1,4 @@
 package br.dev.celularremoto.ui
-
 import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
@@ -33,11 +32,9 @@ import java.net.NetworkInterface
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
 /** Interface Android Views sem dependências adicionais; ambos os modos no mesmo APK. */
 class MainActivity : Activity() {
     internal var activeUiDialog: AlertDialog? = null
-
     internal fun darkTheme(): Boolean = when (SettingsStore.theme(this)) {
         "dark" -> true
         "system" -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
@@ -54,6 +51,9 @@ class MainActivity : Activity() {
     internal val fieldColor get() = if (darkTheme()) Color.rgb(39, 41, 45) else Color.rgb(242, 242, 242)
     internal lateinit var content: LinearLayout
     internal lateinit var bottomNavigation: LinearLayout
+    internal lateinit var permissionsNoticeHost: LinearLayout
+    internal var hidePermissionNoticeForSession = false
+    internal val permissionCenterQueue = mutableListOf<List<String>>()
     internal val handler = Handler(Looper.getMainLooper())
     internal val remoteConnection by lazy { RemoteConnectionManager(applicationContext) }
     internal val pairingController = PairingController()
@@ -107,7 +107,6 @@ class MainActivity : Activity() {
     private val monitorUiInvalidation = Runnable {
         if (active && !isFinishing && !isDestroyed && mode == 0) refreshMonitorIfChanged()
     }
-
     internal var resultBox: LinearLayout? = null
     companion object { const val EXTRA_OPEN_MONITOR = "br.dev.celularremoto.OPEN_MONITOR" }
     // Alpha.53: acesso autenticado permanece visível no cartão Monitorado e na
@@ -120,7 +119,6 @@ class MainActivity : Activity() {
     internal var currentConnectButton: Button? = null
     private var systemBackCallback: android.window.OnBackInvokedCallback? = null
     private data class OptionItem(val title: String, val subtitle: String = "", val action: () -> Unit)
-
     private val poller = object : Runnable {
         override fun run() {
             if (active && mode == 1) {
@@ -129,15 +127,21 @@ class MainActivity : Activity() {
             }
         }
     }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(if (darkTheme()) android.R.style.Theme_Material_NoActionBar else android.R.style.Theme_Material_Light_NoActionBar)
         super.onCreate(savedInstanceState)
         RecentDevices.migrateLegacy(this)
         br.dev.celularremoto.service.RemoteHealthScheduler.refresh(this)
+        val firstPermissionWelcome = savedInstanceState == null && PermissionCenter.needsWelcome(this)
         mode = if (intent.getBooleanExtra(EXTRA_OPEN_MONITOR, false)) 0
             else savedInstanceState?.getInt("active_mode", 2)?.takeIf { it in 0..5 } ?: 2
         settingsSection = savedInstanceState?.getString("settings_section", "home") ?: "home"
+        permissionCenterQueue.addAll(savedInstanceState?.getStringArrayList("pending_permission_groups")
+            ?.map { it.split('|') } ?: emptyList())
+        if (firstPermissionWelcome) {
+            mode = 3
+            settingsSection = "permissions"
+        }
         batteryRemote = savedInstanceState?.getBoolean("battery_remote", false) ?: false
         batterySection = savedInstanceState?.getString("battery_section", "resumo") ?: "resumo"
         messagesTab = savedInstanceState?.getInt("messages_tab", 0)?.coerceIn(0, 1) ?: 0
@@ -165,6 +169,8 @@ class MainActivity : Activity() {
             setPadding(dp(16), dp(16), dp(16), dp(25))
         }
         scroll.addView(content)
+        permissionsNoticeHost = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root.addView(permissionsNoticeHost, LinearLayout.LayoutParams(-1, -2))
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         bottomNavigation = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -187,11 +193,11 @@ class MainActivity : Activity() {
             )
         }
         render()
-        if (savedInstanceState == null) handler.post {
+        if (firstPermissionWelcome) PermissionCenter.markWelcome(this)
+        if (savedInstanceState == null && !firstPermissionWelcome) handler.post {
             if (!isFinishing && !isDestroyed) showVersionNewsIfNeeded()
         }
     }
-
     override fun onDestroy() {
         activeUiDialog?.dismiss()
         activeUiDialog = null
@@ -215,6 +221,7 @@ class MainActivity : Activity() {
         outState.putInt("messages_tab", messagesTab)
         outState.putBoolean("expanded_remote_functions", expandedRemoteFunctions)
         outState.putString("settings_section", settingsSection)
+        outState.putStringArrayList("pending_permission_groups", ArrayList(permissionCenterQueue.map { it.joinToString("|") }))
         outState.putInt("settings_return_mode", settingsReturnMode)
         super.onSaveInstanceState(outState)
     }
@@ -225,6 +232,7 @@ class MainActivity : Activity() {
         AuthenticatedAccess.subscribe(incomingListener)
         // A primeira renderização já ocorreu no onCreate; evitar montar tudo duas vezes.
         if (firstResume) firstResume = false else render()
+        refreshPermissionsNotice()
         recoverAuthorizedServiceIfStopped()
         if (mode == 4) loadRemoteMessages()
         handler.removeCallbacks(monitorStatusPoll)
@@ -274,10 +282,11 @@ class MainActivity : Activity() {
     internal fun render() {
         content.removeAllViews()
         if (mode != 0) displayedMonitorState = null
-        if (mode == 4) { renderBottomNavigation(); renderRemoteMessagesPage(); return }
+        if (mode == 4) { renderBottomNavigation(); refreshPermissionsNotice(); renderRemoteMessagesPage(); return }
         handler.removeCallbacks(monitorStatusPoll)
         if (active && mode == 0) handler.postDelayed(monitorStatusPoll, 5_000L)
         renderBottomNavigation()
+        refreshPermissionsNotice()
         renderMobileHeader()
         when (mode) {
             0 -> renderMonitor()
@@ -357,6 +366,10 @@ class MainActivity : Activity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
         when (requestCode) {
+            PermissionCenter.REQUEST_CODE -> {
+                // A concessão NÃO altera as opções locais de compartilhar SMS/áudio/posição.
+                handler.post { requestNextPermissionCenterGroup() }
+            }
             cameraPermissionRequest -> {
                 if (granted) launchQrCapture()
                 else message("Câmera não autorizada. Permita o acesso para ler o QR ou use IP/chave manual.")

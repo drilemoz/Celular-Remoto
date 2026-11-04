@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.109
+# Celular Remoto v0.1.0-alpha.110
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,15 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.109 / versionCode 109** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.110 / versionCode 110** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Central de permissões (alpha.110)
+
+- Nova tela de **Configurações → Central de permissões**, aberta uma vez na primeira instalação do `br.dev.celularremoto`; acompanha pendências reais de câmera, GPS, notificações, áudio, chips, SMS, Acessibilidade, leitor de notificações, uso e localização em segundo plano.
+- Um banner discreto no topo informa pendências locais e abre a central; pode ser fechado até a próxima sessão. A solicitação em lote só ocorre por toque explícito e separa SMS sensível, sem ativar compartilhamento de dados.
+- Acesso a arquivos/fotos usa Storage Access Framework, sem `READ_MEDIA_IMAGES` nem acesso geral ao armazenamento. MediaProjection solicita autorização a cada captura de tela. Acessos especiais devem ser concedidos nas telas oficiais Android.
+- `READ_SMS`/`RECEIVE_SMS` são restritos por instalador em muitos Androids; a UI explica a limitação. A central nunca concede permissões automaticamente nem ativa o monitoramento remoto.
+- Android 13+ exige `POST_NOTIFICATIONS` para publicar notificações; localização em segundo plano permanece etapa separada.
 
 ## Correção do teste de pareamento QR (alpha.109)
 

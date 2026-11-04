@@ -1,3 +1,13 @@
+## Alpha.110 — Central de permissões (04/11/2026)
+
+- [x] Verificador estrutural `tools/check_distribution.py` concluído; protocolo remoto, serviço único e workflow intactos.
+- [x] Análise sintática Kotlin PSI: 214 fontes, nenhum erro sintático.
+- [x] 53 XML válidos; único `.github/workflows/android.yml`, `push` em `main`.
+- [x] Primeira instalação encaminha para Central de permissões, sem iniciar coleta ou pedir grants ocultamente.
+- [x] SMS e permissões especiais dependem de consentimento local explícito; arquivos/fotos sem permissão ampla.
+- [ ] Build real `:app:testDebugUnitTest :app:assembleDebug` no GitHub Actions.
+- [ ] Testes físicos da tela, fluxo de todas as permissões e negativas em Android 12–16, com dispositivos com e sem SIM.
+
 ## Alpha.104 · estabilidade de conexões e alertas (17/10/2026)
 
 - [x] Fechamento explícito de sockets enfileirados/em processamento no encerramento do listener.

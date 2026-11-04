@@ -16,7 +16,7 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.109" and code.group(1) == "109", "Versões incompatíveis"
+assert version == "0.1.0-alpha.110" and code.group(1) == "110", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/celularremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in (ui_root / 'VersionNewsUi.kt').read_text(), "Tela de versão desatualizada"
@@ -1567,3 +1567,22 @@ assert 'celularremoto://pair' in (root / 'docs/PAIRING_QR.md').read_text(), 'Doc
 assert 'PairingCode.encode(PairingSession.issue()' in (root / 'app/src/test/java/br/dev/celularremoto/ui/QrFrameDecoderTest.kt').read_text(), 'Decoder QR deve usar código gerado pelo protocolo real'
 assert '"CELULAR REMOTO"' in (root / 'app/src/main/java/br/dev/celularremoto/ui/IncomingAccessScreenUi.kt').read_text(), 'Nome legado na interface'
 print('PASSOU: alpha.109 testes QR dinâmicos, novo esquema e porta correta')
+
+# Alpha.110 - central de permissões não pode habilitar compartilhamento ao conceder grant.
+perm = (ui_root / 'PermissionCenterUi.kt').read_text(encoding='utf-8')
+assert 'REQUEST_CODE = 9691' in perm and 'fun pending(activity: MainActivity)' in perm
+assert 'Manifest.permission.READ_SMS' in perm and 'Manifest.permission.RECEIVE_SMS' in perm
+assert 'Manifest.permission.CAMERA' in perm and 'Manifest.permission.ACCESS_FINE_LOCATION' in perm
+assert 'Manifest.permission.POST_NOTIFICATIONS' in perm and 'Manifest.permission.RECORD_AUDIO' in perm
+assert 'Settings.ACTION_ACCESSIBILITY_SETTINGS' in perm
+assert 'Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS' in perm
+assert 'Settings.ACTION_USAGE_ACCESS_SETTINGS' in perm
+assert 'if (firstPermissionWelcome)' in main_ui and 'PermissionCenter.markWelcome(this)' in main_ui
+assert 'refreshPermissionsNotice()' in main_ui
+assert '"permissions" -> renderPermissionCenter(page)' in (ui_root / 'SettingsScreenUi.kt').read_text()
+assert '"permissions"' in (ui_root / 'SettingsHubUi.kt').read_text()
+assert 'PermissionCenter.REQUEST_CODE ->' in main_ui
+assert 'SettingsStore.setShareSmsInbox(this, true)' not in perm
+assert 'SettingsStore.setReceiveSmsEvents(this, true)' not in perm
+assert 'READ_MEDIA_IMAGES' not in manifest and 'MANAGE_EXTERNAL_STORAGE' not in manifest
+print('PASSOU: alpha.110 central de permissões, consentimento local e sem ampliação de acessos')

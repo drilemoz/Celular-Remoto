@@ -1,4 +1,6 @@
-# Celular Remoto — 0.1.0-alpha.109
+# Celular Remoto — 0.1.0-alpha.110
+
+Central de permissões com primeira instalação guiada, solicitações Android e atalhos para acessos especiais, banner de pendências e SMS separado. Não altera o serviço remoto nem permite controle sem autorização local.
 
 **Correção do build 3:** a etapa `:app:testDebugUnitTest` executou 183 testes e falhou em um teste de QR por usar a antiga porta 37841. A versão 109 testa a adulteração da porta real declarada no protocolo (37842), exigindo que os casos negativos sejam de fato diferentes do QR válido. O esquema de QR foi atualizado de `monitorremoto://` para `celularremoto://`; gere novo QR e use esta versão nos dois aparelhos.
 

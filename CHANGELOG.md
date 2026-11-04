@@ -1,3 +1,10 @@
+## 0.1.0-alpha.110 — Central de permissões (04/11/2026)
+- Tela guiada automática na primeira instalação, com status real das permissões declaradas pelo app e atalhos para acessos especiais.
+- Configurações → Central de permissões pesquisável, solicitações controladas pelo usuário e aviso de pendências no topo.
+- Lote de runtime permissions (SMS com confirmação específica); concessão não habilita compartilhamento remoto sem a opção local anterior.
+- Compatibilidade com Android 8–16; atenção às restrições do instalador e consentimento por sessão para tela/fotos.
+- Nenhuma mudança em protocolos remotos, chaves, serviços ou política de transmissão de SMS.
+
 ## 0.1.0-alpha.109 — Correção dos testes de pareamento QR (04/11/2026)
 
 - Logs da execução 3: compilação Kotlin e classes de teste concluídas; 183 testes executados, 1 falha em `PairingCodeTest.rejectsUnexpectedQr` na linha 46; o comando Gradle falhou antes da geração do APK.

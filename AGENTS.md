@@ -1,3 +1,11 @@
+# Celular Remoto 0.1.0-alpha.110 — Regras ativas
+
+- Alpha.110 cria Central de permissões com boas práticas: não pedir grants automaticamente nem habilitar compartilhamento de SMS, áudio, GPS ou notificações só porque o Android autorizou.
+- Acessos especiais (Acessibilidade, leitor de notificações, uso, localização em segundo plano, administrador) devem abrir configuração local oficial, com consentimento contextual.
+- Câmera, áudio, localização e SMS são permissões distintas; READ_SMS/RECEIVE_SMS podem ser bloqueadas pelo instalador. Fotos/arquivos dependem SAF, não inventar READ_MEDIA_IMAGES. MediaProjection sempre por sessão.
+- Próxima versão 0.1.0-alpha.111/versionCode 111; sincronize validações, Kotlin, docs e novidades em cada alteração.
+- Compilação Gradle completa e testes de primeira instalação em aparelhos físicos continuam obrigatórios.
+
 # Celular Remoto 0.1.0-alpha.109 — Regras ativas
 
 - A alpha.109 resolve falha em `PairingCodeTest.rejectsUnexpectedQr`: não usar portas literais obsoletas em mutações de QR. Construir usando `WireProtocol.PORT` e exigir QR alterado antes de testar rejeição.
