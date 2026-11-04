@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.107
+# Celular Remoto v0.1.0-alpha.108
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,13 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.107 / versionCode 107** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.108 / versionCode 108** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Correção de compilação e execução única do workflow (alpha.108)
+
+- Corrigida a colisão entre variável local `type` e `Intent.type` no compartilhamento de sessões automáticas de bateria (`BatteryScreenUi.kt:506`). A intenção recebe explicitamente `this.type = "text/plain"`.
+- A CI passou a executar **um único workflow automaticamente no push para `main`**, sem acionamento separado para pull request ou manual. O `concurrency` cancela a execução anterior da mesma branch, evitando compilações concorrentes e releases em disputa.
+- Mantidas as demais funções e integrações da alpha.107. A correção está sujeita à confirmação pelo build Android completo do GitHub Actions.
 
 ## Nova identidade e integração (alpha.107)
 

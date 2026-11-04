@@ -1,3 +1,15 @@
+# Celular Remoto — 0.1.0-alpha.108
+
+**Correção de compilação:** resolve o erro `BatteryScreenUi.kt:506` no compartilhamento de sessão automática de bateria (colisão entre variável `type` e `Intent.type`).
+
+**Um único workflow:** somente `push` na branch `main` aciona a compilação e publicação. Eventos `pull_request` e `workflow_dispatch` deixaram de disparar o mesmo job; uma nova atualização cancela uma execução anterior ainda em curso.
+
+**Sem mudança de dados ou protocolo:** mantém a identidade `br.dev.celularremoto`, porta 37842, autenticação AES-GCM e compatibilidade estrita de versões. Para comunicação, os dois celulares devem usar alpha.108.
+
+**Validação:** os dois logs da alpha.107 apontam a mesma falha no mesmo commit. A alpha.108 precisa ser compilada no GitHub Actions; um teste estrutural local não substitui o APK real.
+
+---
+
 # Celular Remoto — 0.1.0-alpha.107
 
 **Nova identidade:** `br.dev.celularremoto`, APK `CelularRemoto-v0.1.0-alpha.107.apk` gerado pela CI. Esta versão é instalada separadamente do antigo Monitor Remoto; faça o pareamento novamente em ambos os telefones. Não exclua a instalação antiga antes de resgatar relatórios relevantes, pois dados internos e chaves de pareamento não são migrados.

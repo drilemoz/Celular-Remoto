@@ -503,7 +503,8 @@ private fun MainActivity.showBatteryAutomaticReport(session: JSONObject) {
         .setNegativeButton("Fechar", null)
         .setPositiveButton("Compartilhar") { _, _ ->
             startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"; putExtra(Intent.EXTRA_TEXT, detail)
+                this.type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, detail)
             }, "Compartilhar sessão"))
         }.create())
 }

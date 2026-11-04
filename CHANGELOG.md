@@ -1,3 +1,10 @@
+## 0.1.0-alpha.108 — Correção do build e fluxo único (04/11/2026)
+
+- Corrigido o erro Kotlin `BatteryScreenUi.kt:506:17 'val' cannot be reassigned`, reproduzido nos dois jobs do GitHub Actions sobre o mesmo commit. O compartilhamento de relatório automático agora atribui explicitamente `this.type` ao `Intent`, sem colidir com a variável local que identifica a sessão.
+- Mantido **um único arquivo de workflow** `android.yml`, com apenas um gatilho automático (`push` na branch `main`). Removidos `pull_request` e `workflow_dispatch` para não executar o mesmo build por eventos diferentes; `concurrency` cancela a execução anterior e o fluxo continua gerando APK e Release quando passar.
+- Mantidos applicationId `br.dev.celularremoto`, protocolo, pareamento, coleta, sessões, alertas e regras de privacidade existentes. Sem alterações de banco ou permissões.
+- Verificações locais de regressão, código-fonte e workflow não substituem a compilação Android completa. Próximo teste: GitHub Actions da alpha.108.
+
 ## 0.1.0-alpha.107 — Celular Remoto (04/11/2026)
 
 - Novo nome, applicationId `br.dev.celularremoto`, namespace Kotlin, launcher e distribuição APK; porta separada 37842 durante coexistência com o aplicativo antigo. Nova instalação requer pareamento; dados privados legados não migram automaticamente.

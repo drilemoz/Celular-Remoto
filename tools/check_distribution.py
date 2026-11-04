@@ -16,7 +16,7 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.107" and code.group(1) == "107", "Versões incompatíveis"
+assert version == "0.1.0-alpha.108" and code.group(1) == "108", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/celularremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in (ui_root / 'VersionNewsUi.kt').read_text(), "Tela de versão desatualizada"
@@ -1546,3 +1546,12 @@ assert 'ControllerBatteryEvents.onReport' in (root/'app/src/main/java/br/dev/cel
 assert (root/'app/src/test/java/br/dev/celularremoto/core/BatteryGoalPolicyTest.kt').is_file()
 assert (root/'app/src/test/java/br/dev/celularremoto/core/BatterySessionMathTest.kt').is_file()
 print('PASSOU: alpha.107 pacote, serviço único, metas remotas, previsão e encerramento em 100%')
+
+# alpha.108: regressão do erro do compilador Kotlin e de builds duplicados.
+assert 'this.type = "text/plain"' in ui_battery, 'Intent.type deve ser qualificado para não colidir com variável local type'
+assert re.search(r'(?m)^on:\s*\n  push:\s*\n    branches:\s*\n      - main\s*$', workflow), 'CI deve executar somente em push na main'
+assert not re.search(r'(?m)^\s*(?:pull_request|workflow_dispatch):', workflow), 'Gatilho extra gera builds redundantes'
+assert 'cancel-in-progress: true' in workflow and 'group: celular-remoto-main' in workflow, 'Falta deduplicação por concorrência'
+assert len([p for p in (root/'.github/workflows').iterdir() if p.suffix in {'.yml', '.yaml'}]) == 1, 'Deve haver exatamente um arquivo de workflow'
+assert 'github.ref == \'refs/heads/main\'' in workflow, 'Release deve estar restrita à main'
+print('PASSOU: alpha.108 Intent.type qualificado e um workflow por push na main')

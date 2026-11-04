@@ -15,6 +15,8 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "Bem-vindo à atualização"))
     sectionGap(layout, 10)
     val entries = listOf(
+        "Compilação corrigida" to "O compartilhamento do relatório de sessão automática agora define corretamente o tipo de texto; corrigida a falha do build anterior.",
+        "GitHub Actions simplificado" to "Um push na branch main inicia um único workflow de APK e Release. Builds anteriores são cancelados quando chega nova alteração.",
         "Agora: Celular Remoto" to "Nova identidade e pacote br.dev.celularremoto. É uma instalação separada: a versão antiga não transfere dados ou chaves automaticamente.",
         "Sessões automáticas" to "Carregamento e descarga são registrados pelo serviço Monitorado, além dos testes manuais Solar, Elétrico, Consumo e Automático.",
         "Previsões conservadoras" to "Autonomia e previsão de carga aparecem somente após variação real suficiente do percentual; dados incertos são identificados.",

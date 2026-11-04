@@ -1,8 +1,13 @@
 name: Gerar APK e Release
 on:
   push:
-  pull_request:
-  workflow_dispatch:
+    branches:
+      - main
+
+# Um único build automático por alteração em main. Cancelar builds antigos desta branch.
+concurrency:
+  group: celular-remoto-main
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -100,7 +105,7 @@ jobs:
           if-no-files-found: error
       - name: Publicar APK direto em Releases (sem ZIP)
         id: release
-        if: github.event_name != 'pull_request' && (github.event_name == 'workflow_dispatch' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+        if: github.ref == 'refs/heads/main'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}

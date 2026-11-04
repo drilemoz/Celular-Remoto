@@ -1,3 +1,11 @@
+# Celular Remoto 0.1.0-alpha.108 — Regras ativas
+
+- Alpha.108 corrige colisão de `type` com `Intent.type` no `BatteryScreenUi.kt`; em `Intent(...).apply { ... }`, qualificar explicitamente a propriedade como `this.type`, principalmente quando existir uma variável `type` no escopo externo.
+- O **único** workflow `.github/workflows/android.yml` é acionado automaticamente **apenas** em `push` para a branch `main`. Sem `pull_request` e sem `workflow_dispatch`; manter `concurrency` para cancelar builds antigos da mesma branch e evitar Releases concorrentes.
+- Próxima versão sequencial: **0.1.0-alpha.109/versionCode 109**. Sincronizar Gradle, AppVersion, README, CHANGELOG, notas e validador.
+- Preservar autenticação AES-GCM, porta 37842, controle pareado, dados do Lab e de sessões, permissões, notificações, serviço único e identificação de que potência da bateria não mede a potência do painel solar.
+- Exigir build Gradle Android e validação em dois dispositivos. Check de sintaxe, XML/YAML e testes isolados não comprovam `:app:assembleDebug`.
+
 # Celular Remoto 0.1.0-alpha.107 — Regras ativas
 
 - A partir da alpha.107 o aplicativo unificado chama-se **Celular Remoto**, `applicationId`/namespace `br.dev.celularremoto` e raiz de pacotes Kotlin correspondente. Próxima versão **alpha.108/versionCode 108**. Preservar sincronização Gradle, AppVersion, documentação, UI, testes e workflow.
