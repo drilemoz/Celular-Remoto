@@ -11,7 +11,7 @@ class BatteryHistoryMathTest {
             sky, panel, screen)
 
     @Test fun rateUsesElapsedTimeNotNominalPanelPower() {
-        assertEquals(20.0, BatteryHistoryMath.rate(sample()), 0.001)
+        assertEquals(20.0, requireNotNull(BatteryHistoryMath.rate(sample())), 0.001)
     }
 
     @Test fun insufficientCoverageHidesRate() {

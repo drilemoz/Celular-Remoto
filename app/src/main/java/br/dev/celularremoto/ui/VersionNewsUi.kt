@@ -15,6 +15,7 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "Bem-vindo à atualização"))
     sectionGap(layout, 10)
     val entries = listOf(
+        "Correção do build 8" to "Corrigida a compilação do teste de histórico da bateria. Os recursos de bateria, gráficos, controle remoto e atualizações continuam como antes.",
         "Histórico de bateria com filtros" to "Filtre sessões locais ou do aparelho remoto por tipo (solar, elétrico, consumo, carga/descarga automática) e período de 7, 30, 90 dias ou todo o histórico disponível.",
         "Comparação de testes" to "Compare duas sessões concluídas com taxa em pontos percentuais por hora e cobertura. O app avisa se céu, painel ou condição da tela tornam a comparação inconclusiva.",
         "Gráficos com lacunas" to "Gráficos de percentual, corrente e temperatura mostram eixos, horários e apenas pontos registrados. Intervalos maiores que 90 segundos não recebem linhas inventadas.",

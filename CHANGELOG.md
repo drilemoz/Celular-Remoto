@@ -1,3 +1,10 @@
+## 0.1.0-alpha.115 (versionCode 115) | 04/11/2026
+
+- Corrigido erro de tipo Kotlin em `BatteryHistoryMathTest.kt:14`: comparação com `Double?` agora exige resultado não nulo via `requireNotNull` antes da asserção numérica.
+- Log do build 8 da alpha.114 confirmou `:app:compileDebugKotlin` bem-sucedido e falha em `:app:compileDebugUnitTestKotlin`; o código de produção de bateria não precisou de mudança.
+- Verificador estrutural passou a proteger a assinatura do teste; workflow único e funções de bateria, controle remoto, atualizações e assinatura preservados.
+- Build e testes Android completos da alpha.115 ainda pendentes em GitHub Actions.
+
 ## 0.1.0-alpha.114 (versionCode 114) | 04/11/2026
 
 - Aba Bateria: histórico local/remoto filtrável por categoria e período, incluindo cargas e descargas automáticas e os quatro testes Labs.

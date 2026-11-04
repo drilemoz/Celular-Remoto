@@ -1,3 +1,10 @@
+# Celular Remoto — 0.1.0-alpha.115 — Correção build 8
+
+- O workflow 8 da alpha.114 concluiu `:app:compileDebugKotlin` e falhou em `:app:compileDebugUnitTestKotlin`: `BatteryHistoryMathTest.kt:14` passou `Double?` para `assertEquals` que requer `Double`.
+- A alpha.115 usa `requireNotNull(BatteryHistoryMath.rate(sample()))` no teste numérico, sem mascarar retorno nulo. Não alterar regras de medição somente para resolver erro do teste.
+- Preservar o protocolo autenticado, o único workflow, a compatibilidade com alpha.111 e as funcionalidades de bateria existentes.
+- Próxima versão sequencial: alpha.116/versionCode 116. Compilação Android CI e testes físicos continuam pendentes até confirmação real.
+
 # Celular Remoto — 0.1.0-alpha.114 — Regras ativas
 
 - Aba Bateria: histórico filtrável do aparelho selecionado, com testes Labs e sessões automáticas organizadas por tipo e data. Comparações somente entre testes concluídos; condições distintas ou amostras insuficientes impedem conclusões de superioridade.

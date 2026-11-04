@@ -1,3 +1,11 @@
+# Celular Remoto — 0.1.0-alpha.115
+
+**Correção do build 8:** reparado erro de compilação no teste Kotlin `BatteryHistoryMathTest.rateUsesElapsedTimeNotNominalPanelPower` (linha 14). O retorno anulável de `BatteryHistoryMath.rate` é validado com `requireNotNull`, mantendo o teste de valor esperado. Nenhuma funcionalidade de produção foi alterada; históricos, gráficos, estimativas, serviço remoto, atualizações e workflow único foram preservados.
+
+**Validação:** o log da alpha.114 comprova a compilação principal Kotlin, mas interrompeu os testes; é preciso executar o workflow novamente para confirmar os testes e o APK alpha.115.
+
+---
+
 # Celular Remoto — 0.1.0-alpha.114
 
 - Histórico de bateria com filtros por tipo e período para o celular local ou pareado.

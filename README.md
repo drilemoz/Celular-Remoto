@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.114
+# Celular Remoto v0.1.0-alpha.115
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,14 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.114 / versionCode 114** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.115 / versionCode 115** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Correção do build 8 (alpha.115)
+
+- `:app:compileDebugKotlin` da alpha.114 passou no GitHub Actions; a falha ocorreu posteriormente em `:app:compileDebugUnitTestKotlin`.
+- Em `BatteryHistoryMathTest.kt:14`, `BatteryHistoryMath.rate()` devolve `Double?` (nullable) e o `assertEquals(Double, Double, delta)` exige `Double` não nulo. O teste agora usa `requireNotNull(rate(...))` antes de comparar com a expectativa `20.0`, preservando a falha de teste para amostras inválidas.
+- Nenhuma regra de cálculo de bateria, protocolo, permissão, pareamento, assinatura, atualização online ou workflow foi alterada nesta correção.
+- Compilação e testes Android completos da alpha.115 ainda dependem do próximo build no GitHub Actions.
 
 ## Histórico de bateria e comparação (alpha.114)
 

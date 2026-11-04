@@ -1,3 +1,11 @@
+## Alpha.115 — Correção do build 8 (04/11/2026)
+
+- Log do workflow 8: compilação principal Kotlin aprovada; falha na compilação dos testes (`BatteryHistoryMathTest.kt:14`, `Double?` vs. `Double`).
+- Ajuste pontual no teste e regressão estrutural no verificador; nenhum código de produção de cálculo foi alterado.
+- Teste JVM isolado do arquivo reparado e checagens estruturais e do pacote: conferir `docs/VALIDATION_ALPHA115.md`.
+- [ ] `:app:testDebugUnitTest :app:assembleDebug :app:lintDebug` no GitHub Actions para alpha.115.
+- [ ] Testes físicos em dois celulares com sessões antigas e novas.
+
 ## Alpha.110 — Central de permissões (04/11/2026)
 
 - [x] Verificador estrutural `tools/check_distribution.py` concluído; protocolo remoto, serviço único e workflow intactos.

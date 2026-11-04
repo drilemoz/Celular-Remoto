@@ -16,7 +16,7 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.114" and code.group(1) == "114", "Versões incompatíveis"
+assert version == "0.1.0-alpha.115" and code.group(1) == "115", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/celularremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in (ui_root / 'VersionNewsUi.kt').read_text(), "Tela de versão desatualizada"
@@ -1643,3 +1643,10 @@ assert 'PUBLIC_SESSIONS = 24' in auto114 and 'PUBLIC_GRAPH_POINTS = 40' in auto1
 assert 'showBatteryCompareDialog' in ui114 and 'batteryHistoryPeriod' in ui114
 assert (root / 'app/src/test/java/br/dev/celularremoto/core/BatteryHistoryMathTest.kt').exists()
 print('PASSOU: alpha.114 filtros de histórico, comparação conservadora e limites de amostras remotas')
+
+# Alpha.115 — evita regressão de compilação Kotlin em assertEquals(Double, Double?, delta).
+# Usar requireNotNull é intencional: o resultado nulo deve falhar, não ser aceito como zero.
+rate_test = (root / 'app/src/test/java/br/dev/celularremoto/core/BatteryHistoryMathTest.kt').read_text(encoding='utf-8')
+assert 'requireNotNull(BatteryHistoryMath.rate(sample()))' in rate_test, 'Teste precisa converter Double? em Double validado'
+assert 'assertEquals(20.0, BatteryHistoryMath.rate(sample()), 0.001)' not in rate_test, 'Regressão Double? na asserção'
+print('PASSOU: alpha.115 teste unitário evita incompatibilidade Double? / Double')
