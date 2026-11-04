@@ -1,3 +1,10 @@
+## Alpha.116 — Correção do teste de versão (04/11/2026)
+
+- [x] Falha do build 9 identificada: 210 testes executados, 1 falhou em `AppVersionTest.kt:8` por expectativa obsoleta de alpha.112.
+- [x] Teste de versão usa valores gerados por Gradle (`BuildConfig.VERSION_NAME`/`VERSION_CODE`) e preserva `WIRE_COMPAT` alpha.111.
+- [ ] CI alpha.116: `:app:testDebugUnitTest :app:assembleDebug :app:lintDebug`.
+- [ ] Verificação do APK assinado e comunicação entre dois aparelhos.
+
 ## Alpha.115 — Correção do build 8 (04/11/2026)
 
 - Log do workflow 8: compilação principal Kotlin aprovada; falha na compilação dos testes (`BatteryHistoryMathTest.kt:14`, `Double?` vs. `Double`).

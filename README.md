@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.115
+# Celular Remoto v0.1.0-alpha.116
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,13 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.115 / versionCode 115** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.116 / versionCode 116** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Correção do build 9 (alpha.116)
+
+- A compilação principal e a compilação dos testes passaram na CI da alpha.115; a falha ocorreu na execução do teste `AppVersionTest.apkVersionAndWireVersionAreIndependent` (209/210 aprovados).
+- O teste ainda exigia a versão APK `alpha.112`. Agora compara `AppVersion.NAME` com `BuildConfig.VERSION_NAME` e confere `versionCode`; o marcador de protocolo `alpha.111` continua independente.
+- Nenhuma mudança em rede, AES-GCM, bateria, atualização online, permissões, assinatura ou workflow único. Testar novamente o Gradle/Android na CI.
 
 ## Correção do build 8 (alpha.115)
 

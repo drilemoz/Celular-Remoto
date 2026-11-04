@@ -16,7 +16,8 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.115" and code.group(1) == "115", "Versões incompatíveis"
+assert re.fullmatch(r"0\.1\.0-alpha\.(\d+)", version), "Formato de versão inválido"
+assert version.rsplit(".", 1)[1] == code.group(1), "versionName e versionCode incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/celularremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in (ui_root / 'VersionNewsUi.kt').read_text(), "Tela de versão desatualizada"
@@ -1650,3 +1651,13 @@ rate_test = (root / 'app/src/test/java/br/dev/celularremoto/core/BatteryHistoryM
 assert 'requireNotNull(BatteryHistoryMath.rate(sample()))' in rate_test, 'Teste precisa converter Double? em Double validado'
 assert 'assertEquals(20.0, BatteryHistoryMath.rate(sample()), 0.001)' not in rate_test, 'Regressão Double? na asserção'
 print('PASSOU: alpha.115 teste unitário evita incompatibilidade Double? / Double')
+
+# Alpha.116 — unit test compara contra BuildConfig, não contra versão do APK antiga.
+appversion_test = (root / 'app/src/test/java/br/dev/celularremoto/transport/AppVersionTest.kt').read_text(encoding='utf-8')
+assert 'import br.dev.celularremoto.BuildConfig' in appversion_test, 'BuildConfig ausente no teste de versão'
+assert 'assertEquals(BuildConfig.VERSION_NAME, AppVersion.NAME)' in appversion_test, 'Teste de versão não usa versão gerada'
+assert 'assertEquals("0.1.0-alpha.${BuildConfig.VERSION_CODE}", AppVersion.NAME)' in appversion_test, 'Teste não valida versionCode'
+assert 'assertNotEquals(AppVersion.NAME, AppVersion.WIRE_COMPAT)' in appversion_test, 'Falta teste de independência do protocolo'
+assert 'assertEquals("0.1.0-alpha.112", AppVersion.NAME)' not in appversion_test, 'Não fixar versão de APK antiga no teste'
+assert 'const val WIRE_COMPAT = "0.1.0-alpha.111"' in remote_version, 'Compatibilidade de protocolo alterada indevidamente'
+print('PASSOU: alpha.116 testagem de AppVersion vinculada ao BuildConfig e protocolo preservado')

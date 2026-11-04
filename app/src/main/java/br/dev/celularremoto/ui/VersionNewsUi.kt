@@ -15,6 +15,7 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "Bem-vindo à atualização"))
     sectionGap(layout, 10)
     val entries = listOf(
+        "Correção do build 9" to "A compilação Kotlin passou e 209 dos 210 testes foram aprovados. O teste de versão agora consulta o BuildConfig gerado pelo Gradle, sem exigir o número antigo alpha.112.",
         "Correção do build 8" to "Corrigida a compilação do teste de histórico da bateria. Os recursos de bateria, gráficos, controle remoto e atualizações continuam como antes.",
         "Histórico de bateria com filtros" to "Filtre sessões locais ou do aparelho remoto por tipo (solar, elétrico, consumo, carga/descarga automática) e período de 7, 30, 90 dias ou todo o histórico disponível.",
         "Comparação de testes" to "Compare duas sessões concluídas com taxa em pontos percentuais por hora e cobertura. O app avisa se céu, painel ou condição da tela tornam a comparação inconclusiva.",

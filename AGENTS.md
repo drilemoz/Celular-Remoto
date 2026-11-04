@@ -1,3 +1,11 @@
+# Celular Remoto — 0.1.0-alpha.116 — Correção build 9
+
+- O build 9 da alpha.115 compilou código e testes Kotlin, mas falhou em 1/210 testes (`AppVersionTest.apkVersionAndWireVersionAreIndependent`) por expectativa antiga de alpha.112.
+- O teste agora compara a versão APK com `BuildConfig.VERSION_NAME` e `BuildConfig.VERSION_CODE`, mantendo o protocolo separado (`WIRE_COMPAT=alpha.111`); nunca reintroduzir igualdade textual rígida de versões no pareamento.
+- O validador de distribuição exige sincronização entre nome/code do Gradle sem número hardcoded por release; futuras versões ainda devem incrementar Gradle e `AppVersion.NAME` e atualizar docs, novidades e teste.
+- Preservar único workflow, serviço, AES-GCM, bateria, configuração de permissões e atualizador remoto; sem modificar Secrets ou assinatura.
+- Próxima versão sequencial: alpha.117/versionCode 117. CI Android e testes em aparelhos pendentes até comprovação real.
+
 # Celular Remoto — 0.1.0-alpha.115 — Correção build 8
 
 - O workflow 8 da alpha.114 concluiu `:app:compileDebugKotlin` e falhou em `:app:compileDebugUnitTestKotlin`: `BatteryHistoryMathTest.kt:14` passou `Double?` para `assertEquals` que requer `Double`.

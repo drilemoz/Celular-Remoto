@@ -1,3 +1,10 @@
+## 0.1.0-alpha.116 (versionCode 116) | 04/11/2026
+
+- Corrigido `AppVersionTest.apkVersionAndWireVersionAreIndependent`, único teste falho no workflow 9 (209/210 aprovados); a expectativa obsoleta `alpha.112` foi substituída pela versão real `BuildConfig.VERSION_NAME` e conferência de `BuildConfig.VERSION_CODE`.
+- Marcador `WIRE_COMPAT=0.1.0-alpha.111` preservado para conexão entre versões compatíveis, sem reintroduzir exigência de mesmo número de APK.
+- Validador passa a comparar a numeração declarada no Gradle sem literal fixo para cada alpha, e protege a regressão do teste. Apenas teste, versionamento e documentação foram alterados.
+- Compilação Android completa e testes físicos continuam pendentes para esta versão.
+
 ## 0.1.0-alpha.115 (versionCode 115) | 04/11/2026
 
 - Corrigido erro de tipo Kotlin em `BatteryHistoryMathTest.kt:14`: comparação com `Double?` agora exige resultado não nulo via `requireNotNull` antes da asserção numérica.

@@ -1,3 +1,11 @@
+# Celular Remoto — 0.1.0-alpha.116
+
+**Correção do workflow 9:** o código e os testes Kotlin compilaram, mas um teste executado falhou por comparar a versão atual do APK com o valor antigo `0.1.0-alpha.112`. Agora `AppVersionTest` usa o `BuildConfig` real do Gradle e mantém o marcador de protocolo independente. Nenhuma modificação no comportamento de produção além do incremento sequencial para alpha.116.
+
+**Validação:** Gradle Android completo para alpha.116 e testes físicos ainda dependem de execução posterior. O fluxo único de Release foi preservado.
+
+---
+
 # Celular Remoto — 0.1.0-alpha.115
 
 **Correção do build 8:** reparado erro de compilação no teste Kotlin `BatteryHistoryMathTest.rateUsesElapsedTimeNotNominalPanelPower` (linha 14). O retorno anulável de `BatteryHistoryMath.rate` é validado com `requireNotNull`, mantendo o teste de valor esperado. Nenhuma funcionalidade de produção foi alterada; históricos, gráficos, estimativas, serviço remoto, atualizações e workflow único foram preservados.

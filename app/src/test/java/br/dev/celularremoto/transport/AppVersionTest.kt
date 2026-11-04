@@ -1,11 +1,15 @@
 package br.dev.celularremoto.transport
 
+import br.dev.celularremoto.BuildConfig
 import org.junit.Assert.*
 import org.junit.Test
 
 class AppVersionTest {
     @Test fun apkVersionAndWireVersionAreIndependent() {
-        assertEquals("0.1.0-alpha.112", AppVersion.NAME)
+        // Não repetir o número da versão no teste: o Gradle é a fonte de verdade.
+        assertEquals(BuildConfig.VERSION_NAME, AppVersion.NAME)
+        assertEquals("0.1.0-alpha.${BuildConfig.VERSION_CODE}", AppVersion.NAME)
+        assertNotEquals(AppVersion.NAME, AppVersion.WIRE_COMPAT)
         assertEquals("0.1.0-alpha.111", AppVersion.WIRE_COMPAT)
         assertTrue(AppVersion.compatible(AppVersion.WIRE_COMPAT))
         assertTrue(AppVersion.compatible(AppVersion.NAME))
