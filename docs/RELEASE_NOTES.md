@@ -1,3 +1,13 @@
+# Celular Remoto — 0.1.0-alpha.111
+
+**Atualizações online integradas:** o app consulta versões publicadas no GitHub, baixa em segundo plano pelo DownloadManager (quando permitido pela rede e bateria) e avisa quando o APK estiver verificado. O usuário autoriza localmente a instalação oficial no Android. A instalação nunca é remota ou silenciosa.
+
+A tela **Configurações → Atualizações** inclui busca manual, download manual, horários aproximados de 6/12/24 h, preferências de rede não tarifada e proteção de bateria. APK só é elegível se a Release possuir o manifesto `celular-remoto-update.json` gerado com a assinatura estável. Verificação de hash SHA-256, pacote, versão e certificado. O workflow de GitHub Actions continua único.
+
+**Limitações:** conexão à internet para verificar/baixar; Wi-Fi de transferência entre aparelhos ainda não implementado. Instalações assinadas com certificados diferentes não atualizam entre si. Necessário testar GitHub Actions completo, DownloadManager e instalador nos aparelhos.
+
+---
+
 # Celular Remoto — 0.1.0-alpha.110
 
 Central de permissões com primeira instalação guiada, solicitações Android e atalhos para acessos especiais, banner de pendências e SMS separado. Não altera o serviço remoto nem permite controle sem autorização local.

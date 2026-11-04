@@ -33,3 +33,9 @@ O GitHub Manager aceita TXT UTF-8 com `KEYSTORE_BASE64=...`, `KEYSTORE_PASSWORD=
 **Assinatura ao atualizar:** APKs com o mesmo `applicationId` só atualizam instalados se a assinatura for compatível e o `versionCode` aumentar. Um APK Debug antigo usa certificado distinto da nova chave Release; pode exigir UMA desinstalação/migração ao adotar a assinatura estável. Depois, conservar a MESMA keystore e os quatro Secrets em todas as versões. Sem Secrets, o workflow ainda pode publicar APK Debug, que não é adequado para atualizações permanentes.
 
 **alpha.8:** o Artifact APK de contingência só é gerado após o APK efetivamente existir na pasta `dist`, evitando upload vazio quando o compilador falhar. Os mesmos Secrets de assinatura da alpha.7 devem ser reutilizados nas versões futuras.
+
+## Instalação assistida online (alpha.111)
+
+A tela **Configurações → Atualizações** busca a Release pública mais nova de `drilemoz/Celular-Remoto`, incluindo pre-releases; baixá-la pode ocorrer em segundo plano, mas a instalação exige confirmação local. O manifesto `celular-remoto-update.json` publicado ao lado do APK indica `versionCode`, pacote, hash e que o APK vem de Release com assinatura estável. Este manifesto só é publicado quando os quatro Secrets de assinatura estão completos.
+
+**Atenção:** APK Debug assinado por runner temporário não é atualização compatível com APK Release assinado por keystore privada. A assinatura deve ser a mesma no aplicativo instalado e no novo. Downloads podem ficar aguardando Wi-Fi/rede não tarifada, bateria acima de 25% ou fim dos testes Labs; Android pode atrasar a consulta periódica.

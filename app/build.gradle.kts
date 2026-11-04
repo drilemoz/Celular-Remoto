@@ -13,13 +13,14 @@ val hasReleaseSigning = releaseSigningNames.all { !System.getenv(it).isNullOrBla
 android {
     namespace = "br.dev.celularremoto"
     compileSdk = 36
+    buildFeatures { buildConfig = true }
 
     defaultConfig {
         applicationId = "br.dev.celularremoto"
         minSdk = 26
         targetSdk = 36
-        versionCode = 110
-        versionName = "0.1.0-alpha.110"
+        versionCode = 111
+        versionName = "0.1.0-alpha.111"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

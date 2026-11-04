@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.110
+# Celular Remoto v0.1.0-alpha.111
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,15 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.110 / versionCode 110** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.111 / versionCode 111** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Atualizações online (alpha.111)
+
+- Em **Configurações → Atualizações**, o app consulta `drilemoz/Celular-Remoto` via HTTPS e lista inclusive prereleases. A verificação periódica usa JobScheduler (6, 12 ou 24 horas; padrão 24 h) e pode ser atrasada pelo Android.
+- Se aparecer uma Release com `celular-remoto-update.json` gerado pela CI **com assinatura estável**, o DownloadManager pode baixar o APK com tela apagada. Por padrão usa apenas rede não tarifada, verifica bateria >= 25% ou conectado à fonte e evita downloads durante testes Labs ativos.
+- Antes de oferecer instalação, confere SHA-256, nome do pacote `br.dev.celularremoto`, `versionCode` e assinatura do APK instalada. Instalação somente após toque local e confirmação do Android. Configurações de fontes desconhecidas continuam sendo autorizadas no próprio aparelho.
+- O workflow **único** acrescenta manifesto JSON somente às Releases com os quatro Secrets válidos. Builds Debug não podem ser ofertados como atualizações automáticas. A transferência de APK entre aparelhos por Wi-Fi **ainda não foi implementada**.
+- Mais detalhes e limitações em `docs/UPDATES.md`.
 
 ## Central de permissões (alpha.110)
 

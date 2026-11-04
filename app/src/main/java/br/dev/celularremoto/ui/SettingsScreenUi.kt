@@ -30,6 +30,7 @@ internal fun MainActivity.showSettingsDialog() = openSettingsModule()
 internal fun MainActivity.renderSettingsModule() {
     val labelBySection = mapOf(
         "permissions" to "Permissões do Android",
+        "updates" to "Atualizações",
         "notifications" to "Notificações",
         "apps" to "Aplicativos instalados",
         "sms" to "SMS e telefonia",
@@ -62,6 +63,7 @@ internal fun MainActivity.renderSettingsModule() {
         val page = panel(12)
         when (section) {
             "permissions" -> renderPermissionCenter(page)
+            "updates" -> fillUpdatesSettings(page)
             "notifications" -> fillNotificationSettings(page)
             "apps" -> fillAppsSettings(page)
             "sms" -> fillSmsSettings(page)

@@ -1,3 +1,13 @@
+## 0.1.0-alpha.111 — Atualizações online por GitHub Releases (04/11/2026)
+
+- Nova tela Configurações → Atualizações, com consulta manual, verificação periódica configurável (6/12/24 h), download automático opcional, rede não tarifada, economia de energia e estado do APK.
+- GitHub REST API lista Releases e prereleases (não usa `/releases/latest`), valida manifesto `celular-remoto-update.json` publicado somente para APKs Release com assinatura estável.
+- DownloadManager realiza download em segundo plano e retoma após conectividade. JobScheduler verifica o APK concluído em tarefa separada, sem bloquear broadcast.
+- Antes de declarar pronto: SHA-256, packageName, versionCode e assinatura compatível. Instalação via Android somente após toque local, nunca silenciosamente ou por rede remota.
+- Regras para poupar bateria: bloqueia download automático abaixo de 25% sem carregador ou durante teste Labs ativo; padrão rede não tarifada.
+- Preserva workflow único, serviço de controle/monitoramento e dados anteriores. Transferência LAN de APK adiada para etapa posterior.
+- Compilação Android completa e teste ponta a ponta ainda pendentes de GitHub Actions e aparelhos físicos.
+
 ## 0.1.0-alpha.110 — Central de permissões (04/11/2026)
 - Tela guiada automática na primeira instalação, com status real das permissões declaradas pelo app e atalhos para acessos especiais.
 - Configurações → Central de permissões pesquisável, solicitações controladas pelo usuário e aviso de pendências no topo.

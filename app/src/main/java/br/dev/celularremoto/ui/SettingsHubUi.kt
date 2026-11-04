@@ -49,6 +49,7 @@ private val settingGroups = listOf(
         SettingsDestination(R.drawable.ic_thermometer, "Alertas e proteção", "Bateria, temperatura e saúde", "health"),
     )),
     SettingsGroup("APARÊNCIA E APLICATIVO", listOf(
+        SettingsDestination(R.drawable.ic_folder_download, "Atualizações", "GitHub Releases, download automático e instalação local", "updates"),
         SettingsDestination(R.drawable.ic_palette, "Aparência", "Temas claro, escuro e sistema", "appearance"),
         SettingsDestination(R.drawable.ic_info, "Novidades da versão", "Mudanças nesta atualização", "news"),
         SettingsDestination(R.drawable.ic_info, "Sobre", "Versão e privacidade", "about"),

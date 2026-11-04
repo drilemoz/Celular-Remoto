@@ -96,6 +96,36 @@ jobs:
           install -m 0644 "$SOURCE_APK" "dist/CelularRemoto-v${VERSION}.apk"
           cd dist
           sha256sum "CelularRemoto-v${VERSION}.apk" > "CelularRemoto-v${VERSION}.sha256"
+      - name: Manifesto público para atualização online (somente Release assinada)
+        if: steps.signing.outputs.enabled == 'true'
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.name }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PYGEN'
+          import hashlib, json, os, pathlib, re
+          version = os.environ['VERSION']
+          gradle = pathlib.Path('app/build.gradle.kts').read_text()
+          code_match = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
+          if not code_match:
+              raise RuntimeError('versionCode ausente')
+          apk_name = f'CelularRemoto-v{version}.apk'
+          apk = pathlib.Path('dist') / apk_name
+          if not apk.is_file() or apk.stat().st_size < 1:
+              raise RuntimeError('APK assinado não existe')
+          manifest = {
+              'schema': 1,
+              'packageName': 'br.dev.celularremoto',
+              'versionName': version,
+              'versionCode': int(code_match.group(1)),
+              'apkName': apk_name,
+              'sha256': hashlib.sha256(apk.read_bytes()).hexdigest(),
+              'stableSigned': True,
+          }
+          pathlib.Path('dist/celular-remoto-update.json').write_text(
+              json.dumps(manifest, sort_keys=True, indent=2) + '\n', encoding='utf-8')
+          PYGEN
       - name: Artifact AAB para futura Play Store (somente com Secrets)
         if: steps.signing.outputs.enabled == 'true'
         uses: actions/upload-artifact@v4
@@ -119,10 +149,12 @@ jobs:
               --target "$GITHUB_SHA" --title "Celular Remoto $VERSION (prévia)" \
               --prerelease --notes-file docs/RELEASE_NOTES.md
           fi
-          gh release upload "$TAG" \
-            "dist/CelularRemoto-v${VERSION}.apk" \
-            "dist/CelularRemoto-v${VERSION}.sha256" \
-            --repo "$GITHUB_REPOSITORY" --clobber
+          assets=("dist/CelularRemoto-v${VERSION}.apk" "dist/CelularRemoto-v${VERSION}.sha256")
+          if [[ "$STABLE_SIGNING" == 'true' ]]; then
+            test -s 'dist/celular-remoto-update.json'
+            assets+=('dist/celular-remoto-update.json')
+          fi
+          gh release upload "$TAG" "${assets[@]}" --repo "$GITHUB_REPOSITORY" --clobber
           echo "### APK direto" >> "$GITHUB_STEP_SUMMARY"
           echo "[Baixar CelularRemoto-v${VERSION}.apk](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/CelularRemoto-v${VERSION}.apk)" >> "$GITHUB_STEP_SUMMARY"
           if [[ "$STABLE_SIGNING" != 'true' ]]; then

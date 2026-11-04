@@ -108,7 +108,10 @@ class MainActivity : Activity() {
         if (active && !isFinishing && !isDestroyed && mode == 0) refreshMonitorIfChanged()
     }
     internal var resultBox: LinearLayout? = null
-    companion object { const val EXTRA_OPEN_MONITOR = "br.dev.celularremoto.OPEN_MONITOR" }
+    companion object {
+        const val EXTRA_OPEN_MONITOR = "br.dev.celularremoto.OPEN_MONITOR"
+        const val EXTRA_OPEN_UPDATES = "br.dev.celularremoto.OPEN_UPDATES"
+    }
     // Alpha.53: acesso autenticado permanece visível no cartão Monitorado e na
     // notificação do sistema; nunca abre Activity por cima das tarefas do usuário.
     private val incomingListener: () -> Unit = monitorAccessListener(monitorUiInvalidation)
@@ -132,6 +135,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         RecentDevices.migrateLegacy(this)
         br.dev.celularremoto.service.RemoteHealthScheduler.refresh(this)
+        br.dev.celularremoto.updates.UpdateController.initialize(this)
         val firstPermissionWelcome = savedInstanceState == null && PermissionCenter.needsWelcome(this)
         mode = if (intent.getBooleanExtra(EXTRA_OPEN_MONITOR, false)) 0
             else savedInstanceState?.getInt("active_mode", 2)?.takeIf { it in 0..5 } ?: 2
@@ -141,6 +145,9 @@ class MainActivity : Activity() {
         if (firstPermissionWelcome) {
             mode = 3
             settingsSection = "permissions"
+        } else if (intent.getBooleanExtra(EXTRA_OPEN_UPDATES, false)) {
+            mode = 3
+            settingsSection = "updates"
         }
         batteryRemote = savedInstanceState?.getBoolean("battery_remote", false) ?: false
         batterySection = savedInstanceState?.getString("battery_section", "resumo") ?: "resumo"
@@ -198,6 +205,15 @@ class MainActivity : Activity() {
             if (!isFinishing && !isDestroyed) showVersionNewsIfNeeded()
         }
     }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_UPDATES, false)) {
+            mode = 3
+            settingsSection = "updates"
+            render()
+        }
+    }
     override fun onDestroy() {
         activeUiDialog?.dismiss()
         activeUiDialog = null
@@ -213,7 +229,6 @@ class MainActivity : Activity() {
         }
         super.onDestroy()
     }
-
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putInt("active_mode", mode)
         outState.putBoolean("battery_remote", batteryRemote)
@@ -278,7 +293,6 @@ class MainActivity : Activity() {
         }
         super.onPause()
     }
-
     internal fun render() {
         content.removeAllViews()
         if (mode != 0) displayedMonitorState = null
@@ -304,7 +318,6 @@ class MainActivity : Activity() {
         }
         if (mode == 0) displayedMonitorState = currentMonitorState()
     }
-
     /** Navegação principal: não toca em chaves, sockets ou permissões do Android. */
     internal fun navigateMainTab(destination: Int) {
         if (destination !in listOf(0, 1, 2, 3, 5)) return
@@ -327,12 +340,10 @@ class MainActivity : Activity() {
         if (destination == 5 && active) handler.postDelayed(batteryPoller, 30_000L)
         (content.parent as? ScrollView)?.scrollTo(0, 0)
     }
-
     /** Home retorna à escolha inicial, preservando serviço e chaves de pareamento. */
     private fun navigateHome() {
         if (mode != 2) { if (mode == 4) clearRemoteMessagesScreen(); mode = 2; settingsSection = "home"; render() }
     }
-
     internal fun openSettingsModule() {
         if (mode != 3) settingsReturnMode = if (mode == 4) 1 else mode
         mode = 3
@@ -340,25 +351,21 @@ class MainActivity : Activity() {
         render()
         (content.parent as? ScrollView)?.scrollTo(0, 0)
     }
-
     internal fun openSettingsSection(section: String) {
         settingsSection = section
         render()
         (content.parent as? ScrollView)?.scrollTo(0, 0)
     }
-
     private fun navigateBackFromSettings() {
         if (settingsSection != "home") openSettingsSection("home")
         else { mode = settingsReturnMode; render() }
     }
-
     @Deprecated("Android Activity back callback")
     override fun onBackPressed() {
         if (mode == 3) navigateBackFromSettings()
         else if (mode == 4) closeRemoteMessagesScreen()
         else if (mode != 2) navigateHome() else super.onBackPressed()
     }
-
     /** Resposta centralizada: cada permissão mantém o fluxo específico e independente. */
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
@@ -435,14 +442,12 @@ class MainActivity : Activity() {
             confirmQrCode(scanned)
         }
     }
-
     internal fun requestStart() {
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), notificationPermissionRequest)
         } else startServiceExplicitly()
     }
-
     internal fun startServiceExplicitly() {
         try {
             SecretVault.getOrCreateMonitorKey(this)
@@ -454,15 +459,12 @@ class MainActivity : Activity() {
             message("Não foi possível iniciar o serviço: ${error.message}")
         }
     }
-
-
     internal fun hasListener(): Boolean = try {
         val setting = Settings.Secure.getString(contentResolver, "enabled_notification_listeners").orEmpty()
         setting.split(':').any {
             ComponentName.unflattenFromString(it) == ComponentName(this, NotificationCaptureService::class.java)
         }
     } catch (_: Exception) { false }
-
     internal fun localIps(): String = try {
         NetworkInterface.getNetworkInterfaces().toList()
             .filter { it.isUp && !it.isLoopback }
@@ -470,9 +472,7 @@ class MainActivity : Activity() {
                 .map { "${iface.name}: ${it.hostAddress}" } }
             .joinToString(" · ")
     } catch (_: Exception) { "" }
-
     internal fun formatDate(timestamp: Long): String = SimpleDateFormat("dd/MM HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
-
     internal fun message(message: String) {
         if (mode == 3) render()
         showAppNotice("Celular Remoto", message)

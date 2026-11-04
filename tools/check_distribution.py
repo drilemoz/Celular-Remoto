@@ -16,7 +16,7 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.110" and code.group(1) == "110", "Versões incompatíveis"
+assert version == "0.1.0-alpha.111" and code.group(1) == "111", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/celularremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in (ui_root / 'VersionNewsUi.kt').read_text(), "Tela de versão desatualizada"
@@ -1586,3 +1586,16 @@ assert 'SettingsStore.setShareSmsInbox(this, true)' not in perm
 assert 'SettingsStore.setReceiveSmsEvents(this, true)' not in perm
 assert 'READ_MEDIA_IMAGES' not in manifest and 'MANAGE_EXTERNAL_STORAGE' not in manifest
 print('PASSOU: alpha.110 central de permissões, consentimento local e sem ampliação de acessos')
+
+# alpha.111: verificacao e download online sem segundo workflow ou instalacao silenciosa.
+update = (root / 'app/src/main/java/br/dev/celularremoto/updates/UpdateController.kt').read_text()
+scheduler = (root / 'app/src/main/java/br/dev/celularremoto/updates/UpdateScheduler.kt').read_text()
+assert 'api.github.com/repos/' in update and 'DownloadManager.Request' in update
+assert 'checkPackageSignature(context, apk, code)' in update and 'hashFile(apk)' in update
+assert 'ACTION_MANAGE_UNKNOWN_APP_SOURCES' in update and 'ACTION_VIEW' in update
+assert 'setPeriodic(interval)' in scheduler and 'setRequiredNetworkType' in scheduler
+assert 'android.permission.REQUEST_INSTALL_PACKAGES' in manifest
+assert 'UpdateVerifyJobService' in manifest and 'UpdateDownloadReceiver' in manifest
+assert 'celular-remoto-update.json' in workflow and 'stableSigned' in workflow
+assert len(list((root / '.github/workflows').glob('*.yml'))) == 1
+print('PASSOU: alpha.111 verifica release assinada, agendamento, download e instalador local')

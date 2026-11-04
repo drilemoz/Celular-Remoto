@@ -1,3 +1,12 @@
+# Celular Remoto 0.1.0-alpha.111 — Regras ativas
+
+- Alpha.111 disponibiliza atualizações online pelo GitHub Releases do repositório `drilemoz/Celular-Remoto`; inclui prereleases, ignora builds Debug e só aceita APK com mesmo pacote, certificado e SHA-256 válido.
+- Atualizações usam JobScheduler e DownloadManager nativos, com bateria/rede configuráveis; **nunca** instalar automaticamente ou via comando remoto. A instalação depende de toque local e confirmação no sistema Android.
+- O workflow `android.yml` continua único; anexar `celular-remoto-update.json` apenas quando há assinatura Release estável. Não colocar keystore/Secrets no ZIP nem no Git.
+- A passagem offline do APK por Wi-Fi entre celulares está planejada e NÃO integra a alpha.111. Manter a comunicação remota existente e exigir pares na mesma versão.
+- Próxima versão sequencial: `0.1.0-alpha.112`, `versionCode 112`, com sincronização de Gradle, AppVersion, README, CHANGELOG, Release Notes, validador e tela Novidades.
+- Build Gradle Android, download real em aparelhos e atualização com certificado estável ainda dependem de validação em CI/dispositivos.
+
 # Celular Remoto 0.1.0-alpha.110 — Regras ativas
 
 - Alpha.110 cria Central de permissões com boas práticas: não pedir grants automaticamente nem habilitar compartilhamento de SMS, áudio, GPS ou notificações só porque o Android autorizou.

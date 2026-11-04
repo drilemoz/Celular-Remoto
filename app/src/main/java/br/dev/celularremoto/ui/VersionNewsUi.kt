@@ -15,6 +15,8 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "Bem-vindo à atualização"))
     sectionGap(layout, 10)
     val entries = listOf(
+        "Atualizações online" to "Busca novas versões nas Releases do GitHub com o app em segundo plano e opção de baixar o APK automaticamente. Instalar continua exigindo ação local no Android.",
+        "Download seguro" to "APK publicado com assinatura estável, hash SHA-256, pacote e versão conferidos antes de aparecer como pronto. Sem novas dependências nem segundo workflow.",
         "Central de permissões" to "Na primeira instalação, confira e solicite os acessos do Android. Também disponível em Configurações, com alertas de pendência no topo.",
         "SMS e acessos especiais" to "SMS requer confirmação separada e pode ser restrito pelo instalador. Acessibilidade e notificações recebidas exigem autorização manual no Android.",
         "Pareamento QR corrigido" to "O teste de segurança agora utiliza a porta real 37842; o QR adota o esquema celularremoto. Nos dois aparelhos use a mesma versão.",

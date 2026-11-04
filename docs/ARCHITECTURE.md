@@ -51,9 +51,9 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 ## Distribuição e assinatura
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.110` e `versionCode=110`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.111` e `versionCode=111`.
 
-- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.110.apk`.
+- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.111.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.
 - Com quatro Secrets, Gradle gera APK Release assinado e AAB. Sem Secrets, o arquivo é Debug de teste e não preserva necessariamente a assinatura entre execuções.
 - Releases são prévias, não substituem a futura revisão da Google Play e nem os ensaios reais.
@@ -345,3 +345,9 @@ O controlador guarda prefixos incompletos de arquivos destinados a Downloads/Cel
 - `LocationShareService` usa notificação permanente com Parar, e essa ação revoga também o modo persistente. Desativar monitoramento revoga o modo. Android pode interromper serviços, particularmente fabricantes agressivos; sem garantia de reinício.
 - O controlador consulta automaticamente apenas com a tela aberta; pode exibir um mapa de referência sem GPS, **nunca** inventar o ponto do monitorado. Uma última posição pode ficar na memória dessa tela após falha de conexão, marcando-a explicitamente como antiga.
 - Transporte ainda usa LAN/VPN e AES-GCM. O app não oferece rastreamento global pela internet após furto sem infraestrutura externa e conectividade.
+
+## Atualizações online (alpha.111)
+
+`updates/UpdateScheduler.kt` agenda verificações periódicas no JobScheduler nativo; `UpdateCheckJobService.kt` consulta as Releases da API pública; `UpdateController.kt` filtra o manifesto da assinatura estável e agenda DownloadManager. O receptor de conclusão não faz I/O longo: pede um JobService separado para conferir hash do arquivo, pacote, versão e certificado. O instalador só é iniciado pela tela local `UpdatesSettingsUi.kt`, nunca a partir de uma sessão remota.
+
+A CI publica manifesto JSON junto com APK e checksum apenas com os 4 Secrets de assinatura estável; sem Secrets a publicação Debug não anuncia atualização elegível. Conexão online usa TLS. Não é um atualizador Play Store nem distribui APK pela LAN nesta versão.
