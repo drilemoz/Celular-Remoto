@@ -1,0 +1,341 @@
+package br.dev.celularremoto.capture
+
+import android.Manifest
+import android.content.pm.PackageManager
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioRecord
+import android.media.AudioPlaybackCaptureConfiguration
+import android.app.Activity
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
+import android.graphics.PixelFormat
+import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
+import android.media.ImageReader
+import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
+import android.os.Build
+import android.os.Handler
+import android.os.HandlerThread
+import android.os.IBinder
+import android.os.PowerManager
+import android.os.SystemClock
+import android.util.Log
+import android.view.WindowManager
+import br.dev.celularremoto.core.SettingsStore
+import br.dev.celularremoto.ui.MainActivity
+import java.io.ByteArrayOutputStream
+import br.dev.celularremoto.video.AvcEncoder
+import br.dev.celularremoto.video.VideoFrameStore
+import br.dev.celularremoto.video.VideoStreamPolicy
+
+/** Projeção autorizada: a mesma sessão continua ativa durante reconexões TCP; sem reutilizar token. */
+class ScreenShareService : Service() {
+    companion object {
+        const val ACTION_START = "br.dev.celularremoto.SCREEN_START"
+        const val ACTION_STOP = "br.dev.celularremoto.SCREEN_STOP"
+        const val ACTION_AUDIO_STOP = "br.dev.celularremoto.SCREEN_AUDIO_STOP"
+        const val EXTRA_RESULT_CODE = "projection_result_code"
+        const val EXTRA_RESULT_DATA = "projection_result_data"
+        private const val CHANNEL = "celular_remoto_tela"
+        private const val NOTIFICATION_ID = 58
+        private const val TAG = "CelularRemotoScreen"
+        private const val FRAME_INTERVAL_MS = 330L // alvo ~3 FPS em JPEG; limite dinâmico real depende de CPU/rede
+        fun stop(context: Context) { context.stopService(Intent(context, ScreenShareService::class.java)) }
+    }
+
+    private var recording: AudioRecord? = null
+    private var audioThread: Thread? = null
+    @Volatile private var audioRunning = false
+    private var projection: MediaProjection? = null
+    private var display: VirtualDisplay? = null
+    private var reader: ImageReader? = null
+    private var workerThread: HandlerThread? = null
+    private var worker: Handler? = null
+    private var lastFrameAt = 0L
+    private var lastAvcAt = 0L
+    private var encoder: AvcEncoder? = null
+    private var codecDimensions: Pair<Int, Int>? = null
+    private var stopped = false
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
+            NotificationChannel(CHANNEL, "Compartilhamento visível de tela", NotificationManager.IMPORTANCE_LOW)
+        )
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_AUDIO_STOP) {
+            stopInternalAudio()
+            return START_NOT_STICKY
+        }
+        if (intent?.action == ACTION_STOP || intent?.action != ACTION_START ||
+            !SettingsStore.isMonitorEnabled(this)) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        // Consentimento novo é obrigatório para cada sessão; não reutilizar Intent nem MediaProjection.
+        if (projection != null) return START_NOT_STICKY
+        val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, Activity.RESULT_CANCELED)
+        @Suppress("DEPRECATION")
+        val grant = intent.getParcelableExtra<Intent>(EXTRA_RESULT_DATA)
+        if (resultCode != Activity.RESULT_OK || grant == null) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java)
+            .putExtra(MainActivity.EXTRA_OPEN_MONITOR, true),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val stop = PendingIntent.getService(this, 1, Intent(this, ScreenShareService::class.java)
+            .setAction(ACTION_STOP), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val notification = Notification.Builder(this, CHANNEL)
+            .setSmallIcon(br.dev.celularremoto.R.drawable.ic_stat_shield)
+            .setContentTitle("Tela sendo compartilhada")
+            .setContentText("Sessão ativa até tocar em Parar; reconexões não exigem nova captura.")
+            .setContentIntent(open)
+            .setOngoing(true)
+            .addAction(Notification.Action.Builder(null, "Parar tela", stop).build())
+            .build()
+        try {
+            if (Build.VERSION.SDK_INT >= 29) {
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+            } else startForeground(NOTIFICATION_ID, notification)
+            val manager = getSystemService(MediaProjectionManager::class.java)
+            val acquired = manager.getMediaProjection(resultCode, grant) ?: error("Autorização de captura inválida")
+            projection = acquired
+            workerThread = HandlerThread("CelularRemoto-screen-frame").also { it.start() }
+            worker = Handler(workerThread!!.looper)
+            acquired.registerCallback(object : MediaProjection.Callback() {
+                override fun onStop() { stopSelf() }
+                override fun onCapturedContentResize(width: Int, height: Int) {
+                    worker?.post { resizeSurface(width, height) }
+                }
+            }, worker)
+            val metrics = resources.displayMetrics
+            val wm = getSystemService(WindowManager::class.java)
+            val width = if (Build.VERSION.SDK_INT >= 30) wm.maximumWindowMetrics.bounds.width() else metrics.widthPixels
+            val height = if (Build.VERSION.SDK_INT >= 30) wm.maximumWindowMetrics.bounds.height() else metrics.heightPixels
+            val density = metrics.densityDpi
+            check(width > 0 && height > 0)
+            reader = makeReader(width, height)
+            ScreenFrameStore.begin()
+            VideoFrameStore.reset()
+            display = acquired.createVirtualDisplay("Celular Remoto - tela autorizada", width, height,
+                density, DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, reader!!.surface, null, worker)
+            startInternalAudio(acquired)
+        } catch (error: Exception) {
+            Log.e(TAG, "Não foi possível iniciar compartilhamento consentido", error)
+            stopSelf()
+        }
+        return START_NOT_STICKY
+    }
+
+    /** Áudio de reprodução de apps que permitem captura (Android 10+). Não usa microfone. */
+    private fun startInternalAudio(grantedProjection: MediaProjection) {
+        if (Build.VERSION.SDK_INT < 29 || !SettingsStore.captureInternalAudio(this) ||
+            checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return
+        try {
+            val config = AudioPlaybackCaptureConfiguration.Builder(grantedProjection)
+                .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+                .addMatchingUsage(AudioAttributes.USAGE_GAME)
+                .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
+                .build()
+            val minimum = AudioRecord.getMinBufferSize(AudioChunkStore.RATE,
+                AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+            require(minimum > 0) { "AudioRecord buffer inválido" }
+            val record = AudioRecord.Builder()
+                .setAudioFormat(AudioFormat.Builder()
+                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                    .setSampleRate(AudioChunkStore.RATE)
+                    .setChannelMask(AudioFormat.CHANNEL_IN_MONO).build())
+                .setBufferSizeInBytes(maxOf(minimum * 2, AudioChunkStore.MAX_CHUNK * 2))
+                .setAudioPlaybackCaptureConfig(config).build()
+            require(record.state == AudioRecord.STATE_INITIALIZED) { "AudioRecord não iniciado" }
+            record.startRecording()
+            recording = record
+            audioRunning = true
+            AudioChunkStore.start()
+            audioThread = Thread({
+                val buffer = ByteArray(AudioChunkStore.MAX_CHUNK)
+                while (audioRunning) {
+                    val count = runCatching { record.read(buffer, 0, buffer.size,
+                        AudioRecord.READ_BLOCKING) }.getOrDefault(-1)
+                    if (count <= 0) break
+                    AudioChunkStore.publish(buffer.copyOf(count))
+                }
+                AudioChunkStore.stop()
+            }, "CelularRemoto-audio-playback").apply { isDaemon = true; start() }
+        } catch (error: Exception) {
+            Log.w(TAG, "Áudio interno indisponível; tela continua sem áudio", error)
+            stopInternalAudio()
+        }
+    }
+
+    private fun stopInternalAudio() {
+        audioRunning = false
+        AudioChunkStore.stop()
+        val old = recording
+        recording = null
+        runCatching { old?.stop() }
+        runCatching { old?.release() }
+        audioThread?.interrupt()
+        audioThread = null
+    }
+
+    private fun makeReader(width: Int, height: Int): ImageReader =
+        ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2).also { newReader ->
+            newReader.setOnImageAvailableListener({ source ->
+                val image = runCatching { source.acquireLatestImage() }.getOrNull() ?: return@setOnImageAvailableListener
+                try {
+                    if (!ScreenFrameStore.sharing) return@setOnImageAvailableListener
+                    val stillId = ScreenFrameStore.pendingStill()
+                    val powerSave = getSystemService(PowerManager::class.java).isPowerSaveMode
+                    val wantsVideo = VideoFrameStore.videoRequestedRecent()
+                    val interval = if (powerSave) 700L else
+                        if (wantsVideo && VideoFrameStore.supported) 1_500L else FRAME_INTERVAL_MS
+                    val viewer = ScreenFrameStore.viewerActive()
+                    val now = SystemClock.elapsedRealtime()
+                    val needVideo = viewer && wantsVideo && !powerSave && now - lastAvcAt >= 100L
+                    val needPreview = viewer && now - lastFrameAt >= interval
+                    if (!needPreview && !needVideo && stillId == 0L) return@setOnImageAvailableListener
+                    if (needPreview) lastFrameAt = now
+                    if (needVideo) lastAvcAt = now
+                    val plane = image.planes.firstOrNull() ?: return@setOnImageAvailableListener
+                    val w = image.width
+                    val h = image.height
+                    val pixels = plane.pixelStride
+                    if (w < 1 || h < 1 || pixels < 4) return@setOnImageAvailableListener
+                    val stride = plane.rowStride
+                    val padded = w + (stride - pixels * w) / pixels
+                    val full = Bitmap.createBitmap(padded, h, Bitmap.Config.ARGB_8888)
+                    try {
+                        plane.buffer.rewind()
+                        val src = plane.buffer
+                        src.rewind()
+                        val bytesNeeded = full.byteCount
+                        if (src.remaining() < bytesNeeded) {
+                            val paddedBuffer = java.nio.ByteBuffer.allocateDirect(bytesNeeded)
+                            paddedBuffer.put(src)
+                            paddedBuffer.rewind()
+                            full.copyPixelsFromBuffer(paddedBuffer)
+                        } else full.copyPixelsFromBuffer(src)
+                        val cropped = Bitmap.createBitmap(full, 0, 0, w, h)
+                        try {
+                            if (stillId != 0L) encodeStill(cropped, stillId)
+                            if (needVideo) encodeVideo(cropped)
+                            if (needPreview) {
+                            val targetW = w.coerceAtMost(540)
+                            val targetH = (h.toDouble() * targetW / w).toInt().coerceAtLeast(1)
+                            val small = Bitmap.createScaledBitmap(cropped, targetW, targetH, true)
+                            try {
+                                val out = ByteArrayOutputStream()
+                                for (quality in listOf(55, 38, 24)) {
+                                    out.reset()
+                                    small.compress(Bitmap.CompressFormat.JPEG, quality, out)
+                                    if (out.size() <= ScreenFrameStore.MAX_JPEG_BYTES) break
+                                }
+                                ScreenFrameStore.publish(targetW, targetH, out.toByteArray())
+                            } finally { if (small !== cropped) small.recycle() }
+                            }
+                        } finally { if (cropped !== full) cropped.recycle() }
+                    } finally { full.recycle() }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Falha em frame da projeção", e)
+                } finally { image.close() }
+            }, worker)
+        }
+
+    /** Codec opcional. Mantém uma única VirtualDisplay por autorização Android; fallback JPEG. */
+    private fun encodeVideo(full: Bitmap) {
+        try {
+            val (w, h) = VideoStreamPolicy.dimensions(full.width, full.height)
+                ?: return
+            if (encoder == null || codecDimensions != (w to h)) {
+                encoder?.close()
+                VideoFrameStore.reset()
+                encoder = AvcEncoder(w, h)
+                codecDimensions = w to h
+                VideoFrameStore.enable()
+                VideoFrameStore.requestKeyFrame()
+            }
+            val small = Bitmap.createScaledBitmap(full, w, h, true)
+            try { encoder?.encode(small) } finally { if (small !== full) small.recycle() }
+        } catch (e: Exception) {
+            Log.w(TAG, "Codec AVC indisponível: mantendo prévia JPEG", e)
+            runCatching { encoder?.close() }
+            encoder = null
+            codecDimensions = null
+            VideoFrameStore.disable()
+            lastFrameAt = 0L
+            // Evita reconfiguração contínua em aparelhos sem codec compatível.
+            lastAvcAt = SystemClock.elapsedRealtime() + 30_000L
+        }
+    }
+
+    /** Executado apenas sob solicitação autenticada e com MediaProjection local ainda autorizada. */
+    private fun encodeStill(full: Bitmap, requestId: Long) {
+        for (targetW in listOf(1080, 720, 540)) {
+            val width = full.width.coerceAtMost(targetW)
+            val height = (full.height.toLong() * width / full.width).toInt().coerceAtLeast(1)
+            val scaled = if (width == full.width) full else Bitmap.createScaledBitmap(full, width, height, true)
+            try {
+                val out = ByteArrayOutputStream()
+                for (quality in listOf(85, 70, 55, 40, 28)) {
+                    out.reset()
+                    scaled.compress(Bitmap.CompressFormat.JPEG, quality, out)
+                    if (out.size() <= ScreenFrameStore.MAX_STILL_BYTES) {
+                        ScreenFrameStore.publishStill(requestId, out.toByteArray())
+                        return
+                    }
+                }
+            } finally { if (scaled !== full) scaled.recycle() }
+        }
+        Log.w(TAG, "Imagem acima do limite de captura, não enviada")
+    }
+
+    private fun resizeSurface(width: Int, height: Int) {
+        if (width < 1 || height < 1 || stopped || display == null) return
+        try {
+            val next = makeReader(width, height)
+            display?.resize(width, height, resources.displayMetrics.densityDpi)
+            display?.surface = next.surface
+            val previous = reader
+            reader = next
+            previous?.setOnImageAvailableListener(null, null)
+            previous?.close()
+            lastFrameAt = 0L
+            runCatching { encoder?.close() }; encoder = null; codecDimensions = null
+            VideoFrameStore.reset()
+        } catch (e: Exception) { Log.w(TAG, "Não foi possível redimensionar a projeção", e) }
+    }
+
+    override fun onDestroy() {
+        stopped = true
+        stopInternalAudio()
+        ScreenFrameStore.stop()
+        VideoFrameStore.reset()
+        runCatching { encoder?.close() }
+        encoder = null
+        runCatching { display?.release() }
+        display = null
+        runCatching { reader?.setOnImageAvailableListener(null, null); reader?.close() }
+        reader = null
+        val oldProjection = projection
+        projection = null
+        runCatching { oldProjection?.stop() }
+        workerThread?.quitSafely()
+        workerThread = null
+        worker = null
+        super.onDestroy()
+    }
+}

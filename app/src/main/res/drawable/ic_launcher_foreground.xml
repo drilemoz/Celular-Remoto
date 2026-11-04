@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Identidade Celular Remoto: smartphone, conexão e medição elétrica. -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M39,18 L69,18 Q75,18 75,24 L75,84 Q75,90 69,90 L39,90 Q33,90 33,84 L33,24 Q33,18 39,18 Z"/>
+    <path android:fillColor="#FF137D83" android:pathData="M39,26 L69,26 L69,76 L39,76 Z"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M55,36 L46,54 L53,54 L50,68 L63,48 L56,48 Z"/>
+    <path android:fillColor="#FF137D83" android:pathData="M49,82 A3,3 0,1 0,55 82 A3,3 0,1 0,49 82 Z"/>
+</vector>

@@ -1,0 +1,26 @@
+package br.dev.celularremoto.transport
+
+import org.junit.Assert.*
+import org.junit.Test
+
+class AppVersionTest {
+    @Test fun exactlyMatchingVersionIsAccepted() {
+        assertTrue(AppVersion.compatible(AppVersion.NAME))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.19"))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.20"))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.21"))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.22"))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.23"))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.24"))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.25"))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.26"))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.27"))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.28"))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.29"))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.30"))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.31"))
+        assertFalse(AppVersion.compatible("0.1.0-alpha.43"))
+        assertFalse(AppVersion.compatible(null))
+        assertTrue(AppVersion.incompatibility("0.1.0-alpha.23").contains("Versões incompatíveis"))
+    }
+}

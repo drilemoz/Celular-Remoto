@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="MonitorDialogLight" parent="@android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/monitor_dialog_surface_light</item>
+        <item name="android:colorAccent">#17A58E</item>
+        <item name="android:textColorPrimary">#172230</item>
+        <item name="android:textColorSecondary">#5C6D80</item>
+        <item name="android:backgroundDimAmount">0.58</item>
+    </style>
+    <style name="MonitorDialogDark" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/monitor_dialog_surface_dark</item>
+        <item name="android:colorAccent">#5AD6BC</item>
+        <item name="android:textColorPrimary">#E9EFF7</item>
+        <item name="android:textColorSecondary">#A7B8CB</item>
+        <item name="android:backgroundDimAmount">0.66</item>
+    </style>
+</resources>

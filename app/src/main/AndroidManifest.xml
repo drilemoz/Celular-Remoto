@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Solicitada no leitor QR ou na Activity local de câmera compartilhada. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- SSID/RSSI somente com autorização local explícita de localização. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Opcional: apenas para modo recuperação ativado localmente, após a concessão nas configurações Android. -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <!-- Acesso ao uso precisa de autorização manual nas configurações especiais Android. -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
+    <!-- Opcional: somente após autorização explícita no aparelho monitorado. -->
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+    <!-- SMS particular, independente de Google Play: permissões runtime e restrições do instalador continuam vigentes. -->
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!-- Pré-requisito documentado para FGS connectedDevice (comunicação de rede). -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Captura de som de apps compatíveis (não microfone), permissão Android local. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- WakeLock limitado: apenas solicitação autenticada e opção local ativada. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Visibilidade de apps com ícone de launcher, sem QUERY_ALL_PACKAGES. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <application
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:usesCleartextTraffic="false"
+        android:label="Celular Remoto"
+        android:hardwareAccelerated="true"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar"
+        android:supportsRtl="true">
+
+        <!-- Camera2 local; nenhuma Activity de câmera externa ou componente exportado. -->
+        <!-- Vídeo ao vivo exige Activity visível; foto remota usa FGS camera pré-armado e visível na notificação. -->
+        <activity android:name=".ui.CameraShareActivity" android:exported="false" />
+        <activity android:name=".ui.RemoteCameraActivity" android:exported="false" />
+        <activity android:name=".ui.RemotePhotoSetupActivity" android:exported="false" />
+        <activity android:name=".ui.RemotePhotoActivity" android:exported="false" />
+        <activity android:name=".ui.AdbActivity" android:exported="false" />
+        <activity
+            android:name=".ui.QrScanActivity"
+            android:theme="@android:style/Theme.Material.Light.Dialog.NoActionBar"
+            android:exported="false" />
+
+        <activity android:name=".ui.RemoteDetailsActivity" android:exported="false" />
+        <activity android:name=".ui.RemoteCatalogActivity" android:exported="false" />
+        <activity android:name=".ui.RemoteFilesActivity" android:exported="false" />
+        <activity android:name=".ui.RemoteLocationActivity" android:exported="false" />
+        <activity android:name=".ui.MonitorStatusActivity" android:exported="false" />
+
+        <activity
+            android:name=".ui.IncomingAccessActivity"
+            android:exported="false" />
+
+        <activity android:name=".ui.MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Administrador opcional ativado APENAS na tela oficial do Android.
+             Política única force-lock: não altera senhas nem apaga arquivos. -->
+        <receiver android:name=".core.MonitorLockAdminReceiver"
+            android:label="Celular Remoto - Bloquear tela"
+            android:description="@string/lock_admin_description"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+            <meta-data android:name="android.app.device_admin"
+                android:resource="@xml/monitor_lock_admin" />
+        </receiver>
+
+        <!-- Job de contingência: apenas monitoramento explicitamente autorizado. -->
+        <service android:name=".service.RecoveryJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" />
+
+        <service android:name=".service.RemoteHealthJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" />
+        <service
+            android:name=".service.MonitorService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice"
+            android:stopWithTask="false" />
+
+        <!-- Sessão de fotografia armada SOMENTE com Activity visível e permissão CAMERA.
+             Não reiniciar por boot nem ativar câmera silenciosamente por comando remoto. -->
+        <service android:name=".service.PhotoReadyService"
+            android:exported="false"
+            android:stopWithTask="false"
+            android:foregroundServiceType="camera" />
+
+        <!-- Sessão local ou recuperação previamente armada; notificação permanente com ação Parar.
+             Restauro após boot exige ACCESS_BACKGROUND_LOCATION concedida no sistema. -->
+        <service android:name=".service.LocationShareService"
+            android:exported="false"
+            android:stopWithTask="false"
+            android:foregroundServiceType="location" />
+
+        <!-- Projeção de tela: consentimento MediaProjection por sessão, notificação e parada visível. -->
+        <service
+            android:name=".capture.ScreenShareService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection"
+            android:stopWithTask="false" />
+
+        <activity android:name=".ui.RemoteScreenActivity" android:exported="false" />
+
+        <!-- Usuário ativa manualmente em Acessibilidade; sem acesso aos nós da UI. -->
+        <service android:name=".capture.RemoteTouchService"
+            android:label="Celular Remoto - controle por toque"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice"
+                android:resource="@xml/remote_touch_accessibility" />
+        </service>
+
+        <service
+            android:name=".capture.NotificationCaptureService"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- Recepção SMS explícita, sem conteúdo persistido; depende de RECEIVE_SMS e opção local. -->
+        <receiver android:name=".capture.SmsReceivedReceiver" android:exported="true">
+            <intent-filter><action android:name="android.provider.Telephony.SMS_RECEIVED" /></intent-filter>
+        </receiver>
+        <!-- Retornos de envio/entrega não acessíveis a outros aplicativos. -->
+        <receiver android:name=".capture.SmsStatusReceiver" android:exported="false" />
+
+        <receiver android:name=".service.BootReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

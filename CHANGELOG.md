@@ -1,0 +1,817 @@
+## 0.1.0-alpha.107 — Celular Remoto (04/11/2026)
+
+- Novo nome, applicationId `br.dev.celularremoto`, namespace Kotlin, launcher e distribuição APK; porta separada 37842 durante coexistência com o aplicativo antigo. Nova instalação requer pareamento; dados privados legados não migram automaticamente.
+- Portabilidade da lógica do Pulso Bateria para sessões automáticas locais/remotas de carga e descarga; armazenamento atômico separado e previsão conservadora de duração.
+- Metas e alertas configuráveis e consultáveis remotamente: percentual de carga, bateria baixa e temperatura; notificações locais e remotas opt-in, deduplicação por evento, sem prometer envio online quando desconectado.
+- Testes solares/elétricos/automáticos encerram com duas leituras confirmadas em 100%, mesmo quando o status Android segue CHARGING.
+- Informações visuais corrigidas para fontes inexistentes, potência nominal opcional e corrente de bateria; mantém comunicação AES-GCM e os fluxos de consentimento.
+- Validações de regressão e cálculos Kotlin locais; build Android e testes de aparelho pendentes.
+
+## 0.1.0-alpha.106 (versionCode 106) | 04/11/2026
+
+- Nova quinta aba Bateria com seleção de aparelho local/remoto, sensores, corrente líquida, potência líquida, histórico e gráficos baseados em leituras reais.
+- Módulo privado de testes Solar, Elétrico, Consumo e Carga Automática, com limites, início/fim explícitos, coleta por MonitorService a cada 30 s durante testes ativos, resumos de tempo confirmado e desconhecido, relatórios compartilháveis e retenção limitada.
+- Nova operação `batteryLab` autenticada com AES-GCM (consultar, iniciar e finalizar) no protocolo e porta existentes, com os mesmos requisitos de pareamento e versão exata, sem outro listener ou novo serviço.
+- Diagnóstico de corrente Android validado por faixa/sinal, fonte NOW/AVERAGE, contador de carga bruto e potência líquida aproximada; não afirma medição real de potência solar nem calibração de fabricante.
+- Ajustados versionamento, tela Novidades e validação estrutural. É obrigatório testar compilação Gradle/Android, serviço em segundo plano, reconexão e UI em dois celulares antes de distribuir como versão validada.
+
+## 0.1.0-alpha.105 (versionCode 105) | 20/10/2026
+
+- Redesenhada a interface principal para smartphones, com barra inferior fixa de quatro destinos e rolagem independente.
+- Início: lista de aparelhos salvos com última resposta identificada, acesso direto aos controles e conexão por QR/IP; painel Monitoramento deste telefone.
+- Controlar: seleção e gerenciamento separados, estado e última consulta sem alegar conexão persistente, botões Atualizar e Detalhes, métricas legíveis e rede em linha própria.
+- Grade de duas colunas com quatro atalhos e oito funções expansíveis, sem remover recursos da alpha.104.
+- Telas Monitorado e Ajustes passaram a compartilhar o novo cabeçalho e navegação; funcionalidade interna foi preservada.
+- Lógica remota, AES-GCM, consentimentos e protocolo inalterados; build Android e testes físicos ainda pendentes.
+
+## 0.1.0-alpha.104 (versionCode 104) | 17/10/2026
+- Ao interromper ou recuperar o listener, fechar sockets TCP dos clientes em execução e aguardando na fila; evita manter transmissões antigas após a sessão ter sido encerrada.
+- Limitar o histórico de alertas de acesso às sessões autenticadas recentes, preservando aviso de novo acesso sem acumular identificadores antigos na RAM.
+- No controlador, ignorar snapshot recebido após remoção/troca da chave pareada e limpar o estado de carregamento ao sair da tela durante uma consulta.
+- Testes JVM adicionados para a janela de alertas, regressões estruturais e versão/documentação sincronizadas. Nenhum novo comando, permissão ou acesso remoto.
+- Build Android completo e ensaios em dois dispositivos continuam pendentes.
+
+## 0.1.0-alpha.103 (versionCode 103) | 17/10/2026
+- Reduzida a reconstrução periódica da interface do Modo Monitorado: assinatura de estado leve e redesenho apenas quando ocorrer alteração real nos indicadores de serviço, captura, IP ou clientes recentes. Isso evita reset de rolagem e processamento visual inútil.
+- Removida a duplicação involuntária do agendamento de atualização do Modo Monitorado, preservando a expiração de acessos em 45 s e a recuperação autorizada.
+- Atualizações de acesso autenticado agrupadas em 180 ms; detalhes de último acesso são consultados novamente somente ao abrir a janela.
+- Pesquisa de Configurações com normalização pré-calculada, debounce de 120 ms e cancelamento da atualização pendente ao sair da tela.
+- Aumentadas as áreas de toque de renomear, atualizar e detalhes de conexão a 44 dp; evitada a segunda reconstrução de tela na primeira abertura da Activity.
+- VersionName/versionCode e referências sincronizados. Sem alterações em autenticação, ADB, rede, GPS, câmera ou permissões. Build Android físico e CI ainda pendentes.
+
+## 0.1.0-alpha.102 (versionCode 102) | 17/10/2026
+- Redesenhada a página Configurações sem cabeçalho duplicado: resumo real das permissões Android de localização, câmera e notificações, pesquisa com limpeza rápida e contador de resultados.
+- Modernizado o índice por categorias com seções compactas e separadores discretos, sem alterar roteamento ou autorizações locais.
+- Diálogo central de seleção do perfil GPS substitui a lista antiga; inclui descrição do consumo de bateria, seleção marcada e cancelamento explícito.
+- Diálogos gerenciados ajustam largura ao aparelho e botões ao tema. Preservados confirmações, criptografia, comandos e os modos do aplicativo.
+- Versionamento, documentação, Novidades e regressões sincronizados. Build Android completo e testes em aparelho pendentes.
+
+## 0.1.0-alpha.101 (versionCode 101) | 17/10/2026
+- Modernizada a tela inicial com painel de estado local, atalhos de pareamento e monitoramento e histórico de aparelhos identificando claramente credenciais salvas versus conexão online.
+- Redesenhado o Modo Monitorado: indicadores de serviço, permissões, captura de tela, câmera ao vivo, fotografia remota e acessos autenticados recentes.
+- Criados componentes reutilizáveis `statePill` e `monitorFeatureCard`, com semântica real de status e ações separadas; mantidos os pedidos Android de autorização, as confirmações e o botão Parar.
+- Versionamento, Novidades, documentação e regressões atualizados; compilação Gradle Android completa e verificação visual no aparelho pendentes.
+
+## 0.1.0-alpha.100 (versionCode 100) | 17/10/2026
+- Corrige os três erros de Kotlin no workflow "Gerar APK e Release 87" (alpha.99), tarefa `:app:compileDebugKotlin`, em `MonitorScreenSkin.kt:43`, `:53` e `:73`.
+- Dentro dos escopos `TextView.apply`, `Button.apply` e `ImageView.apply`, `foreground` era a propriedade `View.foreground` do tipo `Drawable`; as chamadas de cor requerem `Int`. Referência explícita `this@MonitorScreenSkin.foreground` resolve a colisão.
+- Adicionada regressão em `tools/check_distribution.py`; mantidos identidade visual, autenticação, comandos e permissões.
+- Validação sintática/estrutural local; compilação Gradle/Android ainda pendente em CI.
+
+## 0.1.0-alpha.99 (versionCode 99) | 17/10/2026
+- Corrige o erro de vinculação de recursos `:app:processDebugResources` registrado no workflow "Gerar APK e Release 86" da alpha.98: `android:windowDimAmount` não existe como atributo de tema Android.
+- Os temas personalizados claro e escuro usam agora `android:backgroundDimAmount` (atributo Android válido) e preservam os valores originais de escurecimento de fundo (0.58 / 0.66).
+- Regressão estrutural acrescentada para impedir o retorno do atributo incorreto e exigir a existência dos dois temas. Sem mudanças de comportamento, permissões, pareamento, ADB ou transmissão.
+- Validação estática local executada; recompilação Android completa e teste real do diálogo dependem do GitHub Actions.
+
+## 0.1.0-alpha.98 (versionCode 98) | 17/10/2026
+- Modernização de conexão, pareamento QR/manual/salvos, detalhes do aparelho e tela ADB com o kit visual comum.
+- Indicador de conexão compacto, cabeçalho ADB com ícone, cartões e hierarquia de botões refinados; dados técnicos mantidos acessíveis.
+- Preservadas credenciais, fluxos de QR, ADB/TLS, confirmação de comandos e proteção FLAG_SECURE dos dados sensíveis.
+- Atualizados Gradle, AppVersion, Novidades, notas, README e verificações estruturais. Build Android/visual físico pendentes.
+
+## 0.1.0-alpha.97 (versionCode 97) | 17/10/2026
+- Ver tela: cabeçalho e quadro de conexão com o novo kit, mantendo opções JPEG/H.264, tela cheia, toque, áudio e autorização local sem alterações.
+- Mensagens e Notificações: painéis compactos, estado protegido e conteúdo temporário, cartões por mensagem e notificação, ícones e estados vazios modernizados.
+- Resposta SMS/notificação: diálogo central unificado, seleção opcional de chip e verificação de conteúdo sensível com confirmação antes do comando.
+- Verificador ganha regressões para esses componentes. Compilação Android e testes visuais em hardware pendentes.
+
+## 0.1.0-alpha.96 (versionCode 96) | 17/10/2026
+- Criado `MonitorScreenSkin` para telas independentes com cores, cartões, indicadores, botões e cabeçalhos unificados nos temas claro/escuro/sistema.
+- Redesenhadas Foto remota, Preparar foto no monitorado, Câmera ao vivo (controlador), Câmera compartilhada (monitorado) e cabeçalho/controles da Localização.
+- Mantidas regras de Camera2, consentimento local, encerramento de captura, transmissão e pareamento, sem novas permissões ou novos comandos.
+- Adicionada regressão ao verificador estrutural; Gradle/Android completo e inspeção de UI real continuam pendentes.
+
+## 0.1.0-alpha.95 (versionCode 95) | 17/10/2026
+- Sistema visual compartilhado `MonitorActionSheet` para menus contextuais: cabeçalho, ícones, descrições curtas, destaque de ações destrutivas, fechamento acessível e rolagem com limite de altura.
+- Gerenciador de arquivos: ações de arquivo/pasta, ordenação e downloads interrompidos usam novo painel inferior. Exclusão/lixeira mantêm confirmação independente e permissões da origem.
+- Aplicativos: detalhes agora possuem opções com ícones, favoritos e explicação clara dos requisitos ADB. Ações ADB seguem com suas confirmações.
+- Configurações: topo com ícone, grupo pesquisável mais compacto e ícones com fundo próprio.
+- Diálogos remanescentes de Arquivos agora usam o tema claro/escuro compartilhado. Nenhuma alteração de chave, protocolo, permissões ou operações remotas.
+- Testes estruturais e sintaxe Kotlin locais não substituem compilação Android no GitHub Actions e teste no aparelho.
+
+## 0.1.0-alpha.94 (versionCode 94) | 17/10/2026
+- Novo `MonitorVisualKit`: cabeçalhos com ícone em degradê, linhas de ação, chips de estado e avisos compactos reutilizáveis.
+- Energia e manutenção refeito como diálogo central de largura responsiva: aparelho identificado, 3 ações com ícones, separação clara da opção que requer ADB, aviso breve e fechamento acessível.
+- Avisos e confirmações principais usam cabeçalho visual, painel de mensagem, rodapé coerente e cor distinta para ações destrutivas.
+- Diálogos legados passaram a usar temas claro/escuro dedicados, cantos arredondados e cor de destaque turquesa; botões e cartões compartilhados ganharam raios padronizados.
+- Nenhum comando remoto automático, permissão nova, alteração de AES-GCM ou afrouxamento de confirmações. Compilação Android e testes visuais em aparelho pendentes.
+
+## 0.1.0-alpha.93 (versionCode 93) | 17/10/2026
+- Localização: painel compacto com chips dinâmicos por estado, evitando mostrar “ao vivo” quando o GPS está antigo.
+- Exibe tempo desde a última resposta autenticada, precisão real (se disponível) e idade real da posição GPS; estados de falha não são tratados como localização atual.
+- Novo modo **Acompanhar** durante a tela aberta: consulta GPS autenticada a cada 3 s, sem alterar o perfil GNSS no monitorado nem manter rastreamento invisível após sair da tela.
+- Protocolo `locationSnapshot` dedicado: AES-GCM, versão idêntica e anti-replay; evita esperar pelo snapshot completo de SMS, rede e outros subsistemas.
+- Controles menores e mapa em destaque; mantém modo automático econômico, cache opcional de mapas e ações de GPS.
+- Compilação Android completa e verificação de latência em aparelhos continuam pendentes.
+
+## 0.1.0-alpha.92 (versionCode 92) | 17/10/2026
+- Redesenhada a tela de Localização com cabeçalho compacto, card de status mais limpo, controles inferiores simplificados e atualização mais frequente.
+- Consulta automática padrão reduzida para 10 segundos, opção de 5 segundos adicionada e nova tentativa rápida após leituras antigas ou aguardando GPS.
+- Passou a exibir latência da consulta autenticada em milissegundos para separar atraso de rede da idade real da posição.
+
+## 0.1.0-alpha.91 (versionCode 91) | 17/10/2026
+- Ao tocar Bateria ou Temperatura, diálogo central personalizado mostra temperatura real da bateria, estado térmico e margem térmica quando disponível; sensor ambiente se houver hardware Android.
+- Consulta pontual cifrada `thermalDiagnostics`, sem coletar sensores continuamente; lastro em `BatteryManager`, `PowerManager` e `SensorManager`.
+- Integração ADB opcional para IP igual ao dispositivo selecionado e ADB previamente pareado; `dumpsys thermalservice` fixo, leitura limitada a 64 KiB e parser com deduplicação HAL/cache e filtros de dados inválidos.
+- Exibe indisponibilidade claramente, sem inventar CPU/GPU; mantém comportamento atual dos demais módulos, confirmação de ADB e proteções existentes.
+- Validar build Android completo e leituras reais em Redmi A3 e Redmi Note 11 Pro+.
+
+## 0.1.0-alpha.90 (versionCode 90) | 16/10/2026
+- Corrige falha real do workflow GitHub Actions #82 em `:app:compileDebugKotlin`, `RemoteFilesActivity.kt:604-606`, provocada por `scroll` não declarado e acesso a `AlertDialog?` potencialmente nulo.
+- O menu inferior de arquivos agora cria sua própria `ScrollView`, recebe `holder` e utiliza `dialog` local não nulo para `show()` e `window`.
+- Novo teste estrutural de regressão para o menu; versão e novidades sincronizadas. Nenhuma mudança no protocolo, pasta fixa, autorizações, criptografia ou operações de arquivos.
+- Sintaxe/estrutura verificadas localmente; recompilar `:app:testDebugUnitTest :app:assembleDebug` na CI.
+
+## 0.1.0-alpha.89 (versionCode 89) | 16/10/2026
+- Pasta fixa Downloads/Monitor Remoto (Android 10+) em ambos os aparelhos; criada automaticamente pelo app e usada por todas as opções de download/upload, sem escolher pastas SAF.
+- `FixedDownloadsFolder` usa MediaStore e filtra a propriedade do app, evitando acesso a arquivos de outros aplicativos, com operações de arquivo autenticadas e confirmação de exclusão; pastas vazias virtuais com índice local.
+- Downloads de pastas preservam hierarquia e hash; download simples/lotes seguem com retomada privada de 7 dias e publicação atômica no MediaStore.
+- Modernização de diálogos e menu inferior de ações, mantendo layout do painel em 3 colunas.
+- Sem alteração de permissões Android; para acessar conteúdo de terceiros continua necessário consentimento/autorização. Build Android e testes no dispositivo pendentes.
+
+## 0.1.0-alpha.88 (versionCode 88) | 16/10/2026
+- Painel remoto redesenhado em 3 colunas com 12 ações compactas. Detalhes saiu da grade e fica junto ao cabeçalho do aparelho.
+- Página inicial de Configurações reorganizada por finalidade com busca instantânea local, inclusive acentos; rotas e permissões originais preservadas.
+- Avisos/confirmacões centrais com tema e espaçamento consistentes. Ações críticas continuam exigindo confirmação explícita.
+- Mostra tempo medido da consulta autenticada (RTT) separado do horário da leitura; não converte polling em conexão permanente.
+- Versionamento sincronizado. Sem compilação Android completa neste ambiente; validar GitHub Actions e aparelhos.
+
+## 0.1.0-alpha.87 (versionCode 87) | 16/10/2026
+- Modo recuperação automática da localização com opt-in local persistente e revogação via notificação, GPS ativo com tela apagada e tentativa condicionada de restauro após boot/serviço (ACCESS_BACKGROUND_LOCATION concedida pelo sistema).
+- Mapa de referência é renderizado mesmo sem posição remota; indicador explícito de ausência de fix e sem marcador inventado. Painel de posição reposicionado antes do mapa; consultas periódicas ao controlador inicialmente ativas com tela aberta.
+- Ao perder conexão, último ponto desta tela pode permanecer somente como não ao vivo; sem histórico persistente nem garantia de GPS/rede após perda ou furto.
+- Permissões Android e limitações de inicialização preservadas. Build Gradle/Android e testes físicos pendentes.
+
+## 0.1.0-alpha.86 (versionCode 86) | 16/10/2026
+- Downloads para Downloads/Monitor Remoto passam por checkpoint em área privada sem backup. Interrupções deixam prefixo retomável, descartando bloco incompleto; nova seleção do mesmo arquivo retoma após confirmação da origem e SHA-256 integral.
+- Protocolo `dataStream` aceita offset alinhado de 192 KiB, com eco de ACK autenticado. O monitorado processa desde byte zero para hash final, mas envia só a parte faltante; o controlador reconstrói hash do parcial antes de receber o restante.
+- Nova consulta de Downloads interrompidos na UI, limpeza manual e expurgo após 7 dias; publicação MediaStore só após confirmação final e destino não visível durante escrita.
+- Nenhuma alteração de permissões ou destinos SAF arbitrários; não existe serviço de transferência em segundo plano. Build Android/ensaios físicos ainda pendentes.
+
+## 0.1.0-alpha.85 (versionCode 85) | 16/10/2026
+
+- UI: painel de controle em duas colunas com informações explícitas sobre conexão e dados armazenados.
+- Arquivos: histórico local limitado, por aparelho e sem nomes/caminhos/IP, com limpeza explícita e marcação dos resultados das operações após o trabalho terminar.
+- Localização: destaque da idade/precisão reportadas, diferenças entre leitura antiga, válida e erro de consulta; mapa harmonizado com tema.
+- Sem mudanças na rede, nas permissões, na criptografia ou na semântica dos comandos; retomada após sair da tela segue pendente.
+- Build Android completo e testes em aparelhos não validados localmente.
+
+## 0.1.0-alpha.84 (versionCode 84) | 16/10/2026
+
+- Fotografia remota recebeu tema claro/escuro, barra de progresso, estado contextual, identificação do aparelho, prévia ampliável com pinça/arraste/duplo toque e metadados reais.
+- Compartilhar foto via Android Sharesheet após salvamento explícito; salvar uma segunda vez não cria cópia duplicada. Nenhum salvamento automático ou acesso adicional ao monitorado.
+- Decodificação da prévia JPEG feita fora da thread principal com amostragem limitada a 1600 px por dimensão, preservando bytes originais para salvar.
+- Tela de armamento ganhou cartões, estado atualizado a cada segundo e botão de parada coerente com a sessão. Nenhuma alteração em autorização, protocolo ou fotografia em segundo plano.
+- Adicionado teste para cálculo de amostragem de foto; build Android e testes visuais no Redmi A3/controlador ainda pendentes.
+
+## 0.1.0-alpha.83 (versionCode 83) | 16/10/2026
+
+- Novo modo de foto real JPEG única por Camera2 com lente traseira/frontal, sem streaming ou miniaturas em loop.
+- A sessão de câmera deve ser armada previamente com autorização e Activity visível NO monitorado. FGS camera com notificação permanente e ação Parar; não inicia por boot, job nem comando remoto.
+- O controlador solicita somente a foto JPEG pelo socket autenticado AES-GCM e pode visualizar/salvar localmente.
+- Se o Android encerrar a sessão, a foto remota falha explicitamente e é necessária nova ativação presencial. Sem acesso fora da rede LAN/VPN já estabelecida.
+- Limite de JPEG transmitido 320 KiB, timeout 12 s, rate limit 2 s; autorização de pareamento compartilhada entre controladores.
+- Android build e ensaios físicos pendentes.
+
+## 0.1.0-alpha.82 (versionCode 82) | 15/10/2026
+
+- Implementado mapa interno nativo no módulo Localização: coordenadas cifradas já autorizadas, precisão, zoom, arrastar, centralizar e seguir aparelho.
+- Consulta opcional pelo controlador a cada 15/30/60/300 segundos só enquanto a tela estiver aberta; sessão GNSS segue consentimento local independente.
+- Tiles online OpenStreetMap ativados por consentimento específico ao aparelho, desativados por padrão, apenas viewport visível, atribuição e cache local das áreas acessadas; sem prefetch ou download de áreas offline.
+- Perfil intermediário GPS de 30 segundos/10 m liberado no monitorado quando não há sessão ativa.
+- Alterações do ramo alpha.81 com UI de transferência e streaming binário foram preservadas e incorporadas, evitando perda de dados por duas revisões alpha.81 paralelas.
+- Testes Kotlin puros e verificador estrutural; compilação Android/Gradle e testes reais permanecem pendentes.
+
+## 0.1.0-alpha.81 (versionCode 81) | 15/10/2026
+
+- Tela Recuperar dados inteiramente refeita durante cópia: porcentagem 34 sp, arquivo 18 sp, blocos de velocidade e ETA 21 sp, bytes, arquivo do lote e tempo decorrido em campos independentes. Ações Pausar/Retomar e Cancelar ampliadas; insets de sistema evitam sobreposição com barra de status.
+- Gargalo de serialização identificado na alpha.80: vídeo era Base64 dentro de JSON e depois novamente Base64 para o envelope cifrado. Download `dataStream` agora usa ACK JSON autenticado e **quadros binários** AES-256-GCM com comprimento limitado, nonce aleatório por quadro, desafio novo no AAD por transferência, offset estrito e SHA-256 final.
+- Uma conexão TCP e uma abertura SAF por download permanecem; quadros de até 192 KiB, 1 stream simultâneo. Elimina a expansão do tráfego pelo Base64 duplo, mas **ganho real não medido** e pode haver limitação pelo Wi-Fi/SAF/CPU.
+- Progresso atualizado por tempo, não apenas por 1% de arquivo; estimativa de velocidade em janela móvel e reinício de amostras após pausa/mudança de arquivo. Envio e ações por lote seguem com o protocolo anterior.
+- Novo teste JVM do transporte para múltiplos frames, autenticação, replay, truncamento, limite e leitura do ACK. Sem novas permissões, sem retomada persistente ou alterações de consentimento. Build Android e teste entre dois aparelhos pendentes.
+
+## 0.1.0-alpha.80 (versionCode 80) | 15/10/2026
+
+- Corrigido o gargalo principal no download SAF de vídeos grandes: a alpha.79 reabria uma conexão TCP, resolvia a árvore SAF e reabria o arquivo a cada 192 KiB (aproximadamente 4000 requisições para um vídeo de 749 MiB). A alpha.80 usa operação `dataStream` autenticada por AES-GCM e **uma conexão / uma abertura sequencial do arquivo por download**.
+- O servidor transmite quadros independentes cifrados, limitados a 192 KiB de dados, com offset validado no receptor, verificação SHA-256 do conteúdo completo e descarte do arquivo de destino se a sessão terminar incorretamente.
+- Novo leitor incremental de frames LF, com buffer mantido entre mensagens, evitando perda de bytes pré-lidos e processamento desnecessário por socket. Apenas uma transferência contínua é admitida simultaneamente para poupar o aparelho monitorado.
+- Revogar a pasta ou parar o monitoramento interrompe a próxima leitura. Pausa/cancelamento seguem restritos à Activity; upload mantém protocolo anterior. Tempo restante agora mostrado em minutos/horas.
+- Testes locais de enquadramento, política e verificação estática; compilação Android e throughput com dois aparelhos pendentes. Não prometer ganho quantitativo sem medição.
+
+## 0.1.0-alpha.79 (versionCode 79) | 15/10/2026
+
+- Recuperar dados: interface compactada com menu de ícones, seleção por checkboxes para arquivos e pastas, selecionar todos, seleção em lote para baixar/mover/copiar/excluir e informações de arquivo mais completas.
+- SAF remoto bidirecional: leitura continua autorizada pela pasta escolhida; escrita/destruição somente após nova autorização local explícita independente. Upload de arquivos múltiplos, criar pastas, renomear, copiar, mover, mover para lixeira quando suportado e excluir definitivamente com confirmação.
+- Segurança: nomes e caminhos validados e resolvidos exclusivamente dentro da árvore, sem overwrite silencioso; upload no cache privado do monitorado, sessão autenticada vinculada ao clientId informado, SHA-256 antes de publicar e limpeza de parcial. Para operações de renomear/mover/copiar, comportamento depende do DocumentsProvider.
+- Download: até 2 GiB por arquivo/lote, 192 KiB por requisição autenticada com hash de bloco e SHA-256 final. Dados de velocidade real, bytes, tempo decorrido e estimativa, pausa e cancelamento enquanto Activity estiver aberta. Downloads diretos via MediaStore no Android 10+, incluindo lote; seletor SAF ainda necessário para destinos alternativos.
+- Limitações: não há transferência persistente em background nem retomada após processo/Activity fechada. A cópia completa de pasta continua limitada a 20 arquivos e o provedor pode recusar mover/excluir; lixeira depende de moveDocument. Não houve build Gradle nem teste físico nesta entrega.
+
+## 0.1.0-alpha.78 (versionCode 78) | 15/10/2026
+
+- Aplicativos: ícones reais em lotes paginados de até 12 (PNG ou fallback vetorial), favoritos locais por host, pesquisa e filtro por último aplicativo observado, sem inventar estado de execução.
+- Abertura normal autorizada separadamente no monitorado e somente com MainActivity visível. Android pode bloquear; cliente oferece ADB manual após falha, sem executar comandos adicionais silenciosamente.
+- Controle ADB: abrir via comando fixo e forçar parada de pacote permitido somente após sessão TLS no mesmo endereço e confirmação textual. Bloqueio de parada de sistema e do próprio Monitor Remoto; nada é parado automaticamente.
+- Energia e manutenção: centraliza bloqueio, orientação para acender tela, reinicialização normal com confirmação existente e aviso de segurança para aparelhos sem botão Power. Sem desligamento total.
+- Mantidas credenciais protegidas, AES-GCM, consentimentos, módulo Localização, notificação com escudo e serviços anteriores. Sem build Android completo nem ensaio em aparelhos nesta entrega.
+
+## 0.1.0-alpha.77 (versionCode 77) | 15/10/2026
+
+- Correção de compilação do workflow GitHub Actions **Gerar APK e Release #72**: `:app:compileDebugKotlin` falhava em `MonitorService.kt:308:9` por referência inexistente `lastControllerName`.
+- Removida somente a atribuição obsoleta em `onDestroy()`. Preservadas a limpeza de `lastControllerSeenMs`, as notificações, o registro de acessos autenticados, a localização e a parada explícita.
+- Adicionada verificação de regressão em `tools/check_distribution.py`, sincronizados `versionName` e `versionCode` com README, CHANGELOG, AGENTS, ARCHITECTURE, RELEASE_NOTES e tela Novidades.
+- Sem alterações de protocolo, segurança ou permissões. Ainda é necessário rodar `:app:testDebugUnitTest :app:assembleDebug` na CI para confirmar o APK.
+
+## 0.1.0-alpha.76 (versionCode 76) | 15/10/2026
+
+- Notificação principal do serviço passa a apresentar o estado do servidor, acessos autenticados recentes (expiração de 45 segundos) e módulos ativos: localização, tela, câmera e alertas. Não considera consultas TCP uma conexão permanente.
+- A ação Detalhes abre MonitorStatusActivity, que mostra o estado atual e deixa explícito que nomes enviados pelo controlador não são autenticados como identidade; Parar preservado.
+- Atualização da notificação apenas quando muda o resumo, com baixa importância, `setOnlyAlertOnce` e versão pública genérica para a tela bloqueada. Nenhum rastreamento oculto ou vazamento de IP/chaves.
+- Ícone adaptativo próprio de escudo para o app e glifo monocromático para notificações principais, de localização, tela e saúde.
+- Testes de regressão da política de estados e validações estruturais. Build Android completo e testes em aparelhos ainda pendentes.
+
+## 0.1.0-alpha.75 (versionCode 75) | 15/10/2026
+
+- Localização: sessão GPS/rede opt-in iniciada somente no aparelho monitorado com permissões Android, notificação FGS `location` e ação Parar. Não inicia remotamente nem no boot.
+- Três perfis para economia de bateria: Econômico 300 s, Equilibrado 60 s e Preciso 10 s (intervalos mínimos, sujeição ao Android).
+- Última posição fica apenas em RAM, limitada a sessão ativa, com precisão reportada, origem, horário, idade e distinção entre leitura recente, antiga ou expirada. Não armazena trilha GPS.
+- Snapshot já autenticado com AES-GCM traz objeto `location`; controlador exibe coordenadas e estados de autorização, permite atualizar sob demanda, copiar ou abrir em aplicativo de mapas. Sem mapa interno neste ciclo.
+- Parar monitoramento encerra e limpa imediatamente a sessão; GPS exige permissões COARSE/FINE Android 12+ e FGS_LOCATION Android 14+.
+- Chave compartilhada permanece igual entre controladores pareados; não há revogação individual de localização. Compilação Gradle Android e testes reais pendentes.
+
+## 0.1.0-alpha.74 (versionCode 74) | 15/10/2026
+
+- Interface: refinamento visual das telas de conexão e erro, com menor altura geral, paddings reduzidos e ações compactas no cabeçalho do aparelho remoto.
+- Conexão manual: campos e painéis mais enxutos; botões Colar e Limpar padronizados sem sombra/elevation inconsistente.
+- Diagnóstico: cartão “Copiar diagnóstico” ficou mais compacto, com rótulo de ação explícito `COPIAR` e sem quebrar o erro técnico no layout.
+- Componentes compartilhados: botões, campos, cards de diálogo, badges e linhas com ícone foram compactados para melhorar consistência visual sem alterar permissões, criptografia ou protocolo.
+- Sem build Android completo neste ambiente; validação local permanece estrutural/sintática, aguardando CI e teste visual em aparelho.
+
+## 0.1.0-alpha.73 (versionCode 73) | 15/10/2026
+
+- Interface: cabeçalho compacto, ação Renomear aproveitando RecentDevices, botão Desconectar, resumo de conectividade em uma linha; ícones de estado e cartão Aplicativo observado. Cartões de telemetria clicáveis dão detalhes e instruções para autorizar no monitorado.
+- DeviceStateReader guarda último pacote observado e horário no processo para distinguir do estado atual com tela apagada; não confirma gravação do Minha Câmera.
+- Tela Novidades apresentada uma vez após atualizar (ou primeira instalação), reabrível em Configurações.
+- HealthAlertMonitor: notificações locais e resumo de evento autenticado com contador, baterias/temperatura/estado térmico, limiares indicativos com histerese. Protetor térmico somente para captura própria, OFF por padrão.
+- ControllerHealthAlerts e RemoteHealthJobService: aviso remoto por consulta autenticada, deduplicação e JobScheduler opcional de 15 min, sem promessa de latência/entrega se rede ou Android suspender. Permissão POST_NOTIFICATIONS mantida e solicitada com ação explícita.
+- Sem root, abrir apps remotamente, iniciar câmera oculta, mudar chaves de pareamento nem controlar o Minha Câmera; compilação Android e testes reais pendentes.
+
+## 0.1.0-alpha.72 (versionCode 72) | 15/10/2026
+- Cartões de telemetria compactos (~96 dp de altura mínima) e gradiente semântico por faixa de temperatura da bateria; faixas orientativas, não diagnósticos de segurança.
+- Estado da tela e bloqueio, disponibilidade provável da câmera (sem alegar gravação) e último aplicativo em primeiro plano após autorização especial de acesso ao uso no próprio monitorado.
+- SSID e RSSI em dBm da rede Wi-Fi mediante permissão explícita de localização no monitorado; estados indisponíveis não são inventados.
+- Recuperar dados: 12 níveis de pastas e um arquivo terminal, bloqueio de nomes ambíguos, cópia recursiva de pastas (até 20 arquivos, 128 MiB, 32 MiB/arquivo, 150 itens/pasta), até dois blocos por requisição autenticada, retries curtos, SHA-256 integral ao terminar.
+- Restrições ainda existentes: cópias dependem da Activity; não há retomada persistida após interrupção de processo, e conexões TCP não são persistentes. Build Gradle e testes físicos não realizados neste ambiente.
+
+## 0.1.0-alpha.71 (versionCode 71) | 15/10/2026
+
+- Corrigida a falha real de compilação Kotlin do workflow **Gerar APK e Release #66**, `RemoteScreenActivity.kt:472:107`: inferência de tipo recursiva na propriedade `poll` ao referenciar `poll` no próprio inicializador (dentro do callback `main.post`).
+- Declarado `private val poll: Runnable` explicitamente e alterado o reagendamento da resposta de uma visita antiga para `main.post(this)`, referenciando a instância `Runnable` atual, sem autorreferência da propriedade. A regra de uma consulta por vez e o descarte de frames obsoletos continuam.
+- Incluída verificação estrutural de regressão. Nenhum ajuste em permissões, criptografia, protocolo, serviços, comandos remotos ou políticas de câmera. Build Android/Gradle e dispositivos reais aguardam validação na CI.
+
+## 0.1.0-alpha.70 (versionCode 70) | 15/10/2026
+
+- Configurações: selos de estado deixam de analisar frases dos subtítulos. `SettingsBadgeKind.forEnabled` recebe booleanos reais para 24 toggles/permissões, além de status contextual de pasta revogável e tema selecionado; ações comuns ficam com `ABRIR`, revogação destrutiva conserva `REVOGAR`.
+- Câmera Camera2: `CameraShareActivity` encerra somente o token de sessão que ela abriu. Callback atrasado de erro/desconexão não executa `CameraFrameStore.stop()` global e não interrompe câmera aberta por uma Activity mais nova; o serviço preserva capacidade de parada global. Novo teste de sessão antiga.
+- Tela remota: polling usa uma única thread executor durante toda a vida da Activity, com descarte de resultados de visita anterior e shutdown ao destruir. Sem mudar cadência, AES-GCM, endpoints ou controles existentes.
+- Testes de estados dos selos e reforço do verificador de invariantes. Teste JVM local isolado e verificador estático não comprovam compilação Android/Gradle, que permanece pendente até execução da CI; consumo, fluidez e Camera2 real aguardam dois aparelhos.
+
+## 0.1.0-alpha.69 (versionCode 69)
+
+- Corrigidos os **oito erros de compilação Kotlin** registrados no GitHub Actions #64 da alpha.68: quatro tentativas de atribuir `lineSpacingExtra` (somente leitura) e quatro acessos à função `darkTheme()` privada de `MainActivity`.
+- TextView agora usa o método público Android `setLineSpacing(extraPx, 1f)` para preservar o espaçamento previsto. `darkTheme()` passa a ser `internal`, acessível aos componentes da interface no mesmo módulo Kotlin.
+- Verificador estrutural ganha regressões específicas para esses dois problemas. Mantidos os cartões maiores, indicadores de estado e diálogos da alpha.68, sem alterar fluxo remoto, permissões nem segurança.
+- Compilação Android integral da alpha.69 e testes de aparência em aparelhos reais ainda pendentes.
+
+## 0.1.0-alpha.68 (versionCode 68)
+
+- Configurações redesenhadas para deixar a seleção e a confirmação das ações mais claras. Os cartões ficaram maiores, com textos ampliados e um selo visual em formato de botão mostrando o estado principal: `ATIVADO`, `DESATIVADO`, `ABRIR`, `VOLTAR` ou `REVOGAR`.
+- `iconMenuRow` agora destaca melhor cada opção com ícone maior, espaçamento reforçado e leitura mais rápida do estado, reduzindo a dependência de subtítulos pequenos e frases como “(ativar)/(desativar)”.
+- `showAppNotice` e `showAppConfirm` foram convertidos para diálogos do próprio app com botões grandes e mais legíveis, em vez dos botões pequenos padrão do AlertDialog.
+- Vários subtítulos das telas de Configurações foram reescritos para descrever o efeito real de cada opção, em vez de exibir textos ambíguos.
+- Sem novas permissões, sem alteração do protocolo AES-GCM, sem mudança nos módulos remotos além da interface. Build Android completo e teste manual em aparelhos ainda permanecem pendentes.
+
+## 0.1.0-alpha.67 (versionCode 67)
+
+- **Correção de testes reais do GitHub Actions #62:** `:app:compileDebugKotlin` completou, mas `:app:testDebugUnitTest` terminou com 105 testes executados e cinco `CameraFrameStoreGenerationTest` falhando por `RuntimeException` ao chamar `SystemClock.elapsedRealtime()` (stub Android em JUnit local).
+- `CameraFrameStore` substitui apenas suas leituras temporais por relógio monotônico baseado em `System.nanoTime()` relativo ao início do processo, com valor positivo e sem dependências de APIs Android no teste JVM. Preservadas expiração de quadros e demanda, limites entre solicitações, consentimento e isolamento de sessões.
+- Verificador estático cobre a regressão, versionamento e documentação sincronizados. Nenhuma permissão, comando ADB, endpoint ou funcionalidade adicionada.
+- Os testes isolados locais não substituem novo `:app:testDebugUnitTest :app:assembleDebug` no GitHub Actions; dispositivo físico ainda pendente.
+
+## 0.1.0-alpha.66 (versionCode 66)
+
+- **Correção de compilação** do workflow GitHub Actions **Gerar APK e Release #61** (`:app:compileDebugKotlin`): em `CameraShareActivity.kt:83`, atribuição de `TextureView` incompatível com `TextureView.SurfaceTextureListener?` dentro de `apply`.
+- Listener da prévia Camera2 agora recebe explicitamente `this@CameraShareActivity`, classe que implementa `TextureView.SurfaceTextureListener`; mantém a prévia, controle de sessão e alternância remota autorizada da alpha.65.
+- Verificador estrutural ganhou teste de regressão específico para impedir a volta do `surfaceTextureListener = this` ambíguo.
+- Versões e documentação sincronizadas. Nada mudou em permissões, autenticação, protocolo ou demais módulos. **Build completo da alpha.66 e teste em aparelho permanecem pendentes**, devem ser executados no GitHub Actions e no Android real.
+
+## 0.1.0-alpha.65 (versionCode 65)
+
+- Alternância frontal/traseira solicitável pelo controlador exclusivamente quando a câmera está aberta na Activity local e o monitorado marcou opt-in temporário nesta sessão, desligado por padrão.
+- `cameraFrame` acrescenta `sessionToken` e `remoteSwitchAllowed`; novo `cameraSwitch` mantém criptografia AES-GCM, checagem de versão exata, credencial pareada, whitelist de lente, demanda autenticada recente, token atual e limite de 2 segundos entre solicitações. Não abre câmeras.
+- `CameraFrameStore` descarta solicitações pendentes na revogação, troca, encerramento do serviço ou pausa da Activity. Apenas a Activity visível executa a troca Camera2. O controlador informa pedido pendente e aguarda nova leitura da lente real.
+- Mantidas câmera JPEG 110 KB/1 s, prévia visível, permissões anteriores, todos os demais módulos, sem áudio/gravação/captura oculta/ADB adicional. Adicionados testes da política e da revogação; APK e hardware ainda não validados.
+
+## 0.1.0-alpha.64 (versionCode 64)
+
+- Otimizado consumo da câmera compartilhada: somente converter/comprimir quadros JPEG se houver consulta `cameraFrame` autenticada nos últimos 4,5 segundos. Sem visualizador conectado, permanece a prévia local, mas a conversão JPEG é suspensa. A demanda é descartada na troca/fechamento da câmera.
+- `CameraFrameStore.status(afterSequence)` devolve metadados coerentes em leitura sincronizada. `cameraFrame` não envia novamente bytes JPEG que o controlador já recebeu. Isso reduz transferências redundantes, sem alterar a autenticação AES-GCM, limites de 110 KB ou expiração de quadros.
+- Visualizador mostra tempo medido de requisição/resposta, tamanho real do JPEG e intervalo medido entre novas imagens. Estados fechada/aguardando/expirada continuam conservadores. Nenhuma métrica artificial de FPS ou atraso real da câmera.
+- Incluídos testes JVM de demanda expirada, revogação, consistência e supressão de quadro repetido; atualizados AGENTS, arquitetura, notas e versionamento. Não há comando para alternar câmeras remotamente: a escolha continua local e visível.
+- **Build Android e testes em celulares reais ainda não executados nesta versão.**
+
+## 0.1.0-alpha.63 (versionCode 63)
+
+- Camera2: corrigida a orientação dos quadros remotos JPEG com rotação real do plano NV21 (Y e VU), considerando a orientação relatada pelo sensor, a rotação da tela e a lente frontal/traseira. Mantida a proporção e dimensões corretas após giro de 90°/270°.
+- Segurança contra callbacks atrasados: token único de sessão em `CameraFrameStore`, verificado antes de publicar bytes. Encerrar/recriar câmera não publica quadro de sessão anterior.
+- Ao encerrar o serviço de monitoramento, descarta quadros; consulta `cameraFrame` também exige serviço em execução. Recursos alocados são liberados em erros Camera2 e falhas de configuração.
+- Mantidos início local, tela visível, consentimento, limite de 110 KB/1 JPEG por segundo, AES-GCM e versões iguais. Nenhuma nova permissão, câmera oculta, áudio, gravação ou comando ADB.
+- Testes da transformação NV21 adicionados. **Compilação APK Android e ensaios com câmeras físicas permanecem pendentes.**
+
+## 0.1.0-alpha.62 (versionCode 62)
+
+- Módulo inicial de câmeras: Activity local de Camera2 com prévia visível, consentimento explícito e permissão CAMERA, alternância frontal/traseira exclusivamente local e interrupção ao sair da tela.
+- Controlador: novo cartão **Câmeras** com visualizador JPEG via polling autenticado AES-GCM `cameraFrame` (sem start remoto) e salvar foto manualmente no controlador (MediaStore Android 10+, SAF Android 8/9).
+- JPEG YUV_420_888 limitado a 110 KB, máximo um quadro convertido por segundo, RAM volátil, expiração 3 segundos; sem áudio, vídeo gravado, serviços de captura em segundo plano, ADB livre ou permissões novas.
+- Corrigida proteção contra callbacks de câmera obsoletos ao alternar/fechar; documentação, versões e testes atualizados. Build Android/compatibilidade e latência nos celulares reais pendentes.
+
+## 0.1.0-alpha.61 (versionCode 61)
+
+- Bloqueio remoto restrito por `DevicePolicyManager.lockNow`, política única `force-lock`, administrador habilitado manualmente no sistema, PIN/senha/padrão já configurados e autorização local independente OFF por padrão.
+- Card Bloquear no controlador com confirmação digitada BLOQUEAR, transmissão AES-GCM já existente, mínimo 15s entre solicitações e resposta conservadora sem alegar execução comprovada.
+- Novos XML/Receiver e cobertura de política/consentimento no verificador estrutural. Funções anteriores preservadas.
+- Compilação APK Android e testes com aparelho real ainda pendentes.
+
+## 0.1.0-alpha.60 (14/10/2026)
+
+- Controles físicos **Tocar som** e **Lanterna** no painel remoto, cada um em pop-up compacto, usando o canal AES-GCM autenticado e versão idêntica nos dois aparelhos. Operações permitidas são fixas (`status`, `soundStart`, `soundStop`, `torchOn`, `torchOff`); nenhum shell/ADB novo.
+- Som: seleção de 5, 10, 20 ou 30 segundos, repetição de bip em STREAM_ALARM sem alterar o volume ou desrespeitar políticas de Não Perturbe. Interromper manualmente, revogar permissão e parar serviço encerram o som; desligamento automático ao atingir o tempo.
+- Lanterna: API Camera2 `setTorchMode` no flash traseiro e observação de estado real via `TorchCallback`; estados desconhecido/ocupado são informados sem presumir sucesso. O serviço tenta desligar o flash que ligou ao encerrar, sem interferir deliberadamente na lanterna que outra aplicação ligou previamente.
+- Nova seção local **Configurações > Som e lanterna**, com opt-in separado, ambos desligados por padrão; permissão Câmera Android pode ser necessária para lanterna. Sem novas permissões no manifesto nem captura de câmera ou microfone.
+- Testes estáticos e de allowlist registrados; build Android completo e testes nos aparelhos ainda pendentes. Mantidos bateria, notificações, ADB, transmissão, mensagens e recuperação de arquivos.
+
+## 0.1.0-alpha.59 (14/10/2026)
+
+- Bateria: porcentagem calculada por nível/escala do broadcast oficial, com validação de limites, e estado derivado de `BATTERY_STATUS_CHARGING`, `DISCHARGING`, `FULL`, `NOT_CHARGING` ou desconhecido. O estado NOT_CHARGING não é apresentado erroneamente como descarga.
+- Nova fonte de energia identificada somente quando `EXTRA_PLUGGED` informar tomada (AC), USB, sem fio ou dock/base. Indicador visual ⚡ somente quando o Android reporta carregamento ou bateria cheia ainda conectada à alimentação identificada.
+- Cartão principal compacto com estado e fonte sob a porcentagem. Tela Detalhes também mostra estado correto e alimentação. Temperatura, rede e todos os demais recursos anteriores mantidos.
+- Campos extras no snapshot AES-GCM (`state`, `statusCode`, `powerSource`, `pluggedCode`, `chargingIndicator`), mantendo `charging` e `full` para compatibilidade interna. Nenhuma nova permissão, serviço, operação remota ou comando ADB.
+- Testes unitários novos para níveis válidos/inválidos, estados, fontes e indicador; verificador de distribuição atualizado. Tocar som e Lanterna avaliados e adiados, priorizando estabilidade e consentimento antes de abrir novos comandos.
+- Versão sincronizada em Gradle, AppVersion, README, CHANGELOG, AGENTS e documentação. Build Android/ensaio físico ainda dependem de validação.
+
+## 0.1.0-alpha.58 (14/10/2026)
+
+- Tela própria de Notificações no padrão dos cartões de Detalhes, com Atualizar, estado da captura, informação da fonte e mensagens mais úteis em caso de ausência de eventos.
+- NotificationListenerService: reprocessa até 30 notificações ainda ativas ao ser conectado, tenta solicitar religação ao sistema em caso de interrupção e registra em RAM o diagnóstico sem conteúdo sensível.
+- Snapshot autenticado agora inclui `notificationStatus` para diferenciar monitoramento interrompido, ausência de permissão, listener desconectado e lista de aplicativos vazia.
+- Módulo Aplicativos instalados: consulta autenticada sob demanda dos apps com lançador visíveis ao Android, mediante autorização explícita local e revogável, desativada por padrão. Sem permissão QUERY_ALL_PACKAGES ou gerenciamento remoto de apps.
+- Novos cartões de acesso rápido no painel remoto e seção de configurações de compartilhamento dos aplicativos. Lista de até 120 apps por nome e identificador de pacote.
+- README, documentação, versionamento, testes estruturais e notas de release atualizados; compilação Android completa e testes físicos pendentes.
+
+## 0.1.0-alpha.58 (14/10/2026)
+
+- **Manutenção** redesenhada com ícone, cartão do aparelho, aviso breve sobre ausência de botão Power, opção única para reiniciar normalmente e confirmação final ADB com digitação `REINICIAR`. A reinicialização continua usando apenas `reboot:`, sem desligamento, recovery ou repetição automática.
+- Mensagem de **ADB não configurado** atualizada para diálogo no estilo do aplicativo, com botão para iniciar o pareamento em vez de alerta Android sem formatação.
+- **Recuperar dados** agora abre em um gerenciador remoto mais compacto: botão Voltar, título e aparelho, Ajuda (?) contextual e **Atualizar** no topo; caminho/pasta atual e contador de itens.
+- Navegação em pastas, lista/grade, busca por nome, ordenação por nome/data/tamanho/tipo, ícones e detalhes de metadados (nome, MIME, tamanho, data, caminho), sem novas permissões.
+- Seleção múltipla (até 20 arquivos por lote / 128 MiB agregados) com cópia sequencial para pasta escolhida pelo seletor SAF Android no controlador. O limite de 32 MiB por arquivo, blocos AES-GCM + SHA-256 e a origem somente leitura permanecem. Nomes já existentes no destino recebem sufixo em vez de sobrescrita; cancelar interrompe o lote e uma saída com erro tenta apagar o arquivo parcialmente criado.
+- Não incluídas exclusão, renomeação ou escrita remotas, recuperação de apagados, acesso irrestrito ao armazenamento ou prévia de conteúdo sem cópia. Teste físico de SAF, compileDebugKotlin e testes Android completos ainda pendentes.
+- Versão, AppVersion, documentação, notas e verificador estrutural atualizados.
+
+## 0.1.0-alpha.56 (14/10/2026)
+
+- No **Modo avançado ADB**, botões agora têm espaçamento consistente; ações principais ficam organizadas em pares compactos (Controles / Manutenção e Renomear / Desconectar). O pop-up de Controles ADB possui grade com espaçamento e inclui Renomear.
+- O cartão do celular atualmente conectado não aparece novamente em **Outros celulares salvos**. A lista só é reconstruída quando os dados efetivamente mudam, evitando atualização visual desnecessária a cada 2 segundos.
+- Identificação do aparelho preserva apelido e último modelo conhecido quando o diagnóstico ADB volta sem modelo legível; fallback visual sugere renomear em vez de exibir só o IP. Não atribui modelo comercial sem evidência.
+- Em **Ver tela**, substituído o texto longo de alternância de codec por seletor de dois botões estilizados, **JPEG · rápido** e **H.264 · teste**, com estado de seleção visível e explicação de modo experimental.
+- Avisos de toque/captura passaram a distinguir tela bloqueada, tela apagada, captura encerrada e Acessibilidade indisponível a partir dos estados retornados pelo monitorado. Sem desbloquear PIN, biometria ou burlar MediaProjection.
+- ADB: heartbeat e comandos serializados no mesmo executor; tolerância ampliada de 8 para 12 s e intervalo de 30 para 45 s para evitar interferência no transporte, sem garantia de estabilidade.
+- Versão, metadados de distribuição, documentação e verificador sincronizados. Build Android completo e testes reais de reconexão/codec ainda pendentes.
+
+## 0.1.0-alpha.55 (14/10/2026)
+
+- Corrigido o teste `AdbPolicyTest.commandAllowlist` que falhou no workflow 53 (`:app:testDebugUnitTest`): a asserção antiga esperava 4 comandos, mas a política atual possui 7 comandos explicitamente permitidos (diagnóstico, heartbeat, navegação e volume).
+- O teste agora valida **cada nome e comando shell exato**, além de proibir comandos ADB não autorizados; não amplia a lista de operações disponíveis.
+- Mantido o reinício normal por serviço separado `reboot:` exclusivamente após confirmação explícita. Não foram alterados o protocolo, as permissões, a recuperação SAF, as telas nem a segurança da manutenção.
+- Atualizados versionName/versionCode/AppVersion, documentação, notas de release e verificador estrutural. Build Android completo e testes físicos da alpha.55 ainda pendentes.
+
+## 0.1.0-alpha.54 (14/10/2026)
+
+- Corrigida a falha real de `:app:compileDebugKotlin` reportada no workflow 52: `MainActivity.kt:192:9 Unresolved reference 'lastRecoveryAttemptMs'`.
+- Declarado `private var lastRecoveryAttemptMs = 0L` no ciclo de vida da `MainActivity`, com carimbo monotônico de `SystemClock.elapsedRealtime()` em memória para limitar tentativas de recuperação do serviço de monitoramento a uma por minuto, somente quando o app está visível e autorizado.
+- Incluída regressão no verificador `tools/check_distribution.py` para impedir que a declaração seja esquecida novamente; atualizados versionName/versionCode/AppVersion e documentação para alpha.54/54.
+- A correção é pontual: mantidos a manutenção Reiniciar por ADB confirmada, navegação não invasiva, recuperação de dados SAF e o restante da alpha.53. Build Android completo e testes físicos ainda dependem do workflow.
+
+## 0.1.0-alpha.53 (14/10/2026)
+
+- Adicionado cartão **Manutenção** aos principais recursos remotos: pop-up de opção única **Reiniciar aparelho · ADB**, com navegação até sessão ADB do mesmo aparelho. A conexão AES-GCM não concede capacidade ADB.
+- Implementado serviço ADB `reboot:` (reinício normal), sem argumentos e sem desligar/recovery. Confirmar digitando `REINICIAR` e avisar especialmente sobre ausência de botão Power. Pedido nunca é repetido automaticamente se o socket cair.
+- Removido o redirecionamento automático de `MainActivity` para `IncomingAccessActivity`, que atrapalhava a navegação. Mantidos notificação e cartão de acessos autenticados, com detalhe apenas quando o usuário solicitar, e botão Voltar na tela de detalhes.
+- Remodelada tela Recuperar dados com botão Voltar permanente e estado de erro guiando a autorização SAF local, além de Tentar novamente/Voltar ao painel.
+- VersionName/Code e documentação sincronizados. Build Android completo e testes físicos pendentes.
+
+## 0.1.0-alpha.52 (14/10/2026)
+
+- Integrado o ADB real ao visualizador de tela remota por uma transferência explícita de sessão, sem serviço persistente nem abertura automática: o usuário toca em **Ver tela remota • controle ADB** no Modo avançado ADB.
+- O visualizador exibe indicador de canal **Navegação: ADB conectado • Imagem: Monitor Remoto (MediaProjection)** e informa a alternativa normal quando não existe ADB ativo.
+- Voltar/Início/Recentes usam comandos ADB permitidos durante a visualização após resposta autenticada da captura normal no mesmo host. Demais comandos e interação por toque continuam usando o protocolo Monitor Remoto e as permissões anteriores.
+- Para abrir o visualizador via ADB, exige chave normal já pareada para o mesmo IP. Sem ela, explica que o ADB não transmite vídeo nesta versão e orienta o consentimento local no monitorado.
+- Sessão ADB da ponte é encerrada quando Ver tela deixa o primeiro plano. Nenhum segredo/código/QR é persistido pelo visualizador e não foi adicionado serviço de fundo. Não há reconexão ADB durante a visualização nesta etapa.
+- Versionamento alpha.52 / versionCode 52, documentação, notas e verificações sincronizados. Build Android completo e testes de hardware continuam pendentes.
+
+## 0.1.0-alpha.51 (14/10/2026)
+
+- Adicionada reconexão automática, restrita à Activity ADB visível e ao aparelho escolhido/conectado pelo usuário. Ao perder a sessão, tenta a última porta e redescobre serviço `_adb-tls-connect` no mesmo IP (nunca varre a rede ou reativa opções do Android).
+- Heartbeat ADB de leitura/resposta a cada 30 s e timeout de 8 s identificam queda de conexão que o flag local TLS ainda não percebeu. Tentativas usam atrasos 2/4/8/15/30 s e permanecem em 30 s enquanto a tela estiver aberta.
+- Botão visível **Cancelar reconexão automática** interrompe novas tentativas. Desconectar também desliga a retomada; ao sair da Activity a sessão/socket é encerrado, e uma retomada pendente só volta quando a mesma tela é reaberta.
+- **Comandos ADB** aparecem diretamente no resumo quando a sessão está ativa. Controles limitados a Voltar, Início, Recentes e volume +/−; sem shell livre, sem desbloqueio, sem captura via ADB e sem novo serviço persistente.
+- Mantidas as autenticações TLS, QR e identidade Android Keystore. Se a Depuração sem fios for desligada no monitorado, o app aguarda o usuário/Android reativar o serviço; não é possível ligá-la à força. A reconexão depende da disponibilidade do mesmo IP/serviço, com fallback manual.
+- Versionamento e documentação sincronizados. Validações de fonte locais não substituem build Android CI nem testes em dois aparelhos.
+
+## 0.1.0-alpha.50 (14/10/2026)
+
+- Simplificada a tela principal ADB de acordo com a referência: dispositivos salvos, Reconectar/Desconectar e Adicionar outro celular; controles técnicos recolhidos.
+- Substituídas as telas do wizard por diálogos centralizados de papel, método, QR temporário, código e orientação do monitorado. Comandos Voltar/Início/Recentes movidos para diálogo de Controles ADB nas configurações avançadas.
+- Após pareamento ADB bem-sucedido por QR ou código, o app busca via mDNS a porta de conexão TLS **no mesmo IP do aparelho pareado** e tenta conectar automaticamente. Busca ambígua, bloqueada ou sem resposta mantém a entrada manual como contingência.
+- Reconectar tenta o último IP/porta e busca a porta atual no mesmo IP após falha; mudanças na identificação do modelo exigem confirmação. Nome comercial informado pelo Android é consultado quando disponível.
+- Corrigida a transição de client ADB de pareamento para conexão: o cliente encerrado é liberado antes de invocar o callback de sucesso. Lista ADB não mescla automaticamente aparelhos de mesmo modelo apenas pelo nome.
+- Preservados controles de consentimento, QR com FLAG_SECURE, sessão encerrada ao sair e funcionalidade normal de vídeo/Recuperar dados; sem novos acessos.
+- VersionName 0.1.0-alpha.51, versionCode 51, AppVersion, README, AGENTS, arquitetura, notas e validações sincronizados. Build Gradle Android e testes físicos ainda pendentes.
+
+## 0.1.0-alpha.46 (14/10/2026)
+
+- Corrigidos dois erros de compilação de `:app:compileDebugKotlin` do workflow 45, em `RemoteFilesActivity.kt:59` e `:66`. No escopo `TextView.apply`/`Button.apply`, `foreground` referia-se a `View.foreground: Drawable`, enquanto `setTextColor()` exige `Int` ou `ColorStateList`. Qualificado `this@RemoteFilesActivity.foreground` nas duas ocorrências.
+- Adicionada regressão que falha se voltar o acesso não qualificado em `setTextColor(foreground)` na Activity de arquivos.
+- Sincronizados versionName 0.1.0-alpha.46, versionCode 46, AppVersion, documentação, notas e verificador. Sem alteração das permissões nem da transferência SAF.
+- Validações estáticas locais não substituem `gradle :app:testDebugUnitTest :app:assembleDebug` em CI e testes reais em dois aparelhos.
+
+## 0.1.0-alpha.45 (14/10/2026)
+
+- Implementada primeira etapa funcional de Recuperar dados com compartilhamento somente leitura de uma pasta SAF escolhida no monitorado, revogável nas Configurações.
+- Nova navegação de arquivos no controlador e salvamento individual via ACTION_CREATE_DOCUMENT, com progresso, cancelamento, limites 32 MiB/150 itens/12 níveis e limpeza tentativa de destino parcial.
+- Novas operações autenticadas `dataList` e `dataChunk` sobre o canal AES-GCM atual; verificação SHA-256 por bloco, validação de caminho e tamanho, checagem dos metadados para detectar alterações durante a cópia; nenhum novo serviço/porta ou permissão de armazenamento amplo.
+- README, AGENTS, notas, arquitetura, verificador e versionamento atualizados. Build Gradle Android completo e transferência física ainda pendentes.
+
+## 0.1.0-alpha.44 (14/10/2026)
+
+- Corrigida falha de compilação `:app:compileDebugKotlin` do workflow 43: quatro lambdas de `runOperation` em `AdbActivity` se associavam indevidamente ao callback `onSuccess(String)`, gerando referências `pair`/`execute` não resolvidas.
+- Todas as cinco invocações ADB passam agora `operation = { adb -> ... }` e o callback de identificação utiliza `onSuccess = { result -> ... }`. Adicionada regressão estrutural no validador.
+- VersionName/Code, AppVersion, distribuição APK, README e notas atualizados. Sem mudanças no TLS ADB, nas permissões ou nos codecs. Build Android completo da alpha.44 ainda não validado.
+
+## 0.1.0-alpha.43 (14/10/2026)
+
+- O **Modo avançado ADB** permite capturar imagens das instruções, campos comuns e diagnóstico. Enquanto um QR de pareamento ADB está visível, aplica `FLAG_SECURE` para proteger a senha temporária; removido ao fechar, expirar ou sair.
+- Instruções na tela distinguem controlador (gera QR) e monitorado (lê QR nas Configurações de Depuração sem fios), e portas de pareamento/conexão. mDNS passa a alertar que IP não confirma identidade do aparelho.
+- Conexão ADB bem-sucedida consulta modelo e versão Android reportados pelo próprio aparelho e mostra esses dados no topo; indisponibilidade não é apresentada como identidade verificada. ADB continua sem transmitir vídeo.
+- Visualizador **Ver tela** inicia em JPEG para priorizar menor atraso e oferece alternância manual para H.264 experimental. Enquanto o usuário usa JPEG, o monitorado suspende a pesada codificação H.264 (após 2 s sem requisições de vídeo), mantendo somente a prévia JPEG. Fila de H.264 longa deixa de entregar sequências antigas e aguarda/solicita um quadro-chave recente para sincronizar.
+- Mantidos MediaProjection consentida, TLS do ADB, limites de rede, autorização local para comandos e dados sensíveis. Testes físicos de desempenho/funcionamento e build Android devem ser registrados separadamente.
+
+# 0.1.0-alpha.42 — Modo avançado ADB por Wi-Fi
+
+- Cliente ADB TLS real em módulo isolado, com pareamento SPAKE2 via QR/código, mDNS e credencial RSA cifrada pelo Android Keystore.
+- Tela própria em Configurações: IP/portas dinâmicos, conexão, desconexão, diagnóstico e navegação confirmada.
+- Apenas IPv4 privado, sem ADB legado/5555 automático, sem execução livre de shell, sem serviço oculto ou mudança no espelhamento.
+- Fonte de libadb 3.1.1 incluída com licença e alterações de TLS/lifecycle/timeout documentadas. Dependências nativas ainda exigem teste em aparelho.
+- Testes e limitações em docs/VALIDATION.md; protocolo ADB e roteiro em docs/ADB.md.
+
+## 0.1.0-alpha.41 (14/10/2026)
+
+- Adicionadas barras flutuantes semitransparentes em Ver tela, visíveis no modo imersivo, com navegação remota (Voltar/Início/Recentes/Notificações), Toque, Acender tela, Print, Áudio, Foto HD, Ajustar/Preencher e Sair. Todas as ações usam os comandos e permissões existentes.
+- Mantido conteúdo remoto em tela cheia, com áreas de controle compactas, contraste nos ícones, rótulos acessíveis, indicador real de estado/latência e FPS de quadros apresentados, respeito a recortes e insets e preservação do modo ao recriar a Activity.
+- Preservados MediaProjection autorizada, AVC/JPEG reserva, criptografia, prints sob demanda e bloqueio de desbloqueio seguro. Sem alegar ganho de FPS nem testes físicos ainda não realizados.
+- Compilação Gradle Android e verificação no dispositivo pendentes.
+
+## 0.1.0-alpha.40 (14/10/2026)
+
+- Implementado streaming experimental AVC/H.264 via MediaCodec com decoder no controlador, fila curta de quadros voláteis (até 30), controle de sincronização IDR e fallback JPEG. Target de até 10 FPS, desempenho real ainda desconhecido.
+- MediaProjection continua consentida apenas no celular monitorado, notificação e parada local. Sem salvar vídeo, sem desbloquear tela e sem capturar fora da sessão.
+- Comando remoto Acender tela com autorização local OFF por padrão, WakeLock temporário e cooldown para poupar bateria; funciona independentemente da projeção em vigor, mas não ignora PIN/biometria nem garante despertar em todas as versões do Android.
+- Mantidos prints, foto HD, áudio, navegação, configurações e recuperação agendada.
+- Testes estáticos e unitários locais; Gradle Android e aparelho físico pendentes.
+
+# Histórico de versões
+
+## 0.1.0-alpha.39 (14/10/2026)
+
+- Corrigidos Voltar e Início: não dependem de "Toque" ligado. Adicionados Recentes e Notificações com ações globais oficiais de Acessibilidade autorizada.
+- Interface Ver tela respeita WindowInsets e display cutout; modo imersivo recupera ocultação das barras e oferece Ajustar/Preencher com mapeamento adequado dos gestos.
+- Prévia JPEG ajustada para ~3 fps como alvo sob demanda (330 ms no monitorado e consulta seguinte após 300 ms); em economia de bateria, 700 ms. Indicadores de RTT/idade do quadro permitem medir atrasos sem assumir números irreais.
+- Diagnóstico diferencia tela apagada, bloqueio seguro e fim de projeção. Não desbloqueia aparelho, não reinicia MediaProjection após o Android encerrá-la e não contorna consentimento.
+- Testes de mapeamento CENTER_CROP e ações globais; verificador reforçado. Compilação Android completa e testes físicos permanecem pendentes.
+
+## 0.1.0-alpha.38 (14/10/2026)
+
+- Implementada verificação de contingência opcional via `JobScheduler` (intervalo mínimo 15 minutos), acionada somente quando monitoramento e recuperação agendada tiverem sido ativados no próprio aparelho; parada local cancela o Job.
+- Se o serviço Android ainda existir, o supervisor TCP de 15 segundos continua responsável por recuperar a porta, sem reiniciar todo o processo nem descartar autorizações.
+- Quando o serviço Android está ausente, a tela Monitorado tenta recuperá-lo enquanto estiver aberta (tentativas limitadas), e o Job pode solicitar a retomada. Caso o Android negue iniciar um foreground service em segundo plano, exibe notificação para retorno manual.
+- Diagnóstico agora diferencia serviço Android e listener TCP, exibindo último evento e data. Não reativa após Parar, force-stop ou reinício sem início automático explicitamente habilitado.
+- Captura de tela e áudio interno não são reativados pelo Job, pois exigem sessão `MediaProjection` autorizada.
+- A compilação Android e testes em aparelhos físicos ainda precisam ser realizados no CI.
+
+## 0.1.0-alpha.37 (14/10/2026)
+
+- Corrigidos erros de compilação observados no workflow **Gerar APK e Release #37** (`:app:compileDebugKotlin`): `Unresolved reference Base64` em `RemoteClient.kt:144` e `Unresolved reference fillViewport` em `RemoteScreenActivity.kt:263`.
+- Adicionado `import android.util.Base64` e substituído `fillViewport = true` por `isFillViewport = true`. Erros de inferência de tipo associados à referência Base64 também ficam resolvidos.
+- Regressões adicionadas ao verificador, versão 0.1.0-alpha.37/versionCode 37 sincronizada. Sem mudanças de permissões nem do fluxo consentido de tela/toques/áudio.
+- A compilação Android completa da alpha.37 ainda precisa ser confirmada no GitHub Actions; o ZIP contém código-fonte, não APK.
+
+## 0.1.0-alpha.36 (14/10/2026)
+
+- Redesenhada a página **Ver tela** de acordo com a referência visual: barra superior de ícones, área de imagem arredondada, controles compactos e temas claro/escuro.
+- Botão **Print** para salvar o último quadro JPEG recente, sem tirar capturas contínuas. Android 10+ salva via MediaStore em `Imagens/Monitor Remoto`; Android 8–9 solicita destino pelo sistema.
+- Ação **Foto HD** autenticada e sob demanda: exige sessão MediaProjection local vigente, solicita novo frame e usa codificação adaptativa de até 1080 px/480 KiB. Nenhuma imagem é persistida no monitorado.
+- Botão **Tela cheia** em modo imersivo, com saída acessível, preservando proporção e coordenadas de toque remoto. Prevenção de captura de quadro vencido.
+- Atualizados `versionName=0.1.0-alpha.36`, `versionCode=36`, verificador e documentação; build Android e testes reais pendentes.
+
+## 0.1.0-alpha.35 (14/10/2026)
+
+- Adicionados gestos remotos autorizados via serviço de acessibilidade opcional, áudio interno opcional por AudioPlaybackCapture, notificação de solicitação e reuso da mesma sessão de projeção após quedas de rede.
+- Áudio e toque exigem habilitação explícita no monitorado. Prévia de ~1–2 quadros/s, sem gravação automática. Testes Android pendentes.
+
+
+## 0.1.0-alpha.34 (14/10/2026)
+
+- Implementado **Ver tela** no painel remoto, com página própria, atualizações JPEG compactadas pela rede e pelo protocolo AES-GCM com autenticação e proteção contra replay.
+- No monitorado, botão local **Compartilhar tela** abre autorização nativa MediaProjection. Serviço foreground independente (`mediaProjection`) exibe notificação com **Parar tela**; sem captura em segundo plano sem consentimento e sem retomada automática após encerramento, bloqueio ou reinício.
+- Buffer estritamente em memória, quadro de no máximo 110 KiB, 1 FPS, limite de idade 3 s, sem áudio, gravação ou controle remoto por toque. Callback de parada e redimensionamento/rotação liberam recursos.
+- Manter versão exata nos dois celulares: `versionName=0.1.0-alpha.34`, `versionCode=34`. Build e testes físicos pendentes.
+
+## 0.1.0-alpha.33 (14/10/2026)
+
+- Mensagens remotas redesenhadas como página própria do controlador, com abas SMS e Notificações, cabeçalho Voltar/Atualizar e cartões compactos; não usa mais uma janela longa com botões Copiar de largura total.
+- Cada conversa apresenta mensagens com data/direção e ação de cópia por ícone; Responder SMS aparece no cabeçalho quando autorizado, e Responder notificação apenas nas mensagens com token válido.
+- Agrupamento por remetente/conversa, revalidação de conexão ao abrir/atualizar e descarte dos conteúdos da memória ao sair. Status de SMS e MMS ficam recolhidos em Detalhes.
+- Corrigido vazamento de códigos de autenticação em inglês (“authentication code”, “verification code”): filtragem no monitorado, revalidação antes de envio e na UI antes de exibição/cópia. Testes de regressão adicionados. Filtros heurísticos não garantem bloqueio absoluto.
+- `versionCode 33` / `versionName 0.1.0-alpha.33`, documentação e validador sincronizados. Build Android e testes de UI em aparelho pendentes.
+
+## 0.1.0-alpha.32 (14/10/2026)
+
+- Nova página de **Configurações** no fluxo de navegação, sem abrir uma janela gigante: categorias Notificações, SMS, Serviço, Diagnóstico, Segurança, Aparência e Sobre. Cada categoria é uma tela independente, com Voltar.
+- Supervisor do servidor TCP no serviço foreground: estado baseado na thread de accept e no listener real, tentativa de reinício interno a cada 15 s, esperas progressivas quando o bind falha e callback de retorno de rede. Não desabilita a autorização do usuário em erros transitórios.
+- Diagnóstico local de última verificação, quantidade de falhas e estado de escuta; habilitação de início após reboot e acesso às configurações de bateria.
+- Preserva START_STICKY e o botão de parada explícito; não contorna "Forçar parada" do Android. Testes em aparelho ainda pendentes.
+- versionCode 32 / versionName 0.1.0-alpha.32. Compilação Android completa pendente.
+
+## 0.1.0-alpha.31 (14/10/2026)
+
+- SMS em tempo real mediante autorização `RECEIVE_SMS`, buffer volátil e consulta sob demanda; histórico recente de recebidos e enviados.
+- Callbacks por parte para envio/entrega SMS, identificação opcional de chips com READ_PHONE_STATE e escolha no formulário de resposta.
+- MMS somente assuntos/datas quando autorizados pelo provedor, sem anexos.
+- Seleção opcional de notificações de todos os apps elegíveis, preservando listas individuais e filtros de sensibilidade.
+- Botões Copiar e Responder em SMS e notificações, diálogos de mensagens sem FLAG_SECURE para permitir capturas. QR e chaves continuam protegidos.
+- versionCode 31 / versionName 0.1.0-alpha.31. Compilação Android real permanece pendente.
+
+## 0.1.0-alpha.30 (14/10/2026)
+
+- Central **Mensagens** no controlador, com SMS recebidos e notificações autorizadas, data/hora e ações de resposta com confirmação.
+- Leitura opcional de até 30 SMS recebidos usando `READ_SMS`, consultados sob demanda, filtrando indícios de autenticação. Sem armazenamento local, sem `RECEIVE_SMS`, desativado por padrão; no Android a permissão pode ser bloqueada por ser *hard restricted*.
+- Resposta SMS opcional por `SEND_SMS`, apenas para números regulares presentes na caixa recebida, taxa mínima de 20 s entre solicitações e corpo limitado a 500 caracteres; pode gerar cobrança, não confirma entrega.
+- Resposta por notificação usando `Notification.Action` e `RemoteInput`, somente para aplicativos permitidos com ações ativas, token efêmero de uso único e validade de até 10 minutos. Histórico de WhatsApp não é acessado.
+- As três autorizações independentes são desativadas por padrão; pedidos cifrados AES-GCM usam autenticação, nonce antirreplay, versão exata e confirmação de ação no controlador. Revogação limpa os tokens.
+- `versionCode 30`, `versionName/AppVersion.NAME 0.1.0-alpha.30`. A validação sintática/estrutural local não substitui compilação Android, permissões reais ou envio de SMS em aparelhos.
+
+## 0.1.0-alpha.29 (14/10/2026)
+
+- Corrigido erro de sintaxe de `MonitorScreenUi.kt` (linhas 143–145) apontado no workflow “Gerar APK e Release 29”: a criação/abertura do diálogo de acesso autenticado tinha uma terminação `}.create()` duplicada após o refactor da alpha.28.
+- `showIncomingAccessActions` volta a instanciar o diálogo uma vez e exibi-lo uma vez por `showManagedDialog(dialog)`, preservando as ações Trocar chave, Fechar e Parar serviço.
+- Adicionada verificação de regressão no `tools/check_distribution.py` para impedir a duplicação do construtor/exibição do diálogo.
+- `versionCode 29`, `versionName/AppVersion.NAME 0.1.0-alpha.29`, metadados, testes de compatibilidade e documentos sincronizados. Sem alterações de permissões ou protocolo além da exigência de igualdade exata da versão.
+- Compilação Android completa e testes físicos dependem de nova execução do GitHub Actions; não há APK nesta entrega de fonte.
+
+## 0.1.0-alpha.28 (14/10/2026)
+
+- Falhas de conexão diferenciadas por causa provável (EOF, timeout, conexão recusada, endereço inválido, autenticação e versão), sem exibir exceções duplicadas no painel.
+- Mismatch de versão em consultas autenticadas passa a receber uma resposta AES-GCM explícita do monitorado, permitindo identificar a versão remota quando o servidor também usa o novo fluxo. Chaves inválidas continuam sem resposta.
+- Cartão de diagnóstico do controlador com versão local/remota quando conhecida, IP, horário, checagens, ações de tentar novamente/editar e cópia do diagnóstico sem chave.
+- `AppDialogUi.kt` centraliza janelas do aplicativo para evitar sobreposição, com cabeçalhos de ícones e conteúdo em cartões para informações e confirmações importantes.
+- Seleção de aplicativos para notificações agora mostra lista real com ícones, busca, checkboxes, contagem, tratamento de lista vazia e aviso de privacidade.
+- Validação manual de IP/chave permanece no próprio formulário sem apagar o texto ao informar erros.
+- Preservados QR seguro, Android Keystore, consentimento do número do chip e funcionalidades existentes; nenhuma permissão Android nova.
+- Compilação Android completa e testes físicos pendentes.
+
+## 0.1.0-alpha.27 (14/10/2026)
+
+- Padronização visual do aplicativo segundo os cartões, bordas, ícones vetoriais e espaços da tela Detalhes do aparelho da alpha.26.
+- Home redesenhada com dois atalhos lado a lado, aparelhos anteriores em cartões compactos e gestão por menu visual.
+- Modo Monitorado atualizado com ícone de aparelho, informações de IP/acesso em cartões e ações QR/Informações/Interromper em grade horizontal.
+- Conectar reformulado com cartões QR e Manual lado a lado; histórico, diálogos de segurança e formulário manual seguem o mesmo design.
+- Submenus Configurações (Aparência, Permissões, Segurança, Serviço), Diagnóstico e Sobre agora usam opções ilustradas e métricas em cartões.
+- Janelas Minhas informações e Gerar QR reorganizadas com cabeçalhos vetoriais, credencial inicialmente oculta e QR temporário protegido. Leitor QR utiliza cabeçalho e controles coerentes com a nova identidade.
+- Cabeçalho principal usa ícones Android vetoriais; protocolo, credenciais, permissões e fluxo de conexão foram preservados.
+- Compilação Gradle/Android e testes visuais em aparelhos físicos continuam pendentes.
+
+## 0.1.0-alpha.26 (14/10/2026)
+
+- Painel de controle redesenhado seguindo o layout aprovado: cartões de Bateria, Temperatura e Rede em linha, ícones vetoriais e grade de seis atalhos. Removidos os indicadores redundantes e chips de IP/chave da tela principal.
+- Nova `RemoteDetailsActivity` com seções de bateria, Wi-Fi, conexão, rede móvel, chip, armazenamento, RAM, Android e hardware; progresso de uso do armazenamento calculado do aparelho monitorado.
+- Novos leitores locais `DeviceInfoReader` e `TelephonyReader`; informações transmitidas somente dentro das consultas criptografadas existentes e quando o serviço está autorizado. `NetworkReader` acrescenta indicadores efetivamente observados pelo Android.
+- `READ_PHONE_NUMBERS` e opção de compartilhamento do número da linha desligada por padrão; autorização explícita no aparelho monitorado, revogável no app e informação "Não disponível" quando não fornecida.
+- Atalho **Recuperar dados** marcado Em breve; função de transferência remota ainda não implementada. Ação Copiar resumo técnico passou à tela Detalhes.
+- Contrato de versão sincronizado para 0.1.0-alpha.26/versionCode 26, validadores e documentação atualizados. Testes físicos e compilação Android em CI pendentes.
+
+## 0.1.0-alpha.25 (14/10/2026)
+
+- Corrigidos dois erros de compilação Kotlin do workflow **Gerar APK e Release 25** na tela de acesso recebido (`IncomingAccessScreenUi.kt`, linhas 113 e 114), onde o receiver de `LinearLayout.apply` era passado como `Context` para `View` e `LinearLayout`.
+- Usados `View(this@infoMetric)` e `LinearLayout(this@infoMetric)`, fazendo referência inequívoca à `IncomingAccessActivity` no método de extensão.
+- Validação estática adicionada para impedir regressão desse tipo; versão sincronizada em Gradle, `AppVersion`, teste JUnit e documentação.
+- Preservados design, protocolo, pareamento e permissões da alpha.24. Novos detalhes do aparelho e recuperação de dados ficam para etapa posterior.
+- Compilação Android completa e testes físicos ainda precisam ser confirmados no GitHub Actions e em aparelhos.
+
+## 0.1.0-alpha.24 (13/10/2026)
+
+- Segunda etapa da refatoração modular, preservando layouts, permissões, endpoint e criptografia.
+- `MainActivity.kt` reduzida de 1.000 para ~322 linhas; removidos controles de rede, geração de QR, conexão manual, diálogos de credenciais e seleção de notificações da Activity principal.
+- Criados `RemoteConnectionManager`, `ConnectionController`, `ConnectionScreenUi`, `PairingController`, `PairingScreenUi`, `PairingQrUi` e `MonitorCredentialsUi`. A seleção de apps autorizados e Sobre passaram para `SettingsScreenUi`.
+- Estado e cache de consulta ficam no `RemoteConnectionManager`, que invalida consultas pendentes ao trocar/desconectar o aparelho e fornece callbacks na thread principal.
+- IP selecionado na conexão manual e no pareamento QR é persistido no fluxo de conexão antes da primeira consulta; a chave permanente segue no Android Keystore.
+- Regra de versões iguais mantida: os dois celulares devem executar a alpha.24.
+- Testes estruturais atualizados; build completo Android e testes físicos ainda pendentes.
+
+## 0.1.0-alpha.23 (13/10/2026)
+
+- Continuidade da refatoração da interface: a tela de acesso recebido foi separada em um módulo próprio (`IncomingAccessScreenUi.kt`), reduzindo a responsabilidade direta da `IncomingAccessActivity`.
+- Tela **Acesso remoto detectado** redesenhada: ícone centralizado, cartão principal com informações completas já na primeira tela (nome do aparelho, IP, método, primeira e última consulta) e indicação de acessos adicionais.
+- Removido o pop-up **Quem está?**. Quando houver mais de um aparelho recente, todos passam a ser exibidos diretamente na mesma tela, evitando uma segunda interface desnecessária.
+- Mantido o botão **Parar acesso** e o retorno automático ao modo Monitorado quando o acesso expira ou o serviço é interrompido.
+- Versionamento e documentação sincronizados para `0.1.0-alpha.23` / `versionCode 23`; verificador atualizado para exigir o novo módulo de UI e impedir o retorno do botão/diálogo removido.
+- Compilação Android completa e testes físicos em dois celulares permanecem pendentes.
+
+## 0.1.0-alpha.21 (13/10/2026)
+
+- Corrigido erro Kotlin do workflow **Gerar APK e Release 21**, `IncomingAccessActivity.kt:93`: resolução de `background` como `Drawable` no `ScrollView.apply`, incompatível com o parâmetro `Int` de `setBackgroundColor()`.
+- Referência ao atributo de cor da Activity agora explícita (`this@IncomingAccessActivity.background`), preservando o desenho da tela de acesso recebido.
+- Versionamento `versionCode 21` e `AppVersion.NAME` sincronizados com README, RELEASE_NOTES, AGENTS, arquitetura e validações.
+- Adicionado teste estrutural de regressão da colisão de receiver; build Android e teste em dois celulares pendentes.
+
+## 0.1.0-alpha.20 (13/10/2026)
+
+- Tela de acesso autenticado dedicada em Activity própria (aberta apenas com o aplicativo em primeiro plano), atualizada por evento e encerrada quando o controlador se desconecta explicitamente ou quando o registro expira.
+- Botões **Quem está?** (dados informados/observados e horários) e **Parar acesso** (parada global confirmada). Serviço foreground sinaliza acesso novo por notificação sem invadir outros aplicativos.
+- Rejeição de pareamento/consultas entre versões diferentes. `AppVersion.NAME` exigido no QR, nos snapshots e no pedido de encerramento; a versão do servidor é verificada também nas respostas.
+- `RemoteClient.disconnect` envia aviso autenticado de saída; `AuthenticatedAccess.disconnected` remove apenas a entrada correspondente. Serviço permanece ativo e a tela retorna ao modo Monitorado pronta para gerar QR.
+- Recuperação conservadora do serviço autorizado quando o usuário traz o app para o primeiro plano; parada intencional não reinicia automaticamente.
+- Novo diálogo de Configurações com grade compacta e ícones vetoriais; componentes de métricas menores, ações remotas de toque ampliado e dados da rede realmente informados pelo Android (sem SSID presumido).
+- Informações de cache indicadas como antigas após erro de conexão; sem aumento de permissões ou acesso oculto.
+- Necessários testes Android no GitHub Actions e físicos entre dois celulares. Sem APK compilado localmente.
+
+## 0.1.0-alpha.19 (13/10/2026)
+
+- Painel do aparelho conectado redesenhado com cabeçalho compacto, status visível, IP, método de conexão e botões **Desconectar/Reconectar** e **↻ Atualizar** no topo à direita.
+- Resumo visual do aparelho remoto em grade 3x2 com ícones para bateria, temperatura, correntes, tensão e contador de eventos.
+- Inclusão de grade de **Funções remotas** com atalhos compactos: Notificações, Copiar, Detalhes, Mensagens, Ver tela e Localização. Os três últimos permanecem sinalizados como recursos futuros.
+- Diálogo de **Notificações** exibe os eventos autorizados recentes; **Copiar** agora leva um resumo sensível do aparelho remoto para a área de transferência; **Detalhes** mostra dados técnicos e de rede.
+- Mantidos fluxo Home separado, pareamento QR/manual, KeyStore, polling de 15 segundos e retorno à Home ao desconectar.
+
+## 0.1.0-alpha.18 (13/10/2026)
+
+- Compactação do menu Conectar: QR | Manual horizontal, sem opção Inserir código QR. Aparelhos recentes exibem Conectar | Renomear | Esquecer na mesma linha.
+- Pop-up Minhas informações: Mostrar, Copiar e Compartilhar alinhados horizontalmente, preservando chave oculta e confirmação de envio.
+- Desconectar retorna automaticamente à Home. Navegação continua sem parar o Monitorado.
+- Registro volátil de acessos realmente autenticados no aparelho monitorado, com atualização por callback e expiração de 45 segundos. Nome e método declarados são identificados como informações não verificadas.
+- Cartão de acessos recebidos e Ações: detalhes, parar serviço ou trocar chave global; sem fingir que existe sessão TCP persistente ou revogação individual.
+- Mantidas compatibilidade do protocolo v1, validação AES-GCM, proteção do Keystore e polling de 15 segundos.
+
+## 0.1.0-alpha.17 (13/10/2026)
+
+- **Home independente como tela inicial**, com o convite para conectar novo aparelho, mesmo quando o serviço monitorado ou a rede estão indisponíveis.
+- A seção **Aparelhos anteriores** lista os perfis já pareados, com nome, IP, data/hora da última consulta autenticada bem-sucedida ou indicação de que ainda não houve conexão confirmada.
+- Cada aparelho anterior recebeu **Conectar** e engrenagem individual com **Renomear** e **Esquecer**. Ações a partir da Home retornam à Home, sem reabrir o seletor de métodos.
+- **Monitorar este aparelho** abre uma página separada, acessível também quando não há aparelhos salvos. O botão **Home** (e Voltar) retorna à escolha inicial sem interromper o serviço.
+- Na página Monitorado, **Gerar QR**, **Mostrar info** e **Interromper** foram reunidos em coluna à direita do cartão de status. Quando o serviço está parado, a coluna oferece Ativar/Reiniciar e Mostrar info.
+- Preservados scanner QR com confirmação, conexão manual, Keystore, credenciais por aparelho, segurança da chave, serviço foreground e polling de 15 segundos no Controle.
+- Verificações de fonte e integridade locais executadas; compilação Android completa e testes de layout físico ainda pendentes.
+
+
+## 0.1.0-alpha.16 (13/10/2026)
+
+- Início passa ao modo Monitorado, com botão Home no cabeçalho ao lado da engrenagem; o menu hambúrguer foi removido sem eliminar acesso ao Controle por conexão remota.
+- Modo Monitorado mostra Gerar QR Code, Mostrar minhas informações (IP/chave em pop-up) e Interromper monitoramento quando ativo.
+- Pop-up de informações usa IP privado atual (prioriza Wi-Fi), chave inicialmente oculta, FLAG_SECURE, cópia explícita de ambos e compartilhamento com confirmação antes do Android Sharesheet.
+- Seção compacta Conectados recentemente na página inicial: até dois atalhos, acesso à lista completa e opção de conectar outro aparelho.
+- Sobre o aplicativo migra para Configurações. Home preserva o serviço monitorado e não apaga credenciais.
+- Sem mudanças no protocolo, QR temporário, histórico de pares, sincronização a cada 15 s ou permissões.
+- Build Android e testes reais de tela, compartilhamento e Keystore permanecem pendentes.
+
+
+## 0.1.0-alpha.15 (13/10/2026)
+
+- Conectar/Reconectar passa a abrir uma escolha rápida: QR Code, Manualmente, colagem de URI QR e até 5 aparelhos anteriores.
+- Cards de aparelhos salvos com botões empilhados Conectar, Renomear e Esquecer; exclusão confirmada e chave removida do Keystore.
+- Campos de IP/chave migrados para diálogo exclusivo de conexão manual, com colagem e limpeza de chave.
+- Leitor Camera2 agora é exibido em janela flutuante compacta, com orientação «Aponte para o QR Code», em vez de ocupar a tela toda. Leitura requer confirmação explícita antes de iniciar o pareamento.
+- Painel Controle: Conectar/Reconectar/Desconectar compacto ao lado do nome; Atualizar azul, com texto e alinhado à direita.
+- Protocolo, permissões, prazo e uso único do QR, histórico e atualização periódica de 15 segundos preservados.
+- Testes físicos e compilação Gradle/Android continuam pendentes de CI.
+
+## 0.1.0-alpha.14 (13/10/2026)
+
+- Revisão visual do Painel Controle: cartão principal reorganizado para destacar nome do aparelho, estado, atualização e ação principal **Conectar/Desconectar**.
+- Revisão visual dos diálogos **Menu**, **Configurações**, **Aparência**, **Aparelhos recentes**, **Permissões e notificações**, **Segurança e pareamento**, **Serviço e inicialização** e **Diagnóstico**, agora com cartões, subtítulos e melhor hierarquia.
+- Mensagens rápidas e ações secundárias passam a usar o mesmo padrão visual dos demais pop-ups, reduzindo inconsistência entre telas.
+- Mantidos protocolo local, pareamento por QR, chaves no Android Keystore, aparelhos recentes e polling de 15 s.
+- Compilação Android completa e testes físicos continuam pendentes.
+
+## 0.1.0-alpha.13 (13/10/2026)
+
+- Polimento visual do Painel Controle: o botão **Conectar** saiu do cabeçalho e foi movido para o cartão do aparelho remoto, ao lado do nome/status.
+- A ação principal agora é contextual: **Conectar** quando não há sessão ativa e **Desconectar** quando já existe consulta conectada/atualizando; desconectar remove apenas a seleção atual, preservando o histórico de aparelhos.
+- Diálogos **Menu** e **Configurações** redesenhados em cartões com título + subtítulo, melhorando hierarquia visual e separação das opções.
+- Mantidos modo Monitorado simplificado, histórico de aparelhos, pareamento por QR, segurança no Keystore e polling de 15 s.
+- Compilação Android completa e testes físicos continuam pendentes.
+
+## 0.1.0-alpha.12 (13/10/2026)
+
+- Tela Monitorado reduzida a status real, IP de rede, QR e ativar/interromper conforme o estado do serviço.
+- Configurações reorganizadas em Aparência, Permissões e notificações, Segurança e pareamento, Serviço e inicialização, Diagnóstico.
+- Permissões de notificações continuam opcionais e independentes da leitura de bateria.
+- Preservados chave de assinatura, pareamento, histórico de aparelhos e comunicação local existente.
+- Compilação Android e testes físicos pendentes.
+
+## 0.1.0-alpha.11 (13/10/2026)
+
+- Tela inicial reorganizada: o aplicativo abre diretamente no **Painel Controle** e as abas fixas **Monitorado/Controle** foram removidas da tela principal.
+- Novo menu **☰** no cabeçalho com acesso ao Painel Controle, Modo Monitorado, Aparelhos recentes e Sobre.
+- Botões de topo reorganizados: **Conectar**, **☰** e **⚙**; chips de versão e estado do monitorado adicionados.
+- Pop-up **Conectar aparelho** redesenhado em seções separadas, com campos mais visíveis, fundo destacado, maior área de toque e ações **Colar** e **Limpar** para a chave.
+- Lista de aparelhos recentes mantida no diálogo, agora em cartões separados e mais legíveis.
+- Painel de dados remotos reorganizado com cartões de bateria/temperatura e métricas em blocos distintos, preservando atualização manual por **↻** e automática a cada 15 s.
+- Mantidas Camera2 para QR, chaves por aparelho no Android Keystore, assinatura estável via Secrets existentes e demais regras de segurança.
+- Build Android completo e testes físicos permanecem pendentes; validações locais sem Gradle/SDK continuam documentadas em `docs/VALIDATION.md`.
+
+## 0.1.0-alpha.10 (13/10/2026)
+
+- Controle redesenhado com cabeçalho **Conectar** e **⚙**, cartão compacto de monitoramento, atualização discreta e estados de consulta ligados a sucesso/erro autenticado.
+- Diálogo Conectar reúne IPv4/hostname, sugestão de prefixo Wi-Fi/CIDR, colar chave, ler QR Camera2, digitar conteúdo do QR e lista dos cinco aparelhos recentes.
+- `RecentDevices` mantém nomes, hosts e última consulta, com chave individual protegida no `SecretVault`; migra a credencial antiga sem repareamento e impede reutilização acidental de chave entre hosts.
+- Tema claro padrão, escuro e sistema, aplicado em atividades Android Views e armazenado nas preferências.
+- Preservados protocolo criptografado, permissões, firmware remoto, QR, workflow de APK/AAB e assinatura estável da alpha.7.
+- Sem confirmação de compilação Android completa ou comportamento físico nesta entrega.
+
+## 0.1.0-alpha.9 (13/10/2026)
+
+- Correção do build GitHub Actions #7: duplicidade do override de `onRequestPermissionsResult` em `MainActivity.kt` (422 e 580) causava `Conflicting overloads`. Unificado em callback único com tratamento independente de câmera e permissão de notificações.
+- `POST_NOTIFICATIONS` mantém solicitação condicional a Android 13+ para ativar monitor; `CAMERA` permanece solicitada apenas quando o usuário abre o leitor QR.
+- Workflow não tenta criar Artifact vazio caso Gradle pare antes da geração do APK.
+- Teste estrutural regressivo exige callback único e os dois fluxos distintos; documentação sincronizada, `versionCode 9`.
+- Mantida compatibilidade com a keystore Release gerada anteriormente (nenhuma chave nova).
+- Build Android e QR no dispositivo ainda dependem do GitHub Actions e de ensaios físicos.
+
+
+## 0.1.0-alpha.7 (13/10/2026)
+
+- Correção da falha real GitHub Actions #6: 3 testes `EventJournalTest` acionavam métodos de `org.json` mockados em JVM Android; adicionada projeção `EventJournal.latest` independente de serialização JSON e testes adaptados. As funcionalidades reais do buffer e filtro são preservadas.
+- Leitor QR passa a usar Activity explícita privada `QrScanActivity`, sem flag `clearTaskOnLaunch` herdada da Activity genérica; permissão de câmera solicitada e tratada antes de abrir o scanner; rotação desbloqueada e modo selecionado salvo nas recriações de Activity.
+- Fluxo manual por IP/chave preservado. Hipótese sobre fechamento do QR ainda exige logcat/ensaio físico para diagnóstico definitivo.
+- Preparação para uso de assinatura estável através dos quatro Secrets do workflow, sem incorporar chaves no código-fonte.
+- versionCode 7 e sincronização de arquivos/versionamento.
+
+
+## 0.1.0-alpha.6 (13/10/2026)
+
+- Corrigido vazamento lógico do histórico volátil: interrupção do monitoramento, reinicialização de sessão e encerramento do serviço removem os eventos em memória; alteração da lista positiva remove notificações dos aplicativos revogados.
+- Servidor revalida a lista positiva antes de transmitir os eventos, inclusive nos casos de corrida entre atualização da permissão e captura da notificação.
+- Fila de conexões limitada a 12, com 3 trabalhadores; conexões excedentes são fechadas, sem fila ilimitada de sockets.
+- Tipagem explícita de `java.util.ArrayDeque` para manter APIs de fila compatíveis com Kotlin/JVM.
+- Nenhuma permissão nova, mudança de protocolo, segredo ou dependência; versão, documentação e verificações de regressão atualizadas.
+- Build Android/CI e testes físicos entre aparelhos seguem pendentes de execução.
+
+## 0.1.0-alpha.5 (13/10/2026)
+
+- Corrigida a falha real do workflow GitHub Actions #4 (`:app:compileDebugKotlin`): `Unresolved reference QR_CODE_TYPES` e erro de encadeamento `setPrompt`.
+- Substituída a constante inexistente `IntentIntegrator.QR_CODE_TYPES` pela constante suportada `IntentIntegrator.QR_CODE` do ZXing Android Embedded 4.3.0, com configuração explícita do scanner.
+- Adicionadas verificações de regressão em `tools/check_distribution.py` para API do scanner e sincronização de `versionCode = 5`/`versionName = 0.1.0-alpha.5`.
+- Mantidos QR temporário, conexão manual, protocolos locais, segurança, permissões, geração do APK direto em Releases e AAB opcional.
+- Build Android completo e instalação física continuam pendentes após esta correção.
+
+## 0.1.0-alpha.4 (versionCode 4)
+- Pareamento presencial por QR local com código válido por 120 segundos e uso único, senha temporária e resposta cifrada com credencial permanente.
+- Scanner de QR integrado, confirmação de IP e salvar chave via Android Keystore. Pareamento manual mantido.
+- Validação do bind da porta 37841 antes do serviço ser marcado como iniciado; revogação de códigos QR ao parar serviço ou trocar a chave.
+- Release passa a ser fonte primária do APK; Artifact de APK somente como contingência para execução sem publicação ou com falha.
+- Documento de protocolo QR e riscos do Play Protect. O bloqueio por PHA da alpha.3 não foi solucionado nem reproduzido por testes locais.
+
+## 0.1.0-alpha.3 (versionCode 3) — 2026-10-13
+
+- Gerar arquivo real `MonitorRemoto-v0.1.0-alpha.3.apk`, publicado em GitHub Releases sem ZIP.
+- Manter `upload-artifact` como alternativa (download do GitHub sempre vem ZIP).
+- Preparar build Release assinado com quatro Secrets opcionais e AAB assinado, com fallback Debug.
+- Adicionar validação automática da distribuição, hash SHA-256, documentação e diretrizes `AGENTS.md`.
+- Sem alterações nas permissões sensíveis, mensagens e protocolo local da alpha.2.
+
+## 0.1.0-alpha.2 (versionCode 2) — 2026-10-13
+
+- Workflow corrigido: `android-actions/setup-android@v4` elimina falha no pacote obsoleto `tools`.
+- Corrigida atribuição errada de cor (`setTextColor(text)`) no campo de texto da UI.
+- Retirada a permissão `RECEIVE_SMS` e o receptor SMS. SMS novos só serão exibidos quando presentes em notificações permitidas.
+- Nova lista positiva de aplicativos para notificações, vazia por padrão.
+- Aviso visível antes de direcionar ao acesso a notificações; proteção conservadora contra conteúdo de autenticação e bancos conhecidos.
+- Apps financeiros conhecidos excluídos da seleção; `queries` de launcher para listagem sem `QUERY_ALL_PACKAGES`.
+- Documentação e artifact sincronizados. Ainda requer compilação Gradle e validação em aparelho.
+
+## 0.1.0-alpha.1 (versionCode 1) — 2026-10-13
+
+- Projeto inicial Kotlin Android com modos Monitorado e Controle.
+- Telemetria de bateria, temperatura, tensão e correntes.
+- Captura autorizada de notificações e SMS novos opcionais.
+- Canal TCP cifrado AES-256-GCM, Android Keystore, chave pareada, serviço foreground.
+- Workflow GitHub Actions de testes e APK Debug.
