@@ -155,7 +155,7 @@ object FixedDownloadsFolder {
     }
     fun handle(context: Context, request: JSONObject): JSONObject {
         val response = JSONObject().put("v", 1).put("op", request.optString("op"))
-            .put("appVersion", br.dev.celularremoto.transport.AppVersion.NAME)
+            .put("appVersion", br.dev.celularremoto.transport.AppVersion.WIRE_COMPAT)
         if (!available(context)) return response.put("ok", false).put("message", "Monitoramento desativado ou Android anterior ao 10.")
         return runCatching {
             ensure(context)

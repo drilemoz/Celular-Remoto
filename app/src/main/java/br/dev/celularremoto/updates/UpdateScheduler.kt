@@ -14,7 +14,7 @@ object UpdateScheduler {
             scheduler.cancel(JOB_ID)
             return
         }
-        val interval = UpdatePreferences.intervalHours(context).toLong() * 60 * 60 * 1000
+        val interval = UpdatePreferences.intervalMinutes(context).toLong() * 60 * 1000
         if (scheduler.getPendingJob(JOB_ID)?.intervalMillis == interval) return
         val job = JobInfo.Builder(JOB_ID, ComponentName(context, UpdateCheckJobService::class.java))
             .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)

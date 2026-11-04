@@ -134,7 +134,7 @@ object SharedDataFolder {
     fun handle(context: Context, request: JSONObject): JSONObject {
         if (FixedDownloadsFolder.supported()) return FixedDownloadsFolder.handle(context, request)
         val response = JSONObject().put("v", 1).put("op", request.optString("op"))
-            .put("appVersion", br.dev.celularremoto.transport.AppVersion.NAME)
+            .put("appVersion", br.dev.celularremoto.transport.AppVersion.WIRE_COMPAT)
         if (!available(context)) return response.put("ok", false).put("message",
             "No monitorado, abra Configurações > Arquivos e recuperação e escolha uma pasta para compartilhar.")
         return runCatching {

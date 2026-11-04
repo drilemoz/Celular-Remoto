@@ -51,9 +51,9 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 ## Distribuição e assinatura
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.111` e `versionCode=111`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.112` e `versionCode=112`.
 
-- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.111.apk`.
+- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.112.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.
 - Com quatro Secrets, Gradle gera APK Release assinado e AAB. Sem Secrets, o arquivo é Debug de teste e não preserva necessariamente a assinatura entre execuções.
 - Releases são prévias, não substituem a futura revisão da Google Play e nem os ensaios reais.
@@ -107,7 +107,7 @@ Autenticação prova **posse da chave compartilhada**, não identidade do dispos
 
 ## Compatibilidade e interrupção de acesso (alpha.20)
 
-- `transport/AppVersion.kt` é a versão exata do aplicativo; permanece distinta de `WireProtocol.VERSION`, que identifica o formato básico da mensagem. `tools/check_distribution.py` verifica alinhamento com Gradle.
+- `transport/AppVersion.kt` separa `NAME` (versão real do APK) de `WIRE_COMPAT` (marcador compatível com alpha.111). `WireProtocol.VERSION` identifica o formato básico cifrado da mensagem. `tools/check_distribution.py` verifica alinhamento com Gradle.
 - O conteúdo QR inclui `app=<versão>`; o pareamento temporário também envia `appVersion` cifrado e exige resposta com versão correspondente. QR antigo não é aceito por design.
 - Snapshots incluem `appVersion` em requisição e resposta. O servidor recusa pedidos de versões distintas antes de transmitir dados ou registrar o acesso; o cliente recusa respostas de versão ausente ou diferente.
 - O pedido autenticado `op=disconnect` usa a chave por host, nonce e timestamp do protocolo, indica que o controlador encerrou a consulta e remove sua entrada do registro volátil. Não finaliza o serviço local. Se a rede cair, expiração de 45s continua como fallback.
@@ -351,3 +351,6 @@ O controlador guarda prefixos incompletos de arquivos destinados a Downloads/Cel
 `updates/UpdateScheduler.kt` agenda verificações periódicas no JobScheduler nativo; `UpdateCheckJobService.kt` consulta as Releases da API pública; `UpdateController.kt` filtra o manifesto da assinatura estável e agenda DownloadManager. O receptor de conclusão não faz I/O longo: pede um JobService separado para conferir hash do arquivo, pacote, versão e certificado. O instalador só é iniciado pela tela local `UpdatesSettingsUi.kt`, nunca a partir de uma sessão remota.
 
 A CI publica manifesto JSON junto com APK e checksum apenas com os 4 Secrets de assinatura estável; sem Secrets a publicação Debug não anuncia atualização elegível. Conexão online usa TLS. Não é um atualizador Play Store nem distribui APK pela LAN nesta versão.
+
+## Compatibilidade de versões (alpha.112)
+Versão do APK separada de `appVersion` no fio; marcador de protocolo 111 permite 111↔112. Não altera `WireProtocol.VERSION`, AES-GCM nem estrutura dos recursos existentes. Operação `appUpdate` nova só é atendida por alpha.112+.

@@ -1,3 +1,10 @@
+## 0.1.0-alpha.112 — Compatibilidade e atualização remota sob demanda (04/11/2026)
+
+- Marcador de protocolo compatível separado da versão do APK, preservando canais autenticados entre 111 e 112.
+- Consulta programada mais curta e consulta de recuperação; novo padrão 60 minutos.
+- Atualizações sob demanda por aparelho pareado, com opt-in local para pedidos remotos, limite de frequência, status e preparação remota de APK; instalação local obrigatória.
+- UI e documentação atualizadas, sem segundo workflow ou serviço permanente.
+
 ## 0.1.0-alpha.111 — Atualizações online por GitHub Releases (04/11/2026)
 
 - Nova tela Configurações → Atualizações, com consulta manual, verificação periódica configurável (6/12/24 h), download automático opcional, rede não tarifada, economia de energia e estado do APK.

@@ -16,7 +16,7 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.111" and code.group(1) == "111", "Versões incompatíveis"
+assert version == "0.1.0-alpha.112" and code.group(1) == "112", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/celularremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in (ui_root / 'VersionNewsUi.kt').read_text(), "Tela de versão desatualizada"
@@ -174,12 +174,12 @@ assert 'internal fun MainActivity.showRemoteDetailsDialog(root: JSONObject)' in 
 assert 'Acesso rápido' in ui and 'Mensagens' in ui and 'RemoteScreenActivity::class.java' in ui and 'Localização' in ui
 print('PASSOU: alpha.19, painel remoto compacto, atalhos e detalhes dedicados')
 
-# alpha.20: compatibilidade EXATA, disconnect autenticado, aviso em tela dedicada.
+# alpha.112: versão do APK independente do marcador de protocolo, disconnect autenticado.
 incoming = (root / 'app/src/main/java/br/dev/celularremoto/ui/IncomingAccessActivity.kt').read_text()
 service = (root / 'app/src/main/java/br/dev/celularremoto/service/MonitorService.kt').read_text()
 network = (root / 'app/src/main/java/br/dev/celularremoto/core/NetworkReader.kt').read_text()
-assert 'AppVersion.compatible(' in qr and 'app=${AppVersion.NAME}' in qr
-assert '.put("appVersion", AppVersion.NAME)' in client and 'fun disconnect(' in client
+assert 'AppVersion.compatible(' in qr and 'app=${AppVersion.WIRE_COMPAT}' in qr
+assert '.put("appVersion", AppVersion.WIRE_COMPAT)' in client and 'fun disconnect(' in client
 assert 'AppVersion.compatible(regular.optString("appVersion"))' in server
 assert 'AppVersion.compatible(pairing.optString("appVersion"))' in server
 assert 'AuthenticatedAccess.disconnected(' in server and 'fun disconnected(' in tracker
@@ -196,7 +196,7 @@ assert 'renderSettingsModule()' in ui and 'openSettingsModule()' in ui
 assert 'private fun MainActivity.mobileMetricCard(' in ui and 'minimumHeight = dp(117)' in ui
 assert (root / 'app/src/test/java/br/dev/celularremoto/transport/AppVersionTest.kt').is_file()
 assert len(list((root / 'app/src/main/res/drawable').glob('ic_*.xml'))) >= 10
-print('PASSOU: alpha.20, versão exata, disconnect, notificação, Activity de acesso e UI vetorial')
+print('PASSOU: alpha.20, marcador de protocolo, disconnect, notificação, Activity e UI vetorial')
 
 # alpha.21: regressão do conflito entre Activity.background (Int) e View.background (Drawable).
 # O erro de compileDebugKotlin no build #21 ocorreu no apply receiver de ScrollView.
@@ -210,10 +210,10 @@ print('PASSOU: alpha.21, cor do ScrollView referenciada na Activity; tipo Int pr
 
 # A versão exata usada pelo teste JUnit deve acompanhar AppVersion.NAME a cada release.
 app_version_test = (root / 'app/src/test/java/br/dev/celularremoto/transport/AppVersionTest.kt').read_text()
-assert 'assertTrue(AppVersion.compatible(AppVersion.NAME))' in app_version_test
-assert f'assertFalse(AppVersion.compatible("0.1.0-alpha.20"))' in app_version_test
-assert f'assertFalse(AppVersion.compatible("0.1.0-alpha.21"))' in app_version_test
-assert f'assertFalse(AppVersion.compatible("0.1.0-alpha.22"))' in app_version_test
+assert 'AppVersion.compatible(AppVersion.NAME)' in app_version_test
+assert 'unknownOrOlderProtocolsAreRejected' in app_version_test and '0.1.0-alpha.110' in app_version_test
+assert 'unknownOrOlderProtocolsAreRejected' in app_version_test and '0.1.0-alpha.110' in app_version_test
+assert 'unknownOrOlderProtocolsAreRejected' in app_version_test and '0.1.0-alpha.110' in app_version_test
 print('PASSOU: alpha.21, teste de compatibilidade segue a versão atual')
 
 # alpha.22: a interface cresceu, mas MainActivity não volta a concentrar telas inteiras.
@@ -230,7 +230,7 @@ for entry in ["renderHome", "renderMonitor", "showSettingsDialog", "displayResul
 assert "private fun displayResult(" not in main_ui
 assert "private fun renderHome(" not in main_ui
 assert "private fun showSettingsDialog(" not in main_ui
-assert "AppVersion.NAME" in (ui_root / 'VersionNewsUi.kt').read_text() and 'put("appVersion", AppVersion.NAME)' in client
+assert "AppVersion.NAME" in (ui_root / 'VersionNewsUi.kt').read_text() and 'put("appVersion", AppVersion.WIRE_COMPAT)' in client
 assert "internal fun IncomingAccessActivity.renderIncomingAccessScreen(" in module_ui["IncomingAccessScreenUi.kt"]
 assert 'Quem está?' not in module_ui["IncomingAccessScreenUi.kt"] and 'Outros acessos recentes' in module_ui["IncomingAccessScreenUi.kt"]
 print(f"PASSOU: alpha.22-24, módulos extraídos, MainActivity={len(main_ui.splitlines())} linhas e funções únicas")
@@ -261,7 +261,7 @@ assert 'internal fun MainActivity.selectNotificationApps()' in module_ui['Settin
 assert 'private var fetching = false' not in main_ui
 assert 'private fun refreshRemote(' not in main_ui and 'private fun showConnectionChooser(' not in main_ui
 assert 'override fun onRequestPermissionsResult(' in main_ui and 'override fun onActivityResult(' in main_ui
-assert 'assertFalse(AppVersion.compatible("0.1.0-alpha.23"))' in app_version_test
+assert 'unknownOrOlderProtocolsAreRejected' in app_version_test and '0.1.0-alpha.110' in app_version_test
 for fname in ['ConnectionController.kt','ConnectionScreenUi.kt','PairingScreenUi.kt','PairingQrUi.kt','MonitorCredentialsUi.kt']:
     assert len(module_ui[fname].strip()) > 100
 print('PASSOU: alpha.24, controles separados, host selecionado, cancelamento de respostas antigas e credenciais protegidas')
@@ -274,8 +274,8 @@ assert 'addView(View(this@infoMetric), LinearLayout.LayoutParams(dp(10), 1))' in
 assert 'val column = LinearLayout(this@infoMetric).apply' in incoming_screen
 assert 'addView(View(this), LinearLayout.LayoutParams(dp(10), 1))' not in incoming_screen
 assert 'val column = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }' not in incoming_screen
-assert 'assertFalse(AppVersion.compatible("0.1.0-alpha.24"))' in app_version_test
-assert 'assertFalse(AppVersion.compatible("0.1.0-alpha.25"))' in app_version_test
+assert 'unknownOrOlderProtocolsAreRejected' in app_version_test and '0.1.0-alpha.110' in app_version_test
+assert 'unknownOrOlderProtocolsAreRejected' in app_version_test and '0.1.0-alpha.110' in app_version_test
 print('PASSOU: alpha.25, Context correto nos construtores View/LinearLayout e versão sincronizada')
 
 # alpha.26: dashboard, detalhes e coleta somente após autorização explícita do monitorado.
@@ -323,7 +323,7 @@ assert 'headerIconButton(R.drawable.ic_settings' in module_ui['MobileNavigationU
 assert 'Aponte para o QR Code' in qr_reader and 'this@QrScanActivity' in qr_reader
 assert 'ic_qr' in qr_reader and 'window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)' in qr_reader
 assert 'ClipDescription.EXTRA_IS_SENSITIVE' in credentials_ui
-assert 'assertFalse(AppVersion.compatible("0.1.0-alpha.26"))' in app_version_test
+assert 'unknownOrOlderProtocolsAreRejected' in app_version_test and '0.1.0-alpha.110' in app_version_test
 print('PASSOU: alpha.27, Home, Monitorado, Configurações, QR, credenciais, ícones e versões')
 
 # alpha.28: diagnóstico, contrato de incompatibilidade e controle central de diálogos.
@@ -341,8 +341,8 @@ assert 'val inputError = label(' in pairing_ui and 'inputError.visibility = View
 assert 'fun refreshList(filter: String)' in settings_ui and 'getApplicationIcon(' in settings_ui
 assert 'Nenhum aplicativo elegível' in settings_ui and 'CheckBox(this)' in settings_ui
 assert 'showAppConfirm(' in settings_ui and 'showAppConfirm(' in credentials_ui
-assert 'assertFalse(AppVersion.compatible("0.1.0-alpha.27"))' in app_version_test
-assert 'assertFalse(AppVersion.compatible("0.1.0-alpha.28"))' in app_version_test
+assert 'unknownOrOlderProtocolsAreRejected' in app_version_test and '0.1.0-alpha.110' in app_version_test
+assert 'unknownOrOlderProtocolsAreRejected' in app_version_test and '0.1.0-alpha.110' in app_version_test
 assert (root / 'app/src/test/java/br/dev/celularremoto/ui/ConnectionIssueTest.kt').exists()
 print('PASSOU: alpha.28, incompatibilidade cifrada, erros classificados, diálogo único e seleção de apps')
 
@@ -1599,3 +1599,20 @@ assert 'UpdateVerifyJobService' in manifest and 'UpdateDownloadReceiver' in mani
 assert 'celular-remoto-update.json' in workflow and 'stableSigned' in workflow
 assert len(list((root / '.github/workflows').glob('*.yml'))) == 1
 print('PASSOU: alpha.111 verifica release assinada, agendamento, download e instalador local')
+
+# alpha.112: operações de atualização remota não podem abrir instalador.
+remote_version = (root / 'app/src/main/java/br/dev/celularremoto/transport/AppVersion.kt').read_text()
+remote_preferences = (root / 'app/src/main/java/br/dev/celularremoto/updates/UpdatePreferences.kt').read_text()
+remote_ui = (ui_root / 'UpdatesSettingsUi.kt').read_text()
+assert 'const val WIRE_COMPAT = "0.1.0-alpha.111"' in remote_version
+assert 'AppVersion.WIRE_COMPAT' in client and 'AppVersion.WIRE_COMPAT' in server
+assert '"appUpdate")) return' in server and 'UpdateController.remoteAction(context, action)' in server
+assert 'fun appUpdate(' in client and '"checkDownload"' in client
+assert 'fun remoteAction(context: Context, action: String)' in update
+assert 'UpdatePreferences.remoteRequests(context)' in update and 'REMOTE_COOLDOWN_MS' in update
+assert 'fun installFromUserTap(context: Context)' in update
+assert 'installFromUserTap' not in server and 'installFromUserTap' not in client
+assert 'intervalMinutes(ctx: Context)' in remote_preferences and '?: 60' in remote_preferences
+assert '30, 60, 180, 360, 720, 1440' in remote_preferences
+assert 'Verificar e baixar no remoto' in remote_ui and 'remote_requests' in remote_ui
+print('PASSOU: alpha.112 compatibilidade 111, atualização remota apenas após opt-in, instalação local')

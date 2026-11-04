@@ -11,9 +11,16 @@ internal object UpdatePreferences {
     fun autoDownload(ctx: Context) = prefs(ctx).getBoolean("auto_download", true)
     fun unmetered(ctx: Context) = prefs(ctx).getBoolean("unmetered", true)
     fun batteryCare(ctx: Context) = prefs(ctx).getBoolean("battery_care", true)
-    fun intervalHours(ctx: Context) = prefs(ctx).getInt("interval", 24).takeIf { it in listOf(6, 12, 24) } ?: 24
+    fun intervalMinutes(ctx: Context): Int {
+        val stored = prefs(ctx)
+        // Migração sem alterar as preferências anteriores: 6/12/24 h continuam válidas.
+        val old = stored.getInt("interval", 0).takeIf { it in listOf(6, 12, 24) }
+        return stored.getInt("interval_minutes", old?.takeIf { it != 24 }?.times(60) ?: 60)
+            .takeIf { it in listOf(30, 60, 180, 360, 720, 1440) } ?: 60
+    }
+    fun remoteRequests(ctx: Context): Boolean = prefs(ctx).getBoolean("remote_requests", false)
     fun update(ctx: Context, key: String, value: Boolean) = prefs(ctx).edit().putBoolean(key, value).apply()
-    fun interval(ctx: Context, hours: Int) { require(hours in listOf(6, 12, 24)); prefs(ctx).edit().putInt("interval", hours).apply() }
+    fun interval(ctx: Context, minutes: Int) { require(minutes in listOf(30, 60, 180, 360, 720, 1440)); prefs(ctx).edit().putInt("interval_minutes", minutes).apply() }
     fun getString(ctx: Context, key: String): String = prefs(ctx).getString(key, "").orEmpty()
     fun getLong(ctx: Context, key: String): Long = prefs(ctx).getLong(key, 0L)
     fun putString(ctx: Context, key: String, value: String) = prefs(ctx).edit().putString(key, value).apply()

@@ -26,6 +26,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
 import kotlin.concurrent.thread
+import java.util.concurrent.atomic.AtomicBoolean
 
 internal data class UpdateRelease(val version: String, val code: Int, val sha256: String,
     val apkUrl: String, val apkName: String)
@@ -33,6 +34,10 @@ internal data class UpdateRelease(val version: String, val code: Int, val sha256
 /** Verificação online e download durável; a instalação só é acionada pela Activity local. */
 object UpdateController {
     private val checkLock = Any()
+    private val remoteBusy = AtomicBoolean(false)
+    private val remoteThrottle = Any()
+    private var lastRemoteRequestAt = 0L
+    private const val REMOTE_COOLDOWN_MS = 120_000L
     private const val API = "https://api.github.com/repos/${UpdateRules.REPOSITORY}/releases?per_page=30"
     private const val CHANNEL_ID = "celular_remoto_updates"
     private const val NOTICE_ID = 3312
@@ -45,6 +50,54 @@ object UpdateController {
         UpdatePreferences.getLong(context, "download_code") > BuildConfig.VERSION_CODE &&
         UpdatePreferences.getLong(context, "download_id") > 0L
 
+
+    /** Estado de atualização limitado e sem URLs ou identificadores sensíveis. */
+    fun remoteStatus(context: Context): JSONObject = JSONObject()
+        .put("version", BuildConfig.VERSION_NAME)
+        .put("versionCode", BuildConfig.VERSION_CODE)
+        .put("state", state(context).take(160))
+        .put("lastCheck", lastCheck(context))
+        .put("availableVersion", availableVersion(context).take(50))
+        .put("downloadReady", prepared(context))
+        .put("progress", downloadProgress(context).orEmpty().take(80))
+        .put("remoteAllowed", UpdatePreferences.remoteRequests(context))
+        .put("autoCheck", UpdatePreferences.checking(context))
+        .put("autoDownload", UpdatePreferences.autoDownload(context))
+
+    /**
+     * Chamada exclusivamente pelo servidor pareado depois de AES-GCM válido.
+     * STATUS sempre é de leitura. Operações com internet exigem opt-in local,
+     * respeitam preferência de rede/bateria e possuem limitação de frequência.
+     * Não há método para instalar APK remotamente.
+     */
+    fun remoteAction(context: Context, action: String): Pair<Boolean, String> {
+        if (action == "status") return true to "Estado consultado"
+        if (action !in setOf("check", "checkDownload", "download"))
+            return false to "Operação de atualização desconhecida"
+        if (!UpdatePreferences.remoteRequests(context))
+            return false to "Autorize pedidos de atualização em Configurações → Atualizações no aparelho monitorado"
+        if (action == "download") {
+            if (remoteBusy.get()) return false to "Já existe uma consulta remota em andamento"
+            return true to download(context)
+        }
+        synchronized(remoteThrottle) {
+            if (remoteBusy.get()) return false to "Atualização remota já em andamento"
+            val now = android.os.SystemClock.elapsedRealtime()
+            if (lastRemoteRequestAt > 0 && now - lastRemoteRequestAt < REMOTE_COOLDOWN_MS)
+                return false to "Aguarde dois minutos antes de solicitar outra verificação"
+            lastRemoteRequestAt = now
+            remoteBusy.set(true)
+        }
+        thread(name = "CelularRemoto-remote-update") {
+            try {
+                check(context.applicationContext, automatic = false)
+                if (action == "checkDownload" &&
+                    (UpdatePreferences.getString(context, "available_code").toIntOrNull() ?: 0) > BuildConfig.VERSION_CODE)
+                    download(context.applicationContext)
+            } finally { remoteBusy.set(false) }
+        }
+        return true to "Solicitação recebida. Acompanhe o estado remoto em instantes."
+    }
 
     fun downloadProgress(context: Context): String? {
         val id = UpdatePreferences.getLong(context, "download_id")
@@ -68,6 +121,15 @@ object UpdateController {
     /** Reagendamento após atualização/cold start; sem rede na thread principal. */
     fun initialize(context: Context) {
         UpdateScheduler.refresh(context)
+        // Primeira abertura ou retorno após várias horas: conferir sem depender
+        // da próxima janela imprecisa do JobScheduler. Nunca abrir Activity.
+        val now = System.currentTimeMillis()
+        if (UpdatePreferences.checking(context) &&
+            (lastCheck(context) <= 0L || now - lastCheck(context) >= UpdatePreferences.intervalMinutes(context) * 60_000L)) {
+            thread(name = "CelularRemoto-update-cold-start") {
+                check(context.applicationContext, automatic = true)
+            }
+        }
         val code = UpdatePreferences.getLong(context, "download_code")
         if ((UpdatePreferences.getString(context, "available_code").toIntOrNull() ?: 0) <= BuildConfig.VERSION_CODE) {
             UpdatePreferences.putString(context, "available_version", "")

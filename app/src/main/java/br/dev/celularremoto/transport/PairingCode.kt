@@ -15,7 +15,7 @@ object PairingCode {
         require(isPrivateIpv4(offer.host)) { "O QR exige um IPv4 privado local." }
         require(sessionPattern.matches(offer.session)) { "Identificador de sessão inválido." }
         require(offer.ephemeralKey.size == 32)
-        return "$SCHEME://$URI_HOST?v=1&app=${AppVersion.NAME}&host=${offer.host}&port=${WireProtocol.PORT}" +
+        return "$SCHEME://$URI_HOST?v=1&app=${AppVersion.WIRE_COMPAT}&host=${offer.host}&port=${WireProtocol.PORT}" +
             "&sid=${offer.session}&secret=${CryptoBox.encode(offer.ephemeralKey)}"
     }
 

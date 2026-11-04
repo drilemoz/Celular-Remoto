@@ -1,10 +1,10 @@
-# Atualizador online do Celular Remoto (alpha.111)
+# Atualizador online do Celular Remoto (alpha.112)
 
 ## Como usar
 
 1. No celular com `br.dev.celularremoto`, abra **Configurações → Atualizações**.
 2. Deixe **Verificação automática** e **Download automático** ligados (padrão), ou toque **Verificar agora**.
-3. Escolha rede não tarifada (padrão), proteção de bateria (padrão) e periodicidade 6/12/24 h (24 h por padrão).
+3. Escolha rede não tarifada (padrão), proteção de bateria (padrão) e periodicidade 30 min/1 h/3 h/6 h/12 h/24 h (1 h por padrão).
 4. Quando o download terminar, o Android executará o verificador. O estado ficará **Pronto para instalar** e, se as notificações estiverem liberadas, será emitido um aviso.
 5. Toque **Instalar APK verificado** e confirme a instalação pelo instalador oficial do Android. Se necessário, autorize instalação desta origem nas configurações e volte para tocar novamente em Instalar.
 
@@ -25,8 +25,12 @@
 - Mesmo com o APK pronto, não há instalação silenciosa. O usuário do aparelho decide quando instalar; a instalação pode reiniciar o serviço e interromper transmissão/medição.
 - Android 8.0+ pode exigir `REQUEST_INSTALL_PACKAGES` e habilitar a fonte específica. O app não aprova essa tela automaticamente.
 - Se o celular está com um APK Debug de certificado diferente, não existe atualização direta pela Release nova. Preserve históricos antes de reinstalar.
-- A comunicação autenticada entre dois celulares ainda exige versões iguais. Atualize os dois aparelhos para a mesma versão; não é possível enviar APK via LAN nesta entrega.
+- A conexão deixa de exigir versionName idêntico para alpha.111↔112: ambos usam a revisão de protocolo 111. Comandos de atualização remota exigem servidor alpha.112+, autorização local própria e pareamento. O APK não é transferido por LAN nesta entrega.
 
 ## Privacidade
 
 Nenhum token GitHub é embutido e nenhuma keystore fica no aplicativo. O atualizador usa apenas informações públicas da Release. Acesso à internet é necessário somente para pesquisa e download. O APK fica numa pasta de downloads particular do app. Nenhum comando remoto pode acionar a instalação.
+
+## Controle por aparelho pareado (alpha.112)
+
+Configurações → Atualizações → Permitir pedidos remotos de atualização habilita apenas verificação/download, não instalação. O controlador pode consultar estado ou solicitar verificação e download no monitorado pelo canal autenticado; o aparelho de destino precisa ter internet. Pedidos são limitados para evitar abuso; o monitorado aplica restrições de rede não tarifada, bateria e Labs.

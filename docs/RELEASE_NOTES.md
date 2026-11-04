@@ -1,3 +1,11 @@
+# Celular Remoto — 0.1.0-alpha.112
+
+- Separadas a versão instalada e a revisão do protocolo: alpha.111/112 podem compartilhar os recursos existentes sem exigir `versionName` idêntico; versões mais antigas não são garantidas.
+- Agendamento de consultas mais frequentes: 30 minutos, 1, 3, 6, 12 ou 24 horas, com padrão de 1 hora e consulta de recuperação ao abrir o app.
+- Gerenciamento por aparelho pareado: estado remoto, verificação no GitHub e download remoto via canal AES-GCM, sujeito a permissão local específica, proteção de bateria e limites antiabuso.
+- Instalação sempre iniciada no próprio aparelho pelo usuário; servidor remoto não possui comando de instalação.
+- Transferência do APK pelo Wi-Fi local ainda não implementada.
+
 # Celular Remoto — 0.1.0-alpha.111
 
 **Atualizações online integradas:** o app consulta versões publicadas no GitHub, baixa em segundo plano pelo DownloadManager (quando permitido pela rede e bateria) e avisa quando o APK estiver verificado. O usuário autoriza localmente a instalação oficial no Android. A instalação nunca é remota ou silenciosa.

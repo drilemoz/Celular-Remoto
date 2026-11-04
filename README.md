@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.111
+# Celular Remoto v0.1.0-alpha.112
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,15 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.111 / versionCode 111** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.112 / versionCode 112** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Atualizações mais automáticas (alpha.112)
+
+- Verificação automática a cada 60 minutos por padrão (configurável 30 min/1 h/3 h/6 h/12 h/24 h), sujeita a atraso pelo Android.
+- Configurações → Atualizações permite consulta e pedido de baixar APK no aparelho remoto pareado; o monitorado precisa habilitar localmente **Permitir pedidos remotos de atualização**.
+- Comandos no canal AES-GCM existente: `appUpdate/status`, `check`, `checkDownload`, `download`; sem permissão para instalação remota.
+- Compatibilidade sem exigir número do APK igual: alpha.111 ↔ alpha.112 em operações comuns; operação nova somente entre alpha.112+. Versões anteriores à alpha.111 podem recusar a conexão.
+- Download respeita rede não tarifada e proteção de bateria; APK conferido e instalado somente mediante toque local no aparelho.
 
 ## Atualizações online (alpha.111)
 
@@ -43,7 +51,7 @@
 
 - **Aplicativo único:** `Celular Remoto` / `br.dev.celularremoto`, Android 8+ (minSdk 26), compile/target Android 16/API 36. Classes internas e protocolos mantêm nomes históricos quando não fazem parte da identidade pública.
 - **Instalação separada** do antigo Monitor Remoto: o Android não migra preferências privadas, históricos ou chaves não exportáveis do Keystore entre IDs de aplicativos. Preserve a instalação anterior até compartilhar os relatórios desejados. Os dois aparelhos deverão ser pareados novamente usando o Celular Remoto.
-- Porta de serviço alterada de `37841` para `37842` para coexistir durante migração sem disputar o socket TCP. Protocolo permanece criptografado e autenticado AES-GCM, exigindo a mesma versão nos dois lados.
+- Porta de serviço alterada de `37841` para `37842` para coexistir durante migração sem disputar o socket TCP. Protocolo permanece AES-GCM; desde a alpha.112 a exigência de igualdade textual foi substituída por compatibilidade de protocolo (111↔112).
 - Sessões **automáticas** de carregamento e descarga, acompanhadas pelo serviço Monitorado a cada 30 s com pontos a cada 60 s ou mudança de percentual; história privada isolada de Labs com limite de 120 sessões e 240 pontos por sessão.
 - Estimativas conservadoras de chegada a 100% ou autonomia até 0%: exigem pelo menos dez minutos de observação válida e dois pontos percentuais de variação no mesmo sentido; tempo ausente nunca é apresentado como medido.
 - Alertas configuráveis por aparelho: meta de carga (50–100%), bateria baixa (5–40%), temperatura (38–55 °C). Eventos são mantidos localmente, e no controlador apenas quando opção de alertas remotos estiver habilitada. Não garantem tempo real quando desconectado; não substituem proteção térmica do sistema.
@@ -58,7 +66,7 @@
 - Testes Solar (condição do céu e potência nominal informadas), Elétrico, Consumo e Carga Automática. A Carga Automática encerra com bateria cheia ou após três minutos de desconexão confirmada; outros testes aceitam duração de 1 a 1440 min e encerramento manual.
 - Amostragem a cada 30 s **somente com teste ativo e MonitorService em execução**, com até 80 sessões privadas, 480 pontos enquanto ativas e retenção compactada após encerrar; relógio monotônico e lacunas até 90 s classificadas de modo conservador. Recuperação após reinício do processo é limitada pelo ciclo de vida do serviço.
 - Resumos e relatórios com períodos confirmados, desconhecidos, média válida da corrente, temperaturas e gráfico de percentual baseado em leituras reais. Compartilhamento de texto do relatório exige ação explícita.
-- Comandos `batteryLab` de status/iniciar/parar trafegam pelo AES-GCM/pareamento e versão exata existentes; respostas só são aceitas se host/chave continuarem válidos. **Atualizar os dois APKs antes de usar o remoto.**
+- Comandos `batteryLab` de status/iniciar/parar trafegam pelo AES-GCM/pareamento e revisão de protocolo existentes; respostas só são aceitas se host/chave continuarem válidos. Novas funções só são chamadas quando suportadas.
 - Não mede potência solar real, capacidade útil ou autonomia com precisão metrológica; requer medidor externo para geração do painel. Compilação e testes em dois dispositivos permanecem necessários.
 
 ## Interface mobile-first (alpha.105)
@@ -67,7 +75,7 @@
 - Início com aparelhos pareados, último acesso real, botão de conexão e acesso ao monitoramento local.
 - Controlar com cabeçalho próprio, botões separados e informações de bateria, temperatura e rede em cartões legíveis; dados antigos são identificados.
 - Acesso rápido com Tela, Arquivos, Câmeras e Localização em duas colunas; as outras oito funções permanecem no grupo expansível.
-- Sem modificações de criptografia, protocolos, permissões de captura, pareamento e comandos remotos. Mantenha a mesma versão instalada nos dois telefones.
+- Sem alterações na criptografia nem nas permissões de captura. A alpha.112 mantém compatibilidade com a alpha.111 nas funções já existentes.
 - **Pendente:** compilação Android na CI e teste de navegação/layout no dispositivo real.
 
 ## Estabilidade de conexões e proteção de sessão (alpha.104)

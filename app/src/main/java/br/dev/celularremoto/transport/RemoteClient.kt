@@ -22,7 +22,7 @@ object RemoteClient {
             .put("v", WireProtocol.VERSION)
             .put("op", "snapshot")
             .put("includeSms", includeSms)
-            .put("appVersion", AppVersion.NAME)
+            .put("appVersion", AppVersion.WIRE_COMPAT)
             .put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
@@ -52,7 +52,7 @@ object RemoteClient {
         require(host.isNotBlank() && host.length <= 253 &&
             '/' !in host && ':' !in host && ' ' !in host)
         val request = JSONObject().put("v", WireProtocol.VERSION).put("op", "locationSnapshot")
-            .put("appVersion", AppVersion.NAME).put("ts", System.currentTimeMillis())
+            .put("appVersion", AppVersion.WIRE_COMPAT).put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
             .put("accessMethod", method)
@@ -93,6 +93,20 @@ object RemoteClient {
         return response.getJSONObject("data")
     }
 
+    /** Consulta/verificação/download do APK no aparelho monitorado.
+     * A instalação nunca pode ser acionada remotamente.
+     * Só servidores alpha.112+ entendem esta operação; um peer mais antigo retorna erro.
+     */
+    fun appUpdate(host: String, key: ByteArray, context: Context, method: String,
+        action: String = "status"): JSONObject {
+        require(action in setOf("status", "check", "checkDownload", "download"))
+        val reply = remoteScreenCommand(host, key, context, method, "appUpdate") {
+            put("action", action)
+        }
+        check(reply.optString("op") == "appUpdate") { "O outro aparelho não suporta atualização sob demanda (requer alpha.112+)." }
+        return reply
+    }
+
     /** Termometria pontual autenticada. Sem exigir ADB para as APIs públicas. */
     fun thermalDiagnostics(host: String, key: ByteArray, context: Context, method: String): JSONObject =
         remoteScreenCommand(host, key, context, method, "thermalDiagnostics") { }
@@ -105,7 +119,7 @@ object RemoteClient {
             !host.contains(':') && !host.contains(' ')) { "Host inválido." }
         val request = JSONObject().put("v", WireProtocol.VERSION).put("op", "deviceControl")
             .put("action", action).put("seconds", seconds).put("confirm", confirmation)
-            .put("appVersion", AppVersion.NAME).put("ts", System.currentTimeMillis())
+            .put("appVersion", AppVersion.WIRE_COMPAT).put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
             .put("accessMethod", method)
@@ -127,7 +141,7 @@ object RemoteClient {
     fun installedApps(host: String, key: ByteArray, context: Context, method: String): JSONObject {
         require(host.isNotBlank() && host.length <= 253 && !host.contains('/') && !host.contains(':') && !host.contains(' '))
         val request = JSONObject().put("v", WireProtocol.VERSION).put("op", "appsList")
-            .put("appVersion", AppVersion.NAME).put("ts", System.currentTimeMillis())
+            .put("appVersion", AppVersion.WIRE_COMPAT).put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
             .put("accessMethod", method)
@@ -159,7 +173,7 @@ object RemoteClient {
         operation: String, extra: JSONObject): JSONObject {
         require(host.isNotBlank() && host.length <= 253 && '/' !in host && ':' !in host && ' ' !in host)
         val request = JSONObject().put("v", WireProtocol.VERSION).put("op", operation)
-            .put("appVersion", AppVersion.NAME).put("ts", System.currentTimeMillis())
+            .put("appVersion", AppVersion.WIRE_COMPAT).put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
             .put("accessMethod", method)
@@ -218,7 +232,7 @@ object RemoteClient {
         val fresh = FastFileStream.freshChallenge()
         val challenge = FastFileStream.challengeBytes(fresh)
         val request = JSONObject().put("v", WireProtocol.VERSION).put("op", "dataStream")
-            .put("appVersion", AppVersion.NAME).put("ts", System.currentTimeMillis())
+            .put("appVersion", AppVersion.WIRE_COMPAT).put("ts", System.currentTimeMillis())
             .put("streamNonce", fresh)
             .put("path", org.json.JSONArray(path)).put("size", size).put("modified", modified)
             .put("offset", startOffset)
@@ -342,7 +356,7 @@ object RemoteClient {
         val parts = org.json.JSONArray()
         path.forEach { parts.put(it) }
         val request = JSONObject().put("v", WireProtocol.VERSION).put("op", op)
-            .put("path", parts).put("appVersion", AppVersion.NAME)
+            .put("path", parts).put("appVersion", AppVersion.WIRE_COMPAT)
             .put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
@@ -370,7 +384,7 @@ object RemoteClient {
         val request = JSONObject()
             .put("v", WireProtocol.VERSION)
             .put("op", "disconnect")
-            .put("appVersion", AppVersion.NAME)
+            .put("appVersion", AppVersion.WIRE_COMPAT)
             .put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
         Socket().use { socket ->
@@ -389,7 +403,7 @@ object RemoteClient {
         require(host.isNotBlank() && host.length <= 253 && !host.contains('/') && !host.contains(':') && !host.contains(' '))
         require(text.isNotBlank() && text.length <= 500)
         val request = JSONObject().put("v", WireProtocol.VERSION)
-            .put("op", operation).put("appVersion", AppVersion.NAME)
+            .put("op", operation).put("appVersion", AppVersion.WIRE_COMPAT)
             .put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
@@ -420,7 +434,7 @@ object RemoteClient {
             !host.contains(':') && host.none { it.isWhitespace() }) { "Endereço inválido." }
         require(br.dev.celularremoto.core.RemotePhotoPolicy.validLens(lens)) { "Lente inválida." }
         val request = JSONObject().put("v", WireProtocol.VERSION).put("op", "photoTake")
-            .put("lens", lens).put("appVersion", AppVersion.NAME)
+            .put("lens", lens).put("appVersion", AppVersion.WIRE_COMPAT)
             .put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
@@ -450,7 +464,7 @@ object RemoteClient {
         require(afterSequence >= 0L) { "Sequência inválida." }
         val request = JSONObject().put("v", WireProtocol.VERSION).put("op", "cameraFrame")
             .put("afterSequence", afterSequence)
-            .put("appVersion", AppVersion.NAME).put("ts", System.currentTimeMillis())
+            .put("appVersion", AppVersion.WIRE_COMPAT).put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
             .put("accessMethod", method)
@@ -475,7 +489,7 @@ object RemoteClient {
         require(expectedSession > 0L && br.dev.celularremoto.core.CameraRemoteSwitchPolicy.validLens(targetLens))
         val request = JSONObject().put("v", WireProtocol.VERSION).put("op", "cameraSwitch")
             .put("sessionToken", expectedSession).put("lens", targetLens)
-            .put("appVersion", AppVersion.NAME).put("ts", System.currentTimeMillis())
+            .put("appVersion", AppVersion.WIRE_COMPAT).put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
             .put("accessMethod", method)
@@ -497,7 +511,7 @@ object RemoteClient {
         require(host.isNotBlank() && host.length <= 253 && !host.contains('/') &&
             !host.contains(':') && !host.contains(' '))
         val request = JSONObject().put("v", WireProtocol.VERSION)
-            .put("op", "screenFrame").put("appVersion", AppVersion.NAME)
+            .put("op", "screenFrame").put("appVersion", AppVersion.WIRE_COMPAT)
             .put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
@@ -521,7 +535,7 @@ object RemoteClient {
         require(after >= 0L)
         val request = JSONObject().put("v", WireProtocol.VERSION)
             .put("op", "videoFrame").put("after", after)
-            .put("appVersion", AppVersion.NAME).put("ts", System.currentTimeMillis())
+            .put("appVersion", AppVersion.WIRE_COMPAT).put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
             .put("accessMethod", method)
@@ -547,7 +561,7 @@ object RemoteClient {
         require(host.isNotBlank() && host.length <= 253 && !host.contains('/') &&
             !host.contains(':') && !host.contains(' '))
         val request = JSONObject().put("v", WireProtocol.VERSION)
-            .put("op", "screenCapture").put("appVersion", AppVersion.NAME)
+            .put("op", "screenCapture").put("appVersion", AppVersion.WIRE_COMPAT)
             .put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
@@ -596,7 +610,7 @@ object RemoteClient {
         require(host.isNotBlank() && host.length <= 253 && !host.contains('/') &&
             !host.contains(':') && !host.contains(' '))
         val request = JSONObject().put("v", WireProtocol.VERSION).put("op", op)
-            .put("appVersion", AppVersion.NAME).put("ts", System.currentTimeMillis())
+            .put("appVersion", AppVersion.WIRE_COMPAT).put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
             .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
             .put("accessMethod", method).apply(extras)
@@ -625,7 +639,7 @@ object RemoteClient {
             val request = JSONObject()
                 .put("v", WireProtocol.VERSION)
                 .put("op", "pair")
-                .put("appVersion", AppVersion.NAME)
+                .put("appVersion", AppVersion.WIRE_COMPAT)
                 .put("ts", System.currentTimeMillis())
                 .put("session", code.session)
             WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(code.ephemeralKey, request))

@@ -134,7 +134,7 @@ class MonitorServer(private val context: Context) {
                 val regular = runCatching { WireProtocol.decode(permanentKey, encrypted) }.getOrNull()
                 if (regular != null) {
                     if (regular.optInt("v") != WireProtocol.VERSION ||
-                        regular.optString("op") !in setOf("snapshot", "disconnect", "notificationReply", "smsReply", "screenFrame", "screenCapture", "remoteTouch", "audioChunk", "requestScreen", "videoFrame", "wakeScreen", "dataList", "dataChunk", "dataChunks", "dataHash", "dataRead", "dataStream", "dataManage", "dataUploadStart", "dataUploadChunk", "dataUploadFinish", "dataUploadAbort", "dataUploadStatus", "appsList", "appsIcons", "appLaunch", "deviceControl", "cameraFrame", "cameraSwitch", "photoTake", "thermalDiagnostics", "locationSnapshot", "batteryLab")) return
+                        regular.optString("op") !in setOf("snapshot", "disconnect", "notificationReply", "smsReply", "screenFrame", "screenCapture", "remoteTouch", "audioChunk", "requestScreen", "videoFrame", "wakeScreen", "dataList", "dataChunk", "dataChunks", "dataHash", "dataRead", "dataStream", "dataManage", "dataUploadStart", "dataUploadChunk", "dataUploadFinish", "dataUploadAbort", "dataUploadStatus", "appsList", "appsIcons", "appLaunch", "deviceControl", "cameraFrame", "cameraSwitch", "photoTake", "thermalDiagnostics", "locationSnapshot", "batteryLab", "appUpdate")) return
                     if (abs(now - regular.optLong("ts")) > 5 * 60 * 1000L) return
                     synchronized(seenNonces) {
                         // Retenção compatível com ±5 minutos de validade do envelope.
@@ -149,19 +149,19 @@ class MonitorServer(private val context: Context) {
                         seenNonces[nonce] = now
                         while (seenNonces.size > 60_000) seenNonces.remove(seenNonces.keys.first())
                     }
-                    // A chave válida não dispensa a exigência da mesma versão do app.
+                    // Chave válida + protocolo compatível, sem exigir versionName idêntico.
                     if (!AppVersion.compatible(regular.optString("appVersion"))) {
                         // Apenas pedidos autenticados recebem a versão real do servidor.
                         // Clientes sem chave válida continuam sem resposta para evitar sondagem.
                         val mismatch = JSONObject().put("v", WireProtocol.VERSION)
                             .put("op", "versionMismatch")
-                            .put("appVersion", AppVersion.NAME)
+                            .put("appVersion", AppVersion.WIRE_COMPAT)
                         WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, mismatch))
                         return
                     }
                     if (regular.optString("op") == "dataStream") {
                         val responseBase = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "dataStream").put("appVersion", AppVersion.NAME)
+                            .put("op", "dataStream").put("appVersion", AppVersion.WIRE_COMPAT)
                         // A resposta inicial ainda usa JSON cifrado: falhas de versão, limite
                         // e protocolo são legíveis sem tentar interpretar bytes como arquivo.
                         val challenge = runCatching {
@@ -223,11 +223,25 @@ class MonitorServer(private val context: Context) {
                             regular.optString("clientId"), regular.optString("clientName"), regular.optString("accessMethod"))
                         return
                     }
+                    if (regular.optString("op") == "appUpdate") {
+                        // Apenas consulta e preparação remota; NUNCA chama instalador nem solicita permissões.
+                        val action = regular.optString("action")
+                        val response = JSONObject().put("v", WireProtocol.VERSION)
+                            .put("op", "appUpdate").put("appVersion", AppVersion.WIRE_COMPAT)
+                            .put("actualVersion", AppVersion.NAME)
+                        val result = br.dev.celularremoto.updates.UpdateController.remoteAction(context, action)
+                        response.put("ok", result.first).put("message", result.second)
+                            .put("data", br.dev.celularremoto.updates.UpdateController.remoteStatus(context))
+                        WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, response))
+                        AuthenticatedAccess.authenticated(socket.inetAddress?.hostAddress.orEmpty(),
+                            regular.optString("clientId"), regular.optString("clientName"), regular.optString("accessMethod"))
+                        return
+                    }
                     if (regular.optString("op") == "batteryLab") {
                         // Operações de bateria no canal AES-GCM já autenticado/pareado.
                         // Não cria listener remoto adicional nem altera permissões.
                         val response = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "batteryLab").put("appVersion", AppVersion.NAME)
+                            .put("op", "batteryLab").put("appVersion", AppVersion.WIRE_COMPAT)
                         try {
                             val action = regular.optString("action", "status")
                             when (action) {
@@ -259,7 +273,7 @@ class MonitorServer(private val context: Context) {
                     if (regular.optString("op") == "thermalDiagnostics") {
                         val diagnostic = br.dev.celularremoto.core.ThermalDiagnostics.snapshot(context)
                         val response = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "thermalDiagnostics").put("appVersion", AppVersion.NAME)
+                            .put("op", "thermalDiagnostics").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("diagnostics", diagnostic)
                         WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, response))
                         AuthenticatedAccess.authenticated(socket.inetAddress?.hostAddress.orEmpty(),
@@ -269,7 +283,7 @@ class MonitorServer(private val context: Context) {
                     if (regular.optString("op") == "requestScreen") {
                         val alerted = ScreenShareRequest.notifyLocal(context)
                         val reply = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "requestScreen").put("appVersion", AppVersion.NAME)
+                            .put("op", "requestScreen").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("ok", alerted).put("sharing", ScreenFrameStore.sharing)
                         WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, reply))
                         AuthenticatedAccess.authenticated(socket.inetAddress?.hostAddress.orEmpty(),
@@ -304,7 +318,7 @@ class MonitorServer(private val context: Context) {
                             }
                         }
                         val response = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "wakeScreen").put("appVersion", AppVersion.NAME)
+                            .put("op", "wakeScreen").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("ok", accepted).put("message", message)
                             .put("interactive", power.isInteractive)
                             .put("deviceLocked", context.getSystemService(KeyguardManager::class.java).isDeviceLocked)
@@ -323,7 +337,7 @@ class MonitorServer(private val context: Context) {
                         val locked = context.getSystemService(KeyguardManager::class.java).isDeviceLocked
                         val interactive = context.getSystemService(PowerManager::class.java).isInteractive
                         val response = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "videoFrame").put("appVersion", AppVersion.NAME)
+                            .put("op", "videoFrame").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("sharing", ScreenFrameStore.sharing)
                             .put("supported", VideoFrameStore.supported)
                             .put("deviceLocked", locked).put("screenInteractive", interactive)
@@ -357,7 +371,7 @@ class MonitorServer(private val context: Context) {
                             regular.optDouble("endX", -1.0).toFloat(), regular.optDouble("endY", -1.0).toFloat(),
                             regular.optLong("duration", 240L), gesture)
                         val reply = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "remoteTouch").put("appVersion", AppVersion.NAME)
+                            .put("op", "remoteTouch").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("ok", ok)
                             .put("message", if (ok) "Ação aceita pelo Android" else
                                 "Controle indisponível: verifique Acessibilidade, tela desbloqueada e captura ativa")
@@ -371,7 +385,7 @@ class MonitorServer(private val context: Context) {
                             SettingsStore.captureInternalAudio(context)
                         val chunk = if (enabled) AudioChunkStore.snapshot() else null
                         val reply = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "audioChunk").put("appVersion", AppVersion.NAME)
+                            .put("op", "audioChunk").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("enabled", enabled).put("rate", AudioChunkStore.RATE)
                         if (chunk != null) reply.put("sequence", chunk.sequence)
                             .put("pcm", Base64.encodeToString(chunk.pcm, Base64.NO_WRAP))
@@ -395,7 +409,7 @@ class MonitorServer(private val context: Context) {
                             ScreenFrameStore.cancelStill(id)
                         }
                         val reply = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "screenCapture").put("appVersion", AppVersion.NAME)
+                            .put("op", "screenCapture").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("ok", bytes != null).put("sharing", ScreenFrameStore.sharing)
                         if (bytes != null) reply.put("jpeg", Base64.encodeToString(bytes, Base64.NO_WRAP))
                         WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, reply))
@@ -411,7 +425,7 @@ class MonitorServer(private val context: Context) {
                             br.dev.celularremoto.service.PhotoReadyService.take(lens)
                         else br.dev.celularremoto.service.PhotoReadyService.PhotoResult(error = "Monitoramento desativado.")
                         val reply = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "photoTake").put("appVersion", AppVersion.NAME)
+                            .put("op", "photoTake").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("ok", result.jpeg != null)
                             .put("message", result.error.take(180))
                         if (result.jpeg != null) reply.put("jpeg", Base64.encodeToString(result.jpeg, Base64.NO_WRAP))
@@ -430,7 +444,7 @@ class MonitorServer(private val context: Context) {
                         val status = if (allowed) store.status(knownSequence)
                             else br.dev.celularremoto.capture.CameraFrameStore.Status(false, null, -1L, 0L, null)
                         val response = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "cameraFrame").put("appVersion", AppVersion.NAME)
+                            .put("op", "cameraFrame").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("active", status.active)
                             .put("lens", status.lens ?: JSONObject.NULL)
                             .put("frameAgeMs", status.ageMs)
@@ -454,7 +468,7 @@ class MonitorServer(private val context: Context) {
                         val accepted = allowed &&
                             br.dev.celularremoto.capture.CameraFrameStore.requestRemoteSwitch(expectedSession, targetLens)
                         val response = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "cameraSwitch").put("appVersion", AppVersion.NAME)
+                            .put("op", "cameraSwitch").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("accepted", accepted)
                             .put("message", if (accepted) "Solicitação recebida; aguardando confirmação visual da troca."
                                 else "Troca indisponível: autorize na tela da câmera ou atualize a sessão.")
@@ -470,7 +484,7 @@ class MonitorServer(private val context: Context) {
                         val deviceLocked = context.getSystemService(KeyguardManager::class.java).isDeviceLocked
                         val screenInteractive = context.getSystemService(PowerManager::class.java).isInteractive
                         val response = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "screenFrame").put("appVersion", AppVersion.NAME)
+                            .put("op", "screenFrame").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("sharing", ScreenFrameStore.sharing)
                             .put("deviceLocked", deviceLocked)
                             .put("screenInteractive", screenInteractive)
@@ -510,7 +524,7 @@ class MonitorServer(private val context: Context) {
                             }
                         }
                         val reply = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "deviceControl").put("appVersion", AppVersion.NAME)
+                            .put("op", "deviceControl").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("ok", command.isSuccess)
                             .put("message", command.getOrNull() ?: command.exceptionOrNull()?.message?.take(170).orEmpty())
                             .put("status", RemotePhysicalControls.status(context))
@@ -527,7 +541,7 @@ class MonitorServer(private val context: Context) {
                         val icons = if (allowed && requested.isNotEmpty())
                             InstalledAppsReader.iconBatch(context, requested) else JSONObject()
                         val reply = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "appsIcons").put("appVersion", AppVersion.NAME)
+                            .put("op", "appsIcons").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("ok", allowed && requested.isNotEmpty()).put("icons", icons)
                         WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, reply))
                         AuthenticatedAccess.authenticated(socket.inetAddress?.hostAddress.orEmpty(),
@@ -538,7 +552,7 @@ class MonitorServer(private val context: Context) {
                         // Consulta enxuta: evita leitura de SMS, aplicativos, telemetria e eventos.
                         // Mantém a mesma chave, nonce, janela temporal e verificação de versão.
                         val reply = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "locationSnapshot").put("appVersion", AppVersion.NAME)
+                            .put("op", "locationSnapshot").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("serverMs", System.currentTimeMillis())
                             .put("location", br.dev.celularremoto.core.LocationShareStore.snapshot(context))
                         WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, reply))
@@ -551,7 +565,7 @@ class MonitorServer(private val context: Context) {
                             br.dev.celularremoto.core.RemoteAppLauncher.request(context, regular.optString("package"))
                         }
                         val reply = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "appLaunch").put("appVersion", AppVersion.NAME)
+                            .put("op", "appLaunch").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("ok", response.isSuccess)
                             .put("message", response.getOrNull() ?: response.exceptionOrNull()?.message?.take(180).orEmpty())
                         WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, reply))
@@ -562,7 +576,7 @@ class MonitorServer(private val context: Context) {
                     if (regular.optString("op") == "appsList") {
                         val authorized = SettingsStore.isMonitorEnabled(context) && SettingsStore.shareInstalledApps(context)
                         val response = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "appsList").put("appVersion", AppVersion.NAME)
+                            .put("op", "appsList").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("ok", authorized)
                             .put("message", if (authorized) "" else "Autorize Aplicativos instalados nas Configurações do monitorado.")
                             .put("items", if (authorized) InstalledAppsReader.launchable(context) else org.json.JSONArray())
@@ -577,7 +591,7 @@ class MonitorServer(private val context: Context) {
                         val reply = JSONObject()
                             .put("v", WireProtocol.VERSION)
                             .put("op", "disconnectOk")
-                            .put("appVersion", AppVersion.NAME)
+                            .put("appVersion", AppVersion.WIRE_COMPAT)
                         WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, reply))
                         AuthenticatedAccess.disconnected(socket.inetAddress?.hostAddress.orEmpty(), regular.optString("clientId"))
                         return
@@ -599,7 +613,7 @@ class MonitorServer(private val context: Context) {
                             }
                         }
                         val reply = JSONObject().put("v", WireProtocol.VERSION)
-                            .put("op", "commandResult").put("appVersion", AppVersion.NAME)
+                            .put("op", "commandResult").put("appVersion", AppVersion.WIRE_COMPAT)
                             .put("ok", commandResult.isSuccess)
                             .put("message", commandResult.getOrNull() ?: commandResult.exceptionOrNull()?.message?.take(160).orEmpty())
                         WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, reply))
@@ -609,8 +623,9 @@ class MonitorServer(private val context: Context) {
                     }
                     val response = JSONObject().apply {
                         put("v", WireProtocol.VERSION)
-                        put("appVersion", AppVersion.NAME)
+                        put("appVersion", AppVersion.WIRE_COMPAT)
                         put("serverMs", now)
+                        put("actualVersion", AppVersion.NAME)
                         put("battery", BatteryReader.snapshot(context))
                         put("network", NetworkReader.snapshot(context))
                         put("deviceState", br.dev.celularremoto.core.DeviceStateReader.snapshot(context))
@@ -672,7 +687,7 @@ class MonitorServer(private val context: Context) {
                 if (abs(now - pairing.optLong("ts")) > 120_000L) return
                 if (!AppVersion.compatible(pairing.optString("appVersion"))) {
                     val mismatch = JSONObject().put("v", WireProtocol.VERSION)
-                        .put("appVersion", AppVersion.NAME).put("op", "versionMismatch")
+                        .put("appVersion", AppVersion.WIRE_COMPAT).put("op", "versionMismatch")
                     WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(temporaryKey, mismatch))
                     return
                 }
@@ -680,7 +695,7 @@ class MonitorServer(private val context: Context) {
                 val response = JSONObject().apply {
                     put("v", WireProtocol.VERSION)
                     put("op", "pairOk")
-                    put("appVersion", AppVersion.NAME)
+                    put("appVersion", AppVersion.WIRE_COMPAT)
                     put("session", id)
                     put("key", CryptoBox.encode(permanentKey))
                 }
