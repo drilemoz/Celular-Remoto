@@ -16,8 +16,10 @@ object BatteryLabStore {
     private const val FILE = "battery_labs_v1.json"
     private const val MAX_SESSIONS = 80
     private const val MAX_POINTS = 480
-    private const val MAX_PUBLIC_HISTORY = 12
-    private const val MAX_COMPLETED_POINTS = 60
+    private const val MAX_PUBLIC_HISTORY = 24
+    private const val MAX_COMPLETED_POINTS = 120
+    private const val PUBLIC_GRAPH_SESSIONS = 3
+    private const val PUBLIC_GRAPH_POINTS = 40
 
     private fun file(context: Context): AtomicFile =
         AtomicFile(File(context.applicationContext.filesDir, FILE))
@@ -97,8 +99,8 @@ object BatteryLabStore {
             .apply {
                 if (includePoints) {
                     val limited = JSONArray()
-                    for (i in (points.length() - 48).coerceAtLeast(0) until points.length())
-                        limited.put(points.getJSONObject(i))
+                    val from = (points.length() - PUBLIC_GRAPH_POINTS).coerceAtLeast(0)
+                    for (i in from until points.length()) limited.put(points.getJSONObject(i))
                     put("points", limited)
                 }
             }
@@ -108,9 +110,14 @@ object BatteryLabStore {
     private fun compactCompleted(session: JSONObject) {
         val points = session.optJSONArray("points") ?: return
         if (points.length() <= MAX_COMPLETED_POINTS) return
-        val recent = JSONArray()
-        for (i in points.length() - MAX_COMPLETED_POINTS until points.length()) recent.put(points.get(i))
-        session.put("points", recent)
+        // Seleção uniforme de amostras reais: preserva início/fim sem inventar medições.
+        val selected = JSONArray()
+        val last = points.length() - 1
+        for (i in 0 until MAX_COMPLETED_POINTS) {
+            val index = (i.toLong() * last / (MAX_COMPLETED_POINTS - 1)).toInt()
+            selected.put(points.get(index))
+        }
+        session.put("points", selected)
     }
 
     /** Reavalia descontinuidade do relógio monotônico (ex.: reboot). */
@@ -209,8 +216,9 @@ object BatteryLabStore {
         val points = item.getJSONArray("points")
         points.put(next)
         if (points.length() > MAX_POINTS) {
-            val reduced = JSONArray()
-            for (i in points.length() - MAX_POINTS until points.length()) reduced.put(points.get(i))
+            // Mantém o primeiro registro e os recentes quando a coleta ultrapassa o limite.
+            val reduced = JSONArray().put(points.get(0))
+            for (i in points.length() - (MAX_POINTS - 1) until points.length()) reduced.put(points.get(i))
             item.put("points", reduced)
         }
         val kind = item.optString("kind")
@@ -265,7 +273,7 @@ object BatteryLabStore {
         val history = JSONArray()
         for (i in 0 until minOf(all.length(), MAX_PUBLIC_HISTORY)) {
             val item = all.optJSONObject(i) ?: continue
-            history.put(summary(item, item === active || i == 0))
+            history.put(summary(item, item === active || i < PUBLIC_GRAPH_SESSIONS))
         }
         return JSONObject().put("battery", BatteryReader.snapshot(context))
             .put("active", active?.let { summary(it, true) } ?: JSONObject.NULL)

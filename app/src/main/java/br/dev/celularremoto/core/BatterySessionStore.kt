@@ -15,7 +15,9 @@ object BatterySessionStore {
     private const val FILE = "battery_sessions_v1.json"
     private const val MAX_SESSIONS = 120
     private const val MAX_POINTS = 240
-    private const val PUBLIC_SESSIONS = 12
+    private const val PUBLIC_SESSIONS = 24
+    private const val PUBLIC_GRAPH_SESSIONS = 3
+    private const val PUBLIC_GRAPH_POINTS = 40
 
     private fun atomic(context: Context) = AtomicFile(File(context.applicationContext.filesDir, FILE))
     private fun read(context: Context): JSONArray = runCatching {
@@ -42,7 +44,7 @@ object BatterySessionStore {
         val plugged = raw.optInt("pluggedCode", -1)
         return when {
             plugged > 0 && status == 2 -> "CHARGE"
-            plugged == 0 && status == 3 -> "DISCHARGE"
+            status == 3 -> "DISCHARGE" // Pode haver descarga líquida mesmo com fonte conectada.
             else -> "UNKNOWN"
         }
     }
@@ -70,6 +72,12 @@ object BatterySessionStore {
             .put("lastWall", item.optLong("lastWall", 0L))
             .put("durationMs", (last - first).coerceAtLeast(0L))
             .put("observedMs", observedMs)
+            .put("coveragePercent", if (last > first) (100.0 * observedMs / (last - first)).coerceIn(0.0, 100.0) else 0.0)
+            .put("powerSource", item.optString("powerSource", "").takeUnless { it == "null" } ?: "")
+            .put("validCurrentMs", item.optLong("validCurrentMs", 0L))
+            .put("meanCurrentMa", item.optLong("validCurrentMs", 0L).takeIf { it > 0 }?.let {
+                item.optDouble("currentMaMs", 0.0) / it
+            }?.takeIf { it.isFinite() } ?: JSONObject.NULL)
             .put("initialPercent", startLevel.takeIf { it in 0..100 } ?: JSONObject.NULL)
             .put("finalPercent", finalLevel.takeIf { it in 0..100 } ?: JSONObject.NULL)
             .put("maxTemperatureC", doubleOrNull(item, "maxTemp") ?: JSONObject.NULL)
@@ -80,7 +88,7 @@ object BatterySessionStore {
             .put("pointsCount", points.length())
             .apply { if (pointsAllowed) {
                 val view = JSONArray()
-                for (i in (points.length() - 48).coerceAtLeast(0) until points.length())
+                for (i in (points.length() - PUBLIC_GRAPH_POINTS).coerceAtLeast(0) until points.length())
                     view.put(points.getJSONObject(i))
                 put("points", view)
             } }
@@ -106,7 +114,9 @@ object BatterySessionStore {
             .put("lastWall", now).put("lastElapsed", elapsed).put("endedAt", 0L)
             .put("initialPercent", pct).put("finalPercent", pct)
             .put("maxTemp", temp ?: JSONObject.NULL).put("finalTemp", temp ?: JSONObject.NULL)
-            .put("observedMs", 0L).put("points", JSONArray().put(sample(raw, now, elapsed)))
+            .put("observedMs", 0L).put("currentMaMs", 0.0).put("validCurrentMs", 0L)
+            .put("powerSource", raw.optString("powerSource", "").takeUnless { it == "null" } ?: "")
+            .put("points", JSONArray().put(sample(raw, now, elapsed)))
     }
 
     @Synchronized fun tick(context: Context) {
@@ -119,14 +129,18 @@ object BatterySessionStore {
         val all = read(context)
         val current = all.optJSONObject(0)?.takeIf { it.optLong("endedAt", 0L) == 0L }
         val previousMode = current?.optString("kind")
+        val currentSource = raw.optString("powerSource", "").takeUnless { it == "null" } ?: ""
+        val sourceChanged = current != null && previousMode == "CHARGE" &&
+            current.optString("powerSource", "") != currentSource
         val gap = if (current != null) elapsed - current.optLong("lastElapsed") else 0L
         val wallGap = if (current != null) now - current.optLong("lastWall") else 0L
         val reset = current != null && (gap <= 0L || gap > BatterySessionMath.MAX_GAP_MS ||
             kotlin.math.abs(gap - wallGap) > 10_000L)
         var changed = false
-        if (current != null && (reset || mode != previousMode || (mode == "UNKNOWN"))) {
+        if (current != null && (reset || mode != previousMode || (mode == "UNKNOWN") || sourceChanged)) {
             close(current, if (reset) "Coleta interrompida ou relógio alterado" else
                 if (previousMode == "CHARGE" && percent == 100) "Bateria atingiu 100%" else
+                if (sourceChanged) "Tipo de fonte de alimentação mudou" else
                 if (mode == "UNKNOWN") "Estado da bateria mudou ou ficou indisponível" else "Mudança entre carga e descarga")
             changed = true
         }
@@ -146,6 +160,13 @@ object BatterySessionStore {
         if (!shouldStore) return
         val interval = BatterySessionMath.validInterval(mode, previousMode ?: "UNKNOWN", mode, gap, wallGap)
         current.put("observedMs", current.optLong("observedMs") + interval)
+        val previousMa = lastPoint?.let { doubleOrNull(it, "currentMa") }?.takeIf { it in -30_000.0..30_000.0 }
+        val latestMa = doubleOrNull(raw, "currentMa")?.takeIf { it in -30_000.0..30_000.0 }
+        if (interval > 0L && previousMa != null && latestMa != null) {
+            current.put("currentMaMs", current.optDouble("currentMaMs", 0.0) +
+                (previousMa + latestMa) / 2.0 * interval)
+            current.put("validCurrentMs", current.optLong("validCurrentMs", 0L) + interval)
+        }
         current.put("finalPercent", percent)
         current.put("lastWall", now).put("lastElapsed", elapsed)
         val temp = doubleOrNull(raw, "temperatureC")
@@ -173,10 +194,42 @@ object BatterySessionStore {
         val history = JSONArray()
         for (i in 0 until minOf(all.length(), PUBLIC_SESSIONS)) {
             val item = all.optJSONObject(i) ?: continue
-            history.put(summary(item, item === active || i == 0))
+            history.put(summary(item, item === active || i < PUBLIC_GRAPH_SESSIONS))
         }
-        val forecast = active?.let { summary(it, false) }
+        val now = System.currentTimeMillis()
+        val forecast = active?.let { session ->
+            val result = summary(session, false)
+            val points = session.optJSONArray("points") ?: JSONArray()
+            val observedPoints = (0 until points.length()).mapNotNull { points.optJSONObject(it) }
+                .mapNotNull { point ->
+                    point.optInt("percent", -1).takeIf { it in 0..100 }?.let { percent ->
+                        BatteryForecastMath.Point(point.optLong("elapsed", -1L), point.optLong("wall", -1L), percent)
+                    }
+                }
+            val completed = (0 until all.length()).mapNotNull { all.optJSONObject(it) }
+                .filter { it.optLong("endedAt", 0L) > 0L }
+                .map { item ->
+                    BatteryForecastMath.Session(item.optString("kind"),
+                        item.optString("powerSource", "").takeUnless { it.isBlank() || it == "null" },
+                        item.optLong("startedAt"), item.optLong("endedAt"), item.optLong("observedMs"),
+                        item.optInt("initialPercent", -1), item.optInt("finalPercent", -1),
+                        item.optJSONArray("points")?.length() ?: 0)
+                }
+            val estimate = BatteryForecastMath.predict(session.optString("kind"),
+                session.optInt("finalPercent", -1), session.optLong("lastWall"), now,
+                observedPoints, session.optString("powerSource", "").takeUnless { it.isBlank() || it == "null" },
+                completed)
+            // Não mostrar a estimativa legada quando há lacunas ou dados insuficientes.
+            result.put("forecastMinutes", estimate?.minutes ?: JSONObject.NULL)
+            result.put("forecast80Minutes", estimate?.to80 ?: JSONObject.NULL)
+            result.put("forecast90Minutes", estimate?.to90 ?: JSONObject.NULL)
+            result.put("forecastRatePercentHour", estimate?.percentPerHour ?: JSONObject.NULL)
+            result.put("forecastBasis", estimate?.basis ?: "")
+            result.put("forecastEvidence", estimate?.evidence ?: "INSUFICIENTE")
+            result.put("forecastHistoricalSessions", estimate?.historicalSessions ?: 0)
+            result
+        }
         return JSONObject().put("active", forecast ?: JSONObject.NULL)
-            .put("history", history).put("reportedAt", System.currentTimeMillis())
+            .put("history", history).put("reportedAt", now)
     }
 }

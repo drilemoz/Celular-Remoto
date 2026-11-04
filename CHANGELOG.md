@@ -1,3 +1,18 @@
+## 0.1.0-alpha.114 (versionCode 114) | 04/11/2026
+
+- Aba Bateria: histórico local/remoto filtrável por categoria e período, incluindo cargas e descargas automáticas e os quatro testes Labs.
+- Comparação de duas sessões Labs concluídas com cobertura de observação, ritmo em pontos percentuais por hora, temperatura máxima e advertências de condições incompatíveis (céu, potência nominal do painel informada, tipo e estado da tela).
+- Detalhes de testes com gráficos de percentual, corrente e temperatura, eixos e horários, pontos reais e lacunas preservadas; não interpretar corrente líquida como geração solar.
+- Consultas autenticadas expõem até 24 resumos de cada categoria, limitando amostras em até três sessões recentes por categoria e preservando a retenção local anterior. Labs concluídos novos preservam amostras distribuídas entre início e fim; sessões legadas não recuperam pontos perdidos.
+- Mantidos um workflow, um serviço Monitorado, assinatura, criptografia AES-GCM, versão do protocolo e regras de atualização online. Build Android e testes em dois aparelhos ainda pendentes.
+
+## 0.1.0-alpha.113 (versionCode 113) | 04/11/2026
+
+- Integrados diagnósticos de corrente derivados das regras do Pulso Bateria, sem depender do aplicativo antigo: mantém sinal do Android mesmo que diverja do estado de carga; média válida pelo contador com janela real e raw NOW/AVERAGE/COUNTER.
+- Sessões automáticas exibem cobertura e média líquida por intervalos observados; previsões para carga e descarga usam tendência contígua até 45 minutos e histórico comparável da mesma categoria de fonte, quando suficiente, além das metas 80%, 90% e 100%.
+- Aba Bateria exibe últimas sessões, diagnóstico elétrico e origem das estimativas para aparelho local e remoto. Sem novos serviços, permissões nem workflows; protocolo alpha.111 compatível preservado.
+- Incluídos testes de regressão de corrente e previsões. Build Android e testes físicos em dois aparelhos permanecem pendentes.
+
 ## 0.1.0-alpha.112 — Compatibilidade e atualização remota sob demanda (04/11/2026)
 
 - Marcador de protocolo compatível separado da versão do APK, preservando canais autenticados entre 111 e 112.

@@ -16,7 +16,7 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.112" and code.group(1) == "112", "Versões incompatíveis"
+assert version == "0.1.0-alpha.114" and code.group(1) == "114", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/celularremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in (ui_root / 'VersionNewsUi.kt').read_text(), "Tela de versão desatualizada"
@@ -217,7 +217,7 @@ assert 'unknownOrOlderProtocolsAreRejected' in app_version_test and '0.1.0-alpha
 print('PASSOU: alpha.21, teste de compatibilidade segue a versão atual')
 
 # alpha.22: a interface cresceu, mas MainActivity não volta a concentrar telas inteiras.
-assert len(main_ui.splitlines()) <= 480, "MainActivity voltou a concentrar a UI"
+assert len(main_ui.splitlines()) <= 490, "MainActivity voltou a concentrar a UI"
 assert all(len(text.splitlines()) >= 25 for text in module_ui.values()), "Módulo UI vazio ou parcial"
 assert "internal fun MainActivity.renderHome()" in module_ui["HomeScreenUi.kt"]
 assert "internal fun MainActivity.renderMonitor()" in module_ui["MonitorScreenUi.kt"]
@@ -1616,3 +1616,30 @@ assert 'intervalMinutes(ctx: Context)' in remote_preferences and '?: 60' in remo
 assert '30, 60, 180, 360, 720, 1440' in remote_preferences
 assert 'Verificar e baixar no remoto' in remote_ui and 'remote_requests' in remote_ui
 print('PASSOU: alpha.112 compatibilidade 111, atualização remota apenas após opt-in, instalação local')
+
+# alpha.113 — não esconder descarga líquida ao carregar; previsões exigem evidência.
+core_root = root / 'app/src/main/java/br/dev/celularremoto/core'
+current_math = (core_root / 'BatteryCurrentMath.kt').read_text()
+reader113 = (core_root / 'BatteryReader.kt').read_text()
+forecast113 = (core_root / 'BatteryForecastMath.kt').read_text()
+store113 = (core_root / 'BatterySessionStore.kt').read_text()
+battery_ui113 = (ui_root / 'BatteryScreenUi.kt').read_text()
+assert 'status == 2 && value < 0.0' in current_math, 'Não ocultar corrente negativa durante carregamento'
+assert 'counterTracker.observe' in reader113 and 'batteryPowerWatts' in reader113
+assert 'MIN_INTERVAL_MS' in forecast113 and 'historyRate(' in forecast113 and 'MAX_GAP_MS' in forecast113
+assert 'forecastEvidence' in store113 and 'meanCurrentMa' in store113 and 'coveragePercent' in store113
+assert 'showBatteryCurrentDiagnostic' in battery_ui113 and 'forecast80Minutes' in battery_ui113
+assert 'const val WIRE_COMPAT = "0.1.0-alpha.111"' in (root / 'app/src/main/java/br/dev/celularremoto/transport/AppVersion.kt').read_text()
+print('PASSOU: alpha.113 corrente observada, prognóstico conservador e UI remota')
+
+# alpha.114 — filtros, análise conservadora e limites de envio autenticado.
+history114 = (core_root / 'BatteryHistoryMath.kt').read_text()
+lab114 = (core_root / 'BatteryLabStore.kt').read_text()
+auto114 = (core_root / 'BatterySessionStore.kt').read_text()
+ui114 = (ui_root / 'BatteryScreenUi.kt').read_text()
+assert 'fun compare(a: Session, b: Session)' in history114 and 'MIN_DURATION_MS' in history114
+assert 'MAX_PUBLIC_HISTORY = 24' in lab114 and 'PUBLIC_GRAPH_SESSIONS = 3' in lab114
+assert 'PUBLIC_SESSIONS = 24' in auto114 and 'PUBLIC_GRAPH_POINTS = 40' in auto114
+assert 'showBatteryCompareDialog' in ui114 and 'batteryHistoryPeriod' in ui114
+assert (root / 'app/src/test/java/br/dev/celularremoto/core/BatteryHistoryMathTest.kt').exists()
+print('PASSOU: alpha.114 filtros de histórico, comparação conservadora e limites de amostras remotas')

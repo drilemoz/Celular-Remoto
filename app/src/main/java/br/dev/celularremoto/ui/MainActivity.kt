@@ -77,6 +77,8 @@ class MainActivity : Activity() {
     internal var batteryError: String? = null
     internal var batteryRequestGeneration = 0
     internal var batterySection = "resumo"
+    internal var batteryHistoryType = "ALL"
+    internal var batteryHistoryPeriod = "ALL"
     internal var settingsSection = "home"
     private var settingsReturnMode = 2
     internal val cameraPermissionRequest = 4317
@@ -151,6 +153,8 @@ class MainActivity : Activity() {
         }
         batteryRemote = savedInstanceState?.getBoolean("battery_remote", false) ?: false
         batterySection = savedInstanceState?.getString("battery_section", "resumo") ?: "resumo"
+        batteryHistoryType = savedInstanceState?.getString("battery_history_type", "ALL") ?: "ALL"
+        batteryHistoryPeriod = savedInstanceState?.getString("battery_history_period", "ALL") ?: "ALL"
         messagesTab = savedInstanceState?.getInt("messages_tab", 0)?.coerceIn(0, 1) ?: 0
         expandedRemoteFunctions = savedInstanceState?.getBoolean("expanded_remote_functions", false) ?: false
         if (mode == 4) {
@@ -233,6 +237,8 @@ class MainActivity : Activity() {
         outState.putInt("active_mode", mode)
         outState.putBoolean("battery_remote", batteryRemote)
         outState.putString("battery_section", batterySection)
+        outState.putString("battery_history_type", batteryHistoryType)
+        outState.putString("battery_history_period", batteryHistoryPeriod)
         outState.putInt("messages_tab", messagesTab)
         outState.putBoolean("expanded_remote_functions", expandedRemoteFunctions)
         outState.putString("settings_section", settingsSection)

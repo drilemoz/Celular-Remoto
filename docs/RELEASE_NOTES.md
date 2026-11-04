@@ -1,4 +1,18 @@
-# Celular Remoto — 0.1.0-alpha.112
+# Celular Remoto — 0.1.0-alpha.114
+
+- Histórico de bateria com filtros por tipo e período para o celular local ou pareado.
+- Comparação de dois testes Labs concluídos com cobertura de observação e taxa em p.p./h; diferenças de céu, potência nominal e tela geram avisos, sem classificar como vencedor.
+- Gráficos com horários e eixos para percentual, corrente e temperatura, sem interpolar lacunas ou leituras inválidas.
+- Mais resumos autenticados para navegar no histórico remoto, mas poucos pontos de gráficos por consulta para preservar Wi-Fi e bateria.
+- Continua sem dependência do Pulso Bateria, sem novo serviço/permissão e sem segundo workflow.
+- Compilação Android e testes em dois dispositivos ainda pendentes.
+
+# Celular Remoto — 0.1.0-alpha.113
+
+- Bateria: preservação da corrente líquida negativa mesmo durante CHARGING; diagnóstico de correntes instantânea/média/contador, com indicação da origem e sem supor potência solar.
+- Sessões automáticas: cobertura efetivamente observada, corrente média temporal válida e histórico resumido na aba principal.
+- Previsões para 80%, 90%, 100% e descarga combinam tendência recente e sessões históricas comparáveis quando há evidência; caso contrário permanecem indisponíveis.
+- Mantidos o protocolo autenticado, atualização remota, workflow único, assinatura, permissões e versão sequencial.
 
 - Separadas a versão instalada e a revisão do protocolo: alpha.111/112 podem compartilhar os recursos existentes sem exigir `versionName` idêntico; versões mais antigas não são garantidas.
 - Agendamento de consultas mais frequentes: 30 minutos, 1, 3, 6, 12 ou 24 horas, com padrão de 1 hora e consulta de recuperação ao abrir o app.

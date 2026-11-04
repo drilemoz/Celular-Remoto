@@ -1,3 +1,19 @@
+# Celular Remoto — 0.1.0-alpha.114 — Regras ativas
+
+- Aba Bateria: histórico filtrável do aparelho selecionado, com testes Labs e sessões automáticas organizadas por tipo e data. Comparações somente entre testes concluídos; condições distintas ou amostras insuficientes impedem conclusões de superioridade.
+- Taxa de carga/descarga calculada em pontos percentuais por hora do período decorrido, com cobertura >=70%, duração >=10 min e variação >=2 pontos percentuais. Isto não é energia solar gerada nem medição de capacidade.
+- Relatórios remotos autenticados retornam no máximo 24 resumos por categoria (testes e automáticas), com gráficos em amostras recentes selecionadas e payload limitado. Históricos privados continuam com limites existentes; não expandir socket ou permissões indiscriminadamente.
+- Preservar o serviço Monitorado único, protocolo AES-GCM e WIRE_COMPAT alpha.111; não interferir no sistema de atualização online nem na confirmação local de instalação.
+- Versão seguinte alpha.115/versionCode 115. É obrigatório testar compilação Android CI e funcionamento real de UI/pareamento em dois aparelhos. Verificações estáticas não equivalem ao build completo.
+
+# Celular Remoto — 0.1.0-alpha.113 — Regras ativas
+
+- A nova leitura de corrente respeita o sinal líquido reportado pelo Android, mesmo quando CHARGING e corrente negativa. CURRENT_NOW/AVERAGE são µA; CHARGE_COUNTER µAh. Não inferir potência solar, nem corrigir escala/sinal OEM sem evidência.
+- Previsões só com tendência observada sem lacunas, ou histórico comparável e recente; distinguir ausência de leitura. Evitar extrapolar resultados de painel USB para outros carregadores.
+- Sessões automáticas preservadas no arquivo atômico e expostas no protocolo autenticado existente; não criar serviço paralelo ou nova permissão.
+- Próxima alteração será alpha.114/versionCode 114; manter protocolo WIRE_COMPAT alpha.111 para interoperar com alpha.111/112, até mudança documentada e validada.
+- Executar testes locais, compilação Android no GitHub Actions e testes físicos em dois aparelhos antes de declarar funcionalidade validada.
+
 # Celular Remoto — 0.1.0-alpha.112 — Regras ativas
 
 - A versão do APK e o marcador de protocolo são distintos: `AppVersion.NAME=alpha.112`, `WIRE_COMPAT=alpha.111`. Pares 111 e 112 interoperam somente em operações já disponíveis; novos endpoints exigem alpha.112+.

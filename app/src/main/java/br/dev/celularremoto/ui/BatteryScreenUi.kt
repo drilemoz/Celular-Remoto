@@ -8,9 +8,11 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.ArrayAdapter
+import android.widget.HorizontalScrollView
 import android.text.InputType
 import br.dev.celularremoto.R
 import br.dev.celularremoto.core.BatteryLabStore
+import br.dev.celularremoto.core.BatteryHistoryMath
 import br.dev.celularremoto.core.BatteryGoalAlerts
 import br.dev.celularremoto.core.ControllerBatteryEvents
 import br.dev.celularremoto.core.RecentDevices
@@ -93,7 +95,7 @@ internal fun MainActivity.renderBatteryScreen() {
             when (battery.optString("currentSource")) {
                 "NOW" -> "Instantânea · Android"
                 "AVERAGE" -> "Média do hardware · Android"
-                "COUNTER" -> "Contador de carga · Android"
+                "COUNTER" -> "Contador de carga · média observada"
                 else -> "Leitura indisponível"
             }, R.drawable.ic_activity), LinearLayout.LayoutParams(0, -2, 1f))
         content.addView(one)
@@ -106,6 +108,12 @@ internal fun MainActivity.renderBatteryScreen() {
             if (voltage > 0) "${voltage} mV · não é potência solar" else "Tensão indisponível", R.drawable.ic_power),
             LinearLayout.LayoutParams(0, -2, 1f))
         content.addView(two)
+        val warning = battery.optString("currentWarning", "")
+            .takeUnless { it.isBlank() || it == "null" }
+        if (warning != null) content.addView(statePill(warning, "warning"))
+        content.addView(dialogCardRow("Diagnóstico da corrente", "Leituras brutas, média Android e contador de carga · ${battery.optString("currentSource", "NONE")}") {
+            showBatteryCurrentDiagnostic(battery)
+        })
         content.addView(label("Corrente líquida da bateria, não da entrada USB. Fonte: $powerSource. A geração solar real exige medidor externo.", 11f, muted = true))
     }
     val goalAlerts = data?.optJSONObject("goalAlerts")
@@ -229,6 +237,34 @@ private fun MainActivity.batteryMetric(title: String, value: String, subtitle: S
     addView(label(subtitle, 10.5f, muted = true).apply { maxLines = 2 })
 }
 
+private fun MainActivity.showBatteryCurrentDiagnostic(battery: JSONObject) {
+    val rawNow = battery.optInt("rawNowMicroA", Int.MIN_VALUE).takeIf { it != Int.MIN_VALUE }
+    val rawAverage = battery.optInt("rawAverageMicroA", Int.MIN_VALUE).takeIf { it != Int.MIN_VALUE }
+    val counter = battery.optInt("chargeCounterMicroAh", -1).takeIf { it >= 0 }
+    val counterWindow = battery.optLong("counterWindowMs", -1L).takeIf { it > 0 }
+    val (wrapper, body) = dialogWrapper()
+    body.addView(label("Diagnóstico das propriedades BatteryManager", 14f, strong = true))
+    body.addView(dialogMetricRow("Corrente instantânea Android", battery.safeDouble("instantMa")?.let {
+        "%+.1f mA".format(Locale.getDefault(), it)
+    } ?: "Indisponível"))
+    body.addView(dialogMetricRow("Corrente média Android", battery.safeDouble("averageMa")?.let {
+        "%+.1f mA".format(Locale.getDefault(), it)
+    } ?: "Indisponível"))
+    body.addView(dialogMetricRow("Média pelo contador de carga", battery.safeDouble("counterMeanMa")?.let {
+        "%+.1f mA".format(Locale.getDefault(), it) + (counterWindow?.let { window -> " · janela ${window / 1000} s" } ?: "")
+    } ?: "Aguardando ≥90 s de amostras válidas"))
+    body.addView(dialogMetricRow("CURRENT_NOW bruto", rawNow?.let { "$it µA" } ?: "Indisponível"))
+    body.addView(dialogMetricRow("CURRENT_AVERAGE bruto", rawAverage?.let { "$it µA" } ?: "Indisponível"))
+    body.addView(dialogMetricRow("CHARGE_COUNTER bruto", counter?.let { "$it µAh" } ?: "Indisponível"))
+    body.addView(dialogMetricRow("Origem selecionada", battery.optString("currentSource", "NONE")))
+    body.addView(label(battery.optString("currentDiagnostic", "Leitura indisponível"), 12f, muted = true))
+    val warning = battery.optString("currentWarning", "").takeUnless { it.isBlank() || it == "null" }
+    if (warning != null) body.addView(label("Atenção: $warning", 12f, muted = true))
+    body.addView(label("Sinais e unidades são reportados pelo Android. O contador exige observação contínua; não há correção automática de unidades do fabricante sem evidência suficiente. Potência líquida da bateria ≠ potência do painel solar.", 11.5f, muted = true))
+    showManagedDialog(themedPopup(this).setTitle("Diagnóstico elétrico").setView(wrapper)
+        .setPositiveButton("Fechar", null).create())
+}
+
 private fun JSONObject.safeDouble(name: String): Double? =
     if (isNull(name) || !has(name)) null else optDouble(name).takeIf { it.isFinite() }
 
@@ -330,6 +366,8 @@ private fun MainActivity.renderBatterySessionCard(session: JSONObject, compact: 
     val box = panel()
     box.addView(label("${batteryKind(session.optString("kind"))} · ${formatDate(session.optLong("startedAt"))}", 14f, strong = true))
     box.addView(label("${session.batteryPercent("initialPercent")} → ${session.batteryPercent("finalPercent")} · ${batteryDuration(session.optLong("durationMs"))}", 13.5f))
+    val observed = session.batteryHistorySession()
+    if (session.optLong("durationMs") > 0L) box.addView(label("${session.batteryProgress()} · cobertura ${"%.0f".format(Locale.getDefault(), BatteryHistoryMath.coverage(observed.observedMs, observed.durationMs) * 100)}%", 11.5f, muted = true))
     if (!compact) {
         box.addView(dialogMetricRow("Carregando confirmado", batteryDuration(session.optLong("chargingMs"))))
         box.addView(dialogMetricRow("Sem carregar confirmado", batteryDuration(session.optLong("notChargingMs"))))
@@ -360,30 +398,175 @@ private fun MainActivity.renderBatterySessionCard(session: JSONObject, compact: 
     content.addView(box)
 }
 
+private fun JSONObject.batteryHistorySession(): BatteryHistoryMath.Session {
+    val duration = optLong("durationMs", 0L).coerceAtLeast(0L)
+    return BatteryHistoryMath.Session(
+        kind = optString("kind", ""),
+        startedAt = optLong("startedAt", 0L), endedAt = optLong("endedAt", 0L),
+        durationMs = duration,
+        observedMs = (duration - optLong("unknownMs", duration).coerceAtLeast(0L)).coerceAtLeast(0L),
+        initialPercent = optInt("initialPercent", -1).takeIf { it in 0..100 },
+        finalPercent = optInt("finalPercent", -1).takeIf { it in 0..100 },
+        sky = optString("sky", ""), panelWatts = optInt("panelWatts", 0),
+        screen = optString("screen", "NAO_INFORMADA")
+    )
+}
+
+private fun JSONObject.batteryProgress(): String {
+    val first = optInt("initialPercent", -1)
+    val last = optInt("finalPercent", -1)
+    return if (first in 0..100 && last in 0..100) "%+d p.p.".format(Locale.getDefault(), last - first)
+        else "Variação indisponível"
+}
+
 private fun MainActivity.renderBatteryHistory(history: JSONArray, automatic: JSONObject?) {
-    content.addView(label("Sessões automáticas de carga e descarga", 15.5f, strong = true))
-    renderAutoSessionList(automatic?.optJSONArray("history") ?: JSONArray())
-    gap(13)
-    content.addView(label("Sessões armazenadas no aparelho selecionado", 15.5f, strong = true))
-    if (history.length() == 0) {
-        content.addView(label("Nenhum relatório salvo.", 13f, muted = true))
+    content.addView(label("Histórico do aparelho selecionado", 16f, strong = true))
+    content.addView(label("Filtros aplicados aos registros recebidos deste aparelho. Valores não são preenchidos em lacunas.", 11.5f, muted = true))
+    val kinds = listOf("ALL" to "Todos", "SOLAR" to "☀ Solar", "ELECTRIC" to "⚡ Elétrico",
+        "DISCHARGE" to "Consumo", "AUTO" to "Carga auto (teste)", "CHARGE" to "Carga normal",
+        "AUTO_DISCHARGE" to "Descarga normal")
+    val horizontal = HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false }
+    val choices = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+    kinds.forEach { (key, title) ->
+        choices.addView(actionButton(title, batteryHistoryType == key) {
+            batteryHistoryType = key
+            render()
+        }, LinearLayout.LayoutParams(-2, dp(42)).apply { rightMargin = dp(5) })
+    }
+    horizontal.addView(choices)
+    content.addView(horizontal)
+    gap(8)
+    val periods = listOf("ALL" to "Tudo", "7" to "7 dias", "30" to "30 dias", "90" to "90 dias")
+    val periodRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+    periods.forEachIndexed { index, (key, title) ->
+        periodRow.addView(actionButton(title, batteryHistoryPeriod == key) {
+            batteryHistoryPeriod = key
+            render()
+        }, LinearLayout.LayoutParams(0, dp(39), 1f).apply { if (index < periods.lastIndex) rightMargin = dp(4) })
+    }
+    content.addView(periodRow)
+    gap(10)
+    // Mesmo relatório autenticado para o aparelho local e o remoto; filtros somente na UI.
+    val visible = mutableListOf<Pair<JSONObject, Boolean>>()
+    for (i in 0 until history.length()) history.optJSONObject(i)?.let { visible.add(it to false) }
+    val autos = automatic?.optJSONArray("history") ?: JSONArray()
+    for (i in 0 until autos.length()) autos.optJSONObject(i)?.let { visible.add(it to true) }
+    val now = System.currentTimeMillis()
+    val periodDays = batteryHistoryPeriod.toIntOrNull()
+    val filtered = visible.filter { (item, isAuto) ->
+        val kind = item.optString("kind")
+        val group = if (isAuto && kind == "DISCHARGE") "AUTO_DISCHARGE" else kind
+        (batteryHistoryType == "ALL" || batteryHistoryType == group) &&
+            (periodDays == null || item.optLong("startedAt") >= now - periodDays * 86_400_000L)
+    }.sortedByDescending { it.first.optLong("startedAt") }
+    content.addView(label("${filtered.size} sessões encontradas · ${visible.size} recebidas", 11.5f, muted = true))
+    if (filtered.isEmpty()) {
+        content.addView(label("Nenhuma sessão corresponde aos filtros. Selecione Todos ou um período maior.", 13f, muted = true))
         return
     }
-    for (i in 0 until history.length()) {
-        val session = history.optJSONObject(i) ?: continue
-        content.addView(dialogCardRow("${batteryKind(session.optString("kind"))} · ${formatDate(session.optLong("startedAt"))}",
-            "${session.batteryPercent("initialPercent")} → ${session.batteryPercent("finalPercent")} · ${batteryDuration(session.optLong("durationMs"))}") {
-            showBatteryReportDialog(session)
+    val completedLabs = filtered.filter { !it.second && !it.first.optBoolean("active") }
+        .map { it.first }.filter { it.optString("kind") in setOf("SOLAR", "ELECTRIC", "DISCHARGE", "AUTO") }
+    if (completedLabs.size >= 2) {
+        content.addView(button("Comparar duas sessões registradas") { showBatteryCompareDialog(completedLabs) })
+        gap(7)
+    }
+    filtered.forEach { (item, isAuto) ->
+        val labelKind = if (isAuto) when (item.optString("kind")) {
+            "CHARGE" -> "Carga normal"
+            "DISCHARGE" -> "Descarga normal"
+            else -> "Sessão automática"
+        } else batteryKind(item.optString("kind"))
+        val badge = if (item.optBoolean("active")) " · EM ANDAMENTO" else ""
+        val rate = if (!isAuto) BatteryHistoryMath.rate(item.batteryHistorySession()) else null
+        val cover = if (isAuto) item.safeDouble("coveragePercent") else
+            (100.0 * BatteryHistoryMath.coverage(item.batteryHistorySession().observedMs,
+                item.optLong("durationMs")))
+        val note = "$badge${if (badge.isNotBlank()) " · " else ""}${item.batteryProgress()} · " +
+            "${batteryDuration(item.optLong("durationMs"))}" +
+            (if (cover != null && item.optLong("durationMs") > 0L) " · cobertura ${"%.0f".format(Locale.getDefault(), cover)}%" else "") +
+            (rate?.let { " · ${"%+.1f".format(Locale.getDefault(), it)} p.p./h" } ?: "")
+        content.addView(dialogCardRow("$labelKind · ${formatDate(item.optLong("startedAt"))}",
+            "${item.batteryPercent("initialPercent")} → ${item.batteryPercent("finalPercent")}$note") {
+            if (isAuto) showBatteryAutomaticReport(item) else showBatteryReportDialog(item)
         })
         gap(6)
     }
-    content.addView(label("Exibidas as 12 sessões mais recentes; até 80 são preservadas no armazenamento privado do aplicativo.", 11f, muted = true))
+    content.addView(label("Até 24 resumos de testes e 24 sessões automáticas são enviados pelo aparelho. Gráficos são incluídos apenas nas sessões mais recentes para poupar Wi-Fi e bateria. O histórico local é maior.", 11f, muted = true))
+}
+
+private fun MainActivity.showBatteryCompareDialog(sessions: List<JSONObject>) {
+    val (wrapper, body) = dialogWrapper()
+    body.addView(label("Compare dois testes concluídos do mesmo tipo e com condições semelhantes.", 12f, muted = true))
+    val captions = sessions.map { item ->
+        "${batteryKind(item.optString("kind"))} · ${formatDate(item.optLong("startedAt"))} · ${item.batteryProgress()}"
+    }
+    fun selector(title: String, index: Int): Spinner {
+        body.addView(label(title, 12.5f, strong = true))
+        return Spinner(this).apply {
+            adapter = ArrayAdapter(this@showBatteryCompareDialog, android.R.layout.simple_spinner_dropdown_item, captions)
+            setSelection(index.coerceAtMost(captions.lastIndex))
+            body.addView(this)
+        }
+    }
+    val one = selector("Primeira sessão", 0)
+    val two = selector("Segunda sessão", 1)
+    showManagedDialog(themedPopup(this).setTitle("Comparar sessões").setView(wrapper)
+        .setNegativeButton("Cancelar", null)
+        .setPositiveButton("Comparar") { _, _ ->
+            val a = one.selectedItemPosition
+            val b = two.selectedItemPosition
+            if (a == b) showAppNotice("Seleção inválida", "Escolha duas sessões diferentes.")
+            else showBatteryCompareResult(sessions[a], sessions[b])
+        }.create())
+}
+
+private fun MainActivity.showBatteryCompareResult(first: JSONObject, second: JSONObject) {
+    val a = first.batteryHistorySession()
+    val b = second.batteryHistorySession()
+    val result = BatteryHistoryMath.compare(a, b)
+    fun percentage(value: Double) = "%.0f%%".format(Locale.getDefault(), value * 100)
+    fun rate(value: Double?) = value?.let { "%+.2f p.p./h".format(Locale.getDefault(), it) } ?: "Indisponível"
+    val (scroll, body) = dialogWrapper()
+    body.addView(label("Sessão A · ${batteryKind(a.kind)} · ${formatDate(a.startedAt)}", 13f, strong = true))
+    body.addView(dialogMetricRow("Variação", first.batteryProgress()))
+    body.addView(dialogMetricRow("Ritmo observado", rate(result.firstRate)))
+    body.addView(dialogMetricRow("Cobertura", percentage(result.firstCoverage)))
+    body.addView(dialogMetricRow("Temperatura máxima", first.safeDouble("maxTemperatureC")?.let {
+        "%.1f °C".format(Locale.getDefault(), it)
+    } ?: "Indisponível"))
+    body.addView(label("Sessão B · ${batteryKind(b.kind)} · ${formatDate(b.startedAt)}", 13f, strong = true))
+    body.addView(dialogMetricRow("Variação", second.batteryProgress()))
+    body.addView(dialogMetricRow("Ritmo observado", rate(result.secondRate)))
+    body.addView(dialogMetricRow("Cobertura", percentage(result.secondCoverage)))
+    body.addView(dialogMetricRow("Temperatura máxima", second.safeDouble("maxTemperatureC")?.let {
+        "%.1f °C".format(Locale.getDefault(), it)
+    } ?: "Indisponível"))
+    if (result.meaningful) body.addView(dialogMetricRow("Diferença B − A", rate(result.rateDifference)))
+    else body.addView(label("Comparação de ritmo não conclusiva. Os valores individuais acima são observados, não garantem desempenho equivalente.", 12f, muted = true))
+    result.warnings.forEach { body.addView(label("Atenção: $it", 11.5f, muted = true)) }
+    body.addView(label("Taxas em pontos percentuais por hora do tempo decorrido, não energia solar medida. Nenhuma leitura ausente é preenchida.", 11f, muted = true))
+    showManagedDialog(themedPopup(this).setTitle("Análise comparativa").setView(scroll)
+        .setPositiveButton("Fechar", null).create())
 }
 
 private fun MainActivity.showBatteryReportDialog(session: JSONObject) {
     val text = batteryReportText(session)
     val (scroll, body) = dialogWrapper()
     body.addView(label(text, 13f))
+    val coverage = BatteryHistoryMath.coverage(session.batteryHistorySession().observedMs,
+        session.optLong("durationMs"))
+    body.addView(dialogMetricRow("Cobertura confirmada", "%.0f%%".format(Locale.getDefault(), coverage * 100)))
+    body.addView(dialogMetricRow("Variação observada", session.batteryProgress()))
+    BatteryHistoryMath.rate(session.batteryHistorySession())?.let {
+        body.addView(dialogMetricRow("Ritmo observado", "%+.2f p.p./h".format(Locale.getDefault(), it)))
+    }
+    val points = session.optJSONArray("points")
+    if (points != null && points.length() >= 2) {
+        listOf("percent" to "Bateria (%)", "ma" to "Corrente líquida (mA)", "temp" to "Temperatura (°C)").forEach { (metric, title) ->
+            body.addView(label(title, 12f, strong = true))
+            body.addView(BatteryLabChart(this, points, metric, ink, highlight), LinearLayout.LayoutParams(-1, dp(150)))
+        }
+    } else body.addView(label("Gráficos não incluídos neste resumo remoto. Consulte as sessões mais recentes ou o aparelho de origem.", 11f, muted = true))
     showManagedDialog(themedPopup(this).setTitle("Relatório de bateria").setView(scroll)
         .setNegativeButton("Fechar", null)
         .setPositiveButton("Compartilhar") { _, _ ->
@@ -450,13 +633,43 @@ private fun MainActivity.renderAutomaticBatterySummary(data: JSONObject?) {
         content.addView(statePill(if (paused) "Sessão sem leituras recentes" else "$mode em andamento",
             if (paused) "warning" else "active"))
         val forecast = active.optLong("forecastMinutes", -1L)
+        fun etaText(minutes: Long): String = if (minutes == 0L) "Meta alcançada" else
+            "~${minutes / 60}h ${minutes % 60}min · aprox. ${formatDate(System.currentTimeMillis() + minutes * 60_000L)}"
         content.addView(dialogMetricRow(if (mode == "Carregamento") "Previsão até 100%" else "Autonomia até 0%",
-            if (paused) "Indisponível: coleta pausada" else if (forecast >= 0L) {
-                if (forecast == 0L) "Meta alcançada" else "~${forecast / 60}h ${forecast % 60}min"
-            } else "Calculando… (mínimo 10 min e 2 p.p.)"))
+            if (paused) "Indisponível: coleta pausada" else if (forecast >= 0L) etaText(forecast)
+            else "Calculando… (exige tendência válida ou sessões comparáveis)"))
+        if (!paused && mode == "Carregamento" && forecast >= 0L) {
+            listOf("Até 80%" to "forecast80Minutes", "Até 90%" to "forecast90Minutes").forEach { (caption, key) ->
+                val value = active.optLong(key, -1L)
+                if (value >= 0L) content.addView(dialogMetricRow(caption, etaText(value)))
+            }
+        }
+        val rate = active.safeDouble("forecastRatePercentHour")
+        if (!paused && rate != null) content.addView(dialogMetricRow("Ritmo estimado",
+            "%.1f p.p./h".format(Locale.getDefault(), rate)))
+        val basis = active.optString("forecastBasis", "")
+        if (!paused && basis.isNotBlank()) content.addView(label("Base: $basis. Previsão aproximada, não garantia de horário.", 11f, muted = true))
         content.addView(dialogMetricRow("Variação observada",
             "${active.batteryPercent("initialPercent")} → ${active.batteryPercent("finalPercent")}"))
         content.addView(dialogMetricRow("Intervalos efetivamente observados", batteryDuration(active.optLong("observedMs"))))
+        content.addView(dialogMetricRow("Cobertura das leituras", active.safeDouble("coveragePercent")?.let {
+            "%.0f%%".format(Locale.getDefault(), it)
+        } ?: "Indisponível"))
+        content.addView(dialogMetricRow("Corrente líquida média da sessão", active.safeDouble("meanCurrentMa")?.let {
+            "%+.0f mA".format(Locale.getDefault(), it)
+        } ?: "Sem leituras suficientes"))
+    }
+    val recent = data?.optJSONArray("history") ?: JSONArray()
+    if (recent.length() > 0) {
+        content.addView(label("Últimas sessões de carga e descarga", 14f, strong = true))
+        for (i in 0 until minOf(3, recent.length())) {
+            val item = recent.optJSONObject(i) ?: continue
+            val sessionType = if (item.optString("kind") == "CHARGE") "Carregamento" else "Descarga"
+            content.addView(dialogCardRow("$sessionType · ${formatDate(item.optLong("startedAt"))}",
+                "${item.batteryPercent("initialPercent")} → ${item.batteryPercent("finalPercent")} · ${batteryDuration(item.optLong("durationMs"))}") {
+                showBatteryAutomaticReport(item)
+            })
+        }
     }
     gap(7)
 }
@@ -486,6 +699,9 @@ private fun MainActivity.showBatteryAutomaticReport(session: JSONObject) {
         appendLine("Bateria: ${session.batteryPercent("initialPercent")} → ${session.batteryPercent("finalPercent")}")
         appendLine("Duração: ${batteryDuration(session.optLong("durationMs"))}")
         appendLine("Tempo com leituras consecutivas válidas: ${batteryDuration(session.optLong("observedMs"))}")
+        appendLine("Cobertura das medições: ${session.safeDouble("coveragePercent")?.let { "%.0f%%".format(Locale.getDefault(), it) } ?: "indisponível"}")
+        appendLine("Corrente média líquida: ${session.safeDouble("meanCurrentMa")?.let { "%+.0f mA".format(Locale.getDefault(), it) } ?: "indisponível"}")
+        appendLine("Fonte Android: ${session.optString("powerSource", "").ifBlank { "não identificada" }}")
         appendLine("Temperatura máxima observada: ${session.safeDouble("maxTemperatureC")?.let { "%.1f °C".format(Locale.getDefault(), it) } ?: "indisponível"}")
         appendLine("Término: ${session.optString("stopReason").ifBlank { "Em andamento" }}")
         append("Previsões são estimativas baseadas na variação real do percentual, não medições de capacidade.")
@@ -509,51 +725,84 @@ private fun MainActivity.showBatteryAutomaticReport(session: JSONObject) {
         }.create())
 }
 
-/** Traçado sem interpolar lacunas > 90 segundos. Fonte: amostras realmente registradas. */
+/** Gráfico com eixos, faixas e lacunas: nunca conecta amostras com diferença >90s. */
 private class BatteryLabChart(context: Context, private val samples: JSONArray, private val metric: String,
     private val ink: Int, private val accent: Int) : View(context) {
+    private val density = resources.displayMetrics.density
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = accent; style = Paint.Style.STROKE; strokeWidth = 3f * resources.displayMetrics.density
+        color = accent; style = Paint.Style.STROKE; strokeWidth = 2.5f * density
     }
-    private val baseline = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ink; alpha = 70; strokeWidth = 1f }
+    private val mark = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = accent; style = Paint.Style.FILL }
+    private val grid = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ink; alpha = 46; strokeWidth = 1f * density }
+    private val axisText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = ink; alpha = 175; textSize = 10f * resources.displayMetrics.scaledDensity
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val availableHeight = height.toFloat() - 16f
-        if (width <= 0 || availableHeight <= 0f) return
-        val valid = (0 until samples.length()).mapNotNull { samples.optJSONObject(it) }
-            .mapNotNull { item ->
+        val left = 43f * density
+        val right = width.toFloat() - 7f * density
+        val top = 7f * density
+        val bottom = height.toFloat() - 19f * density
+        if (right <= left || bottom <= top) return
+        val entries = (0 until samples.length()).mapNotNull { samples.optJSONObject(it) }
+            .map { sample ->
                 val value = when (metric) {
-                    "percent" -> item.optInt("percent", -1).takeIf { it in 0..100 }?.toDouble()
-                    "ma" -> (item.safeDouble("ma") ?: item.safeDouble("currentMa"))?.takeIf { it in -30_000.0..30_000.0 }
-                    "temp" -> (item.safeDouble("temp") ?: item.safeDouble("temperatureC"))?.takeIf { it in -30.0..100.0 }
+                    "percent" -> sample.optInt("percent", -1).takeIf { it in 0..100 }?.toDouble()
+                    "ma" -> (sample.safeDouble("ma") ?: sample.safeDouble("currentMa"))?.takeIf { it in -30_000.0..30_000.0 }
+                    "temp" -> (sample.safeDouble("temp") ?: sample.safeDouble("temperatureC"))?.takeIf { it in -30.0..100.0 }
                     else -> null
                 }
-                value?.let { item to it }
+                sample to value
             }
-        if (valid.size < 2) return
-        val minT = valid.first().first.optLong("wall")
-        val maxT = valid.last().first.optLong("wall")
+        val valid = entries.filter { it.second != null && it.first.optLong("wall", 0L) > 0L }
+        if (valid.size < 2) {
+            canvas.drawText("Sem amostras suficientes", left, (bottom + top) / 2f, axisText)
+            return
+        }
+        val minT = valid.minOf { it.first.optLong("wall") }
+        val maxT = valid.maxOf { it.first.optLong("wall") }
         if (maxT <= minT) return
-        val values = valid.map { it.second }
-        val minValue = values.minOrNull() ?: return
-        val maxValue = values.maxOrNull() ?: return
-        val pad = (maxValue - minValue).coerceAtLeast(1.0) * 0.08
-        val low = minValue - pad
-        val span = maxValue + pad - low
-        canvas.drawLine(0f, availableHeight, width.toFloat(), availableHeight, baseline)
+        val values = valid.mapNotNull { it.second }
+        val minimum = values.minOrNull() ?: return
+        val maximum = values.maxOrNull() ?: return
+        val pad = (maximum - minimum).coerceAtLeast(1.0) * 0.12
+        val low = minimum - pad
+        val high = maximum + pad
+        val span = high - low
+        for (fraction in 0..2) {
+            val ratio = fraction / 2f
+            val y = bottom - ratio * (bottom - top)
+            canvas.drawLine(left, y, right, y, grid)
+            val value = low + ratio * span
+            val label = if (metric == "percent") "%.0f%%".format(Locale.getDefault(), value)
+                else "%.0f".format(Locale.getDefault(), value)
+            canvas.drawText(label, 2f * density, y + 4f * density, axisText)
+        }
+        val firstTime = java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(java.util.Date(minT))
+        val lastTime = java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(java.util.Date(maxT))
+        canvas.drawText(firstTime, left, height - 3f * density, axisText)
+        canvas.drawText(lastTime, (right - axisText.measureText(lastTime)).coerceAtLeast(left), height - 3f * density, axisText)
+        fun x(t: Long): Float = left + (t - minT).toFloat() / (maxT - minT) * (right - left)
+        fun y(v: Double): Float = bottom - ((v - low) / span).toFloat() * (bottom - top)
         var previous: Pair<JSONObject, Double>? = null
-        valid.forEach { entry ->
-            val item = entry.first
-            val previousItem = previous
-            if (previousItem != null && item.optLong("wall") - previousItem.first.optLong("wall") in 1..90_000L &&
-                item.optLong("elapsed") - previousItem.first.optLong("elapsed") in 1..90_000L) {
-                val x1 = (previousItem.first.optLong("wall") - minT).toFloat() / (maxT - minT) * width
-                val y1 = availableHeight - ((previousItem.second - low) / span).toFloat() * availableHeight
-                val x2 = (item.optLong("wall") - minT).toFloat() / (maxT - minT) * width
-                val y2 = availableHeight - ((entry.second - low) / span).toFloat() * availableHeight
-                canvas.drawLine(x1, y1, x2, y2, stroke)
+        entries.forEach { (item, value) ->
+            if (value == null || item.optLong("wall", 0L) <= 0L) {
+                previous = null // Não conecta sobre amostra inválida.
+                return@forEach
             }
-            previous = entry
+            val prior = previous
+            val t = item.optLong("wall")
+            if (prior != null) {
+                val deltaWall = t - prior.first.optLong("wall")
+                val deltaElapsed = item.optLong("elapsed", -1L) - prior.first.optLong("elapsed", -1L)
+                if (deltaWall in 1..90_000L && deltaElapsed in 1..90_000L &&
+                    kotlin.math.abs(deltaElapsed - deltaWall) <= 10_000L) {
+                    canvas.drawLine(x(prior.first.optLong("wall")), y(prior.second), x(t), y(value), stroke)
+                }
+            }
+            canvas.drawCircle(x(t), y(value), 1.65f * density, mark)
+            previous = item to value
         }
     }
 }

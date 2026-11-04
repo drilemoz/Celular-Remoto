@@ -15,6 +15,12 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "Bem-vindo à atualização"))
     sectionGap(layout, 10)
     val entries = listOf(
+        "Histórico de bateria com filtros" to "Filtre sessões locais ou do aparelho remoto por tipo (solar, elétrico, consumo, carga/descarga automática) e período de 7, 30, 90 dias ou todo o histórico disponível.",
+        "Comparação de testes" to "Compare duas sessões concluídas com taxa em pontos percentuais por hora e cobertura. O app avisa se céu, painel ou condição da tela tornam a comparação inconclusiva.",
+        "Gráficos com lacunas" to "Gráficos de percentual, corrente e temperatura mostram eixos, horários e apenas pontos registrados. Intervalos maiores que 90 segundos não recebem linhas inventadas.",
+        "Bateria: corrente avançada" to "Corrente instantânea, média Android e média temporal pelo contador, com alerta para sinais contraditórios sem esconder leituras válidas.",
+        "Previsão com histórico" to "Previsões de carga/descarga usam tendência recente e histórico comparável quando há dados suficientes; metas de 80%, 90% e 100%.",
+        "Sessões e diagnóstico" to "Média líquida da sessão, cobertura de amostras, últimas recargas na tela principal e diagnóstico com valores brutos. Dados remotos continuam autenticados.",
         "Versões diferentes conectam" to "A alpha.112 conversa com a alpha.111 nas operações existentes, usando marcador de protocolo compatível, sem exigir mesmo número do APK.",
         "Atualização mais frequente" to "Padrão de 1 hora, com opções de 30 minutos a 24 horas. O Android poderá atrasar a consulta para economizar energia.",
         "Atualizar aparelho remoto" to "Configurações → Atualizações agora consulta estado remoto e solicita verificação/download no aparelho pareado, após autorização local. Instalação sempre no próprio celular.",

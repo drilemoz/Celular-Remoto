@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.112
+# Celular Remoto v0.1.0-alpha.114
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,23 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.112 / versionCode 112** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.114 / versionCode 114** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Histórico de bateria e comparação (alpha.114)
+
+- Histórico do aparelho local ou remoto com filtros por tipo e período, integrando sessões dos testes Solar, Elétrico, Consumo, Automático e sessões normais de carga/descarga. O filtro atua somente nos resumos recebidos, sem novas consultas de armazenamento privado do pareado.
+- Comparação de dois testes concluídos: variação de percentual, tempo, cobertura, ritmo observado em p.p./h e temperatura máxima. A comparação é marcada como inconclusiva quando tipo, céu, painel nominal ou estado da tela não são equivalentes, ou quando a evidência é insuficiente.
+- Gráficos com grades, horários e amostras reais; sem traçado contínuo em lacunas >90s ou com leitura inválida. Dados antigos são preservados, embora algumas sessões legadas possam conter apenas o trecho final.
+- Até 24 resumos Labs e 24 automáticos por consulta autenticada; até três gráficos de cada categoria com no máximo 40 pontos por sessão. Retenção local permanece em 80 Labs/120 automáticas, sem migrar banco nem ampliar permissões.
+- É preciso validar a compilação Android e a usabilidade em telas pequenas. O Pulso Bateria não é uma dependência do APK.
+
+## Bateria avançada (alpha.113)
+
+- Corrente líquida do Android preservada inclusive negativa no estado CHARGING; leituras instantânea, média e média por CHARGE_COUNTER mostram origem e valores brutos. Correções OEM de escala/sinal não são presumidas.
+- Sessões automáticas: média de corrente ponderada apenas por intervalos observados, cobertura das amostras e fonte reportada pelo Android. Histórico anterior mantém-se legível sem migração destrutiva.
+- Previsões após tendência contígua válida (≥10 minutos e 2 pontos percentuais) ou ≥2 sessões históricas recentes comparáveis. Fontes USB não distinguem painel solar de carregador; mostrar limitação.
+- Resumo com metas estimadas de 80/90/100%, proveniência da estimativa, últimas sessões e diagnóstico elétrico acessível local ou remotamente.
+- Sem novo serviço, permissão, segundo workflow ou dependência do APK Pulso Bateria.
 
 ## Atualizações mais automáticas (alpha.112)
 

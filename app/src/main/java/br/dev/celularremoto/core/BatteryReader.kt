@@ -5,9 +5,11 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Build
+import android.os.SystemClock
 import org.json.JSONObject
 
 object BatteryReader {
+    private val counterTracker = BatteryCounterMeanTracker()
     fun snapshot(context: Context): JSONObject {
         val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         val manager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
@@ -21,30 +23,13 @@ object BatteryReader {
         val current = manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
         val average = manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE)
         val chargeCounter = manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
-        // Contrato Android: CURRENT_NOW/AVERAGE são µA, não corrente de entrada USB.
-        // Alguns fabricantes apresentam escalas/sinais incoerentes: não corrigir sem evidência.
-        fun readableCurrent(raw: Int): Double? = raw.toLong()
-            .takeUnless { raw == Int.MIN_VALUE || raw == Int.MAX_VALUE ||
-                kotlin.math.abs(it) > 30_000_000L }?.div(1000.0)
-        val rawNowMa = readableCurrent(current)
-        val rawAverageMa = readableCurrent(average)
-        fun matchesState(value: Double): Boolean = when (status) {
-            BatteryManager.BATTERY_STATUS_CHARGING -> value >= 0.0
-            BatteryManager.BATTERY_STATUS_DISCHARGING -> value <= 0.0
-            else -> true
-        }
-        val source = when {
-            rawNowMa != null && rawNowMa != 0.0 && matchesState(rawNowMa) -> "NOW"
-            rawAverageMa != null && rawAverageMa != 0.0 && matchesState(rawAverageMa) -> "AVERAGE"
-            rawNowMa != null && matchesState(rawNowMa) -> "NOW"
-            rawAverageMa != null && matchesState(rawAverageMa) -> "AVERAGE"
-            else -> "NONE"
-        }
-        val selected = when (source) {
-            "NOW" -> rawNowMa
-            "AVERAGE" -> rawAverageMa
-            else -> null
-        }
+        // CURRENT_NOW/AVERAGE são µA. Um estado CHARGING pode coexistir com descarga
+        // líquida quando o consumo excede a potência efetivamente recebida.
+        val counterMean = counterTracker.observe(
+            chargeCounter.takeIf { it in 0..100_000_000 }, status, SystemClock.elapsedRealtime())
+        val currentReading = BatteryCurrentMath.select(current, average, counterMean, status)
+        val selected = currentReading.ma
+        val source = currentReading.source
 
         return JSONObject().apply {
             put("levelPercent", percent ?: JSONObject.NULL)
@@ -60,15 +45,18 @@ object BatteryReader {
             put("voltageMv", if (voltageMv > 0) voltageMv else JSONObject.NULL)
             put("currentMa", selected ?: JSONObject.NULL)
             put("currentSource", source)
-            put("currentDiagnostic", if (source == "NONE") "Corrente não confirmada ou sinal incompatível" else
-                "Corrente líquida; ${if (source == "NOW") "instantânea" else "média do hardware"}; µA → mA")
-            put("averageMa", rawAverageMa ?: JSONObject.NULL)
-            put("rawNowMicroA", if (rawNowMa != null) current else JSONObject.NULL)
-            put("rawAverageMicroA", if (rawAverageMa != null) average else JSONObject.NULL)
+            put("currentDiagnostic", currentReading.diagnostic)
+            put("currentWarning", currentReading.warning ?: JSONObject.NULL)
+            put("currentQuality", currentReading.quality)
+            put("instantMa", currentReading.nowMa ?: JSONObject.NULL)
+            put("counterMeanMa", counterMean ?: JSONObject.NULL)
+            put("counterWindowMs", counterTracker.windowMs ?: JSONObject.NULL)
+            put("averageMa", currentReading.averageMa ?: JSONObject.NULL)
+            put("rawNowMicroA", if (currentReading.nowMa != null) current else JSONObject.NULL)
+            put("rawAverageMicroA", if (currentReading.averageMa != null) average else JSONObject.NULL)
             put("chargeCounterMicroAh", if (chargeCounter in 0..100_000_000) chargeCounter else JSONObject.NULL)
             // Potência líquida no terminal da bateria, NÃO potência gerada pelo painel solar.
-            put("batteryNetPowerW", if (voltageMv > 0 && selected != null)
-                voltageMv.toDouble() * selected / 1_000_000.0 else JSONObject.NULL)
+            put("batteryNetPowerW", BatteryCurrentMath.batteryPowerWatts(voltageMv, selected) ?: JSONObject.NULL)
             put("updatedMs", System.currentTimeMillis())
             put("device", "${Build.MANUFACTURER} ${Build.MODEL}".trim())
             put("androidSdk", Build.VERSION.SDK_INT)

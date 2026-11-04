@@ -51,9 +51,9 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 ## Distribuição e assinatura
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.112` e `versionCode=112`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.114` e `versionCode=114`.
 
-- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.112.apk`.
+- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.114.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.
 - Com quatro Secrets, Gradle gera APK Release assinado e AAB. Sem Secrets, o arquivo é Debug de teste e não preserva necessariamente a assinatura entre execuções.
 - Releases são prévias, não substituem a futura revisão da Google Play e nem os ensaios reais.
@@ -354,3 +354,15 @@ A CI publica manifesto JSON junto com APK e checksum apenas com os 4 Secrets de 
 
 ## Compatibilidade de versões (alpha.112)
 Versão do APK separada de `appVersion` no fio; marcador de protocolo 111 permite 111↔112. Não altera `WireProtocol.VERSION`, AES-GCM nem estrutura dos recursos existentes. Operação `appUpdate` nova só é atendida por alpha.112+.
+
+## Bateria — alpha.113
+
+- `BatteryCurrentMath` escolhe leituras válidas do Android sem descartar sinais negativos durante carregamento. `BatteryCounterMeanTracker` calcula média de corrente pela variação de CHARGE_COUNTER somente após janela real e leituras válidas; não calibra automaticamente fabricante.
+- `BatteryForecastMath` estima após pelo menos dez minutos/2 p.p. contíguos na tendência recente ou duas sessões recentes de mesma categoria de fonte (não identifica potência solar). Exibe evidência e mantém ausências como nulas.
+- O armazenamento atômico legado `battery_sessions_v1.json` recebe campos aditivos; nenhuma migração destrutiva. O serviço Monitorado mantém coleta única.
+
+## Bateria — alpha.114
+
+`BatteryHistoryMath` contém regras puras, testáveis em JVM, para cobertura, cálculo de taxa e avisos de comparabilidade entre testes. `BatteryScreenUi` aplica os filtros apenas sobre dados já recebidos de `BatteryLabStore.report()` / `BatterySessionStore.report()`, tanto no controlador quanto localmente. Não foi criado comando remoto nem alterado o protocolo AES-GCM.
+
+Os relatórios incluem até 24 resumos Labs e 24 resumos de sessões automáticas; pontos ficam limitados a três registros recentes por categoria, com no máximo 40 pontos por registro, para não exceder o limite de resposta do cliente. Há limites maiores no armazenamento privado, que permanece em JSON atômico, sem migração destrutiva. O gráfico mostra somente amostras reais e não conecta lacunas >90 segundos.
