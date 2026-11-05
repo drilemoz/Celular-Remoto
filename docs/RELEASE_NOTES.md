@@ -1,3 +1,25 @@
+# Celular Remoto v0.1.0-alpha.126 — diagnóstico e entrega de alertas
+
+- Centraliza verificação de notificações de saúde, metas, conexão e atualização pronta, com estados de permissão, aplicativo e canais individuais.
+- Os eventos de saúde/metas locais e remotas só são confirmados após aceitação pelo gerenciador Android. Uma tentativa bloqueada pode ser repetida enquanto o evento ainda é recente e relevante.
+- Eventos de metas remotos também são processados durante a consulta autenticada da tela Controlar.
+- Ajustes → Alertas e proteção: estado dos canais, histórico limitado e privado, abrir ajustes do sistema e envio manual de notificação de teste.
+- "Aceita pelo Android" não significa visualizada, tocada ou lida. Nenhum compartilhamento sensível adicional foi introduzido.
+- Mantidos serviço único, workflow único e `WIRE_COMPAT=0.1.0-alpha.111`. Build completo Android e testes reais de permissão/Doze/canais pendentes.
+
+---
+
+# Celular Remoto v0.1.0-alpha.125 — notificação informativa local e remota
+
+- Barra recolhida: percentual e temperatura observados no aparelho local; estado de carga e situação do monitoramento.
+- Notificação expandida: corrente líquida observada, previsão de carga/autonomia quando válida, informações do Monitorado e última resposta autenticada do aparelho remoto selecionado.
+- Última resposta não significa conexão permanente. Sem remoto pareado, indicar explicitamente a ausência.
+- Reaproveita a coleta de bateria e o serviço foreground já existentes; a atualização visual limitada não acrescenta sondagens de rede ou serviço paralelo.
+- Não muda autorização, acesso remoto, notificações de alerta, instalação de APK, AES-GCM ou `WIRE_COMPAT`.
+- Pendente build Android completo e ensaios com tela apagada/Doze e redes instáveis.
+
+---
+
 # Celular Remoto v0.1.0-alpha.124 — todos os comandos visíveis e menos recriações de UI
 
 - **Controlar:** as oito "Outras funções" são sempre exibidas em grade abaixo dos quatro atalhos principais. Não existe mais botão para recolher comandos nem estado antigo de expansão.

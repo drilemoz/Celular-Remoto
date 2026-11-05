@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Todos os 12 comandos disponíveis" to "Os 4 atalhos e as 8 outras funções ficam visíveis na tela Controlar; removido o botão para ocultar comandos.",
-        "Menos recriações da interface" to "A grade de ações é reutilizada quando aparelho, acesso, eventos e aparência não mudam, mantendo a leitura remota atualizada.",
-        "Segurança e compatibilidade" to "Pareamento, permissões locais, protocolo, bateria e atualizador continuam com suas regras anteriores."
+        "Alertas locais e remotos" to "O controlador processa saúde e metas do monitorado nas respostas autenticadas, inclusive na tela Controlar.",
+        "Diagnóstico de notificações" to "Em Ajustes → Alertas e proteção, confira permissões, canais e tentativas recentes de publicação.",
+        "Avisos sem perda silenciosa" to "Eventos recentes bloqueados podem ser tentados novamente; teste manual e confirmação do Android permanecem locais."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -45,6 +45,8 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Notificação local e remota (alpha.125)" to "Percentual, corrente, temperatura, previsão e último contato remoto na notificação do Monitorado, com atualizações limitadas.",
+        "Todos os comandos visíveis (alpha.124)" to "Doze comandos sempre disponíveis no Controlar, sem botão de ocultar, com cache visual seguro.",
         "AMOLED e legibilidade (alpha.123)" to "Tema Preto AMOLED, tamanhos de fonte maiores, grades adaptativas e navegação responsiva.",
         "Correção de compilação (alpha.122)" to "Corrigida a altura mínima no histórico de Bateria após o erro do workflow 15.",
         "Configurações compactas (alpha.121)" to "Categorias e permissões reorganizadas, atualizador e diálogos com menos cartões, preservando autorizações locais e instalação por toque.",

@@ -1,3 +1,18 @@
+# Celular Remoto v0.1.0-alpha.126 — diagnóstico de alertas (05/11/2026)
+
+- Base alpha.125. Próxima versão obrigatória alpha.127/versionCode 127; sempre sincronizar Gradle, AppVersion, documentação, validações e tela Novidades.
+- `AlertDelivery` valida permissão POST_NOTIFICATIONS, estado geral e canal ANTES de confirmar eventos. `POSTED` significa aceito pelo gerenciador Android, não notificação exibida ou lida. Registro privado e limitado a 48 tentativas sem mensagens nem identificadores de aparelhos.
+- Eventos recentes bloqueados não devem ter sequência confirmada; repetir apenas enquanto válidos (até 24h). O alerta de saúde resolvido não deve reaparecer. Metas locais têm compatibilidade com registros anteriores.
+- `ControllerBatteryEvents` e `ControllerHealthAlerts` recebem dados apenas via resposta autenticada. O JobScheduler continua opt-in; não criar rede extra/serviço/socket ou ampliar acesso à câmera/tela/SMS.
+- Verificar build Android completo, funcionamento em aparelhos reais, negação de notificação geral e de canal, teste manual e privacidade antes de considerar publicação validada.
+
+# Celular Remoto v0.1.0-alpha.125 — notificação local e remota (05/11/2026)
+
+- Base alpha.124. Próxima versão obrigatória alpha.126 / versionCode 126. Sincronizar Gradle, AppVersion, README, CHANGELOG, docs, testes e Novidades.
+- `MonitorNotificationContent` formata somente valores observados e previsões válidas. Não chamar última resposta de conexão persistente; mostrar tempo aproximado desde a última autenticação, sem IP e sem dados privados na tela bloqueada.
+- `MonitorService` aproveita **o mesmo executor serial** do tick de bateria para obter leitura e estimativa, sem novo serviço, conexão remota ou IO de histórico na thread principal. Limitar a frequência das notificações; manter ações Parar e Detalhes.
+- Não modificar monitoramento, autorização, protocolo AES-GCM, `WIRE_COMPAT=alpha.111`, downloads/instalação ou workflow único. Build Android CI e validação física de bateria e notificação ainda necessários.
+
 # Celular Remoto v0.1.0-alpha.124 — comandos sempre visíveis (05/11/2026)
 
 - Base: alpha.123. Próxima versão obrigatória **alpha.125/versionCode 125**. Sincronizar app/build.gradle.kts, AppVersion, README, CHANGELOG, docs, teste de versão e Novidades.

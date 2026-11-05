@@ -34,12 +34,10 @@ object ControllerHealthAlerts {
         val lastAt = prefs.getLong("event_at_$id", 0L)
         // Novo pareamento no mesmo IP pode reiniciar a sequência; data distingue eventos.
         if (at <= lastAt && seq <= lastSeq) return
-        // Primeiro evento visto também é marcado; evitar repetir alertas após troca de Activity.
-        prefs.edit().putLong(id, seq).putLong("event_at_$id", at).apply()
-        if (state == "NORMAL") return
-        if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
-        val mgr = context.getSystemService(NotificationManager::class.java) ?: return
-        mgr.createNotificationChannel(NotificationChannel(CHANNEL, "Alertas de aparelhos remotos", NotificationManager.IMPORTANCE_HIGH))
+        if (state == "NORMAL") {
+            prefs.edit().putLong(id, seq).putLong("event_at_$id", at).apply()
+            return
+        }
         val name = RecentDevices.list(context).firstOrNull { it.host == host }?.name ?: "Aparelho remoto"
         val title = if (state == "CRITICAL") "Atenção: $name" else "Aviso: $name"
         val reason = health.optString("reason", "Condição de bateria/temperatura")
@@ -47,9 +45,13 @@ object ControllerHealthAlerts {
         val detail = if (ageMinutes > 5) "$reason (registro há $ageMinutes min)" else reason
         val open = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        mgr.notify(291 + (id.hashCode() and 127), Notification.Builder(context, CHANNEL)
+        val note = Notification.Builder(context, CHANNEL)
             .setSmallIcon(android.R.drawable.ic_dialog_alert).setContentTitle(title)
             .setContentText(detail.take(120)).setContentIntent(open).setAutoCancel(true)
-            .setVisibility(Notification.VISIBILITY_PRIVATE).build())
+            .setVisibility(Notification.VISIBILITY_PRIVATE).build()
+        val delivery = AlertDelivery.publish(context, CHANNEL, "Alertas de aparelhos remotos",
+            "REMOTE_HEALTH", 291 + (id.hashCode() and 127), note)
+        if (AlertDeliveryPolicy.acknowledged(delivery))
+            prefs.edit().putLong(id, seq).putLong("event_at_$id", at).apply()
     }
 }

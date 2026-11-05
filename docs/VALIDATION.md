@@ -1,3 +1,17 @@
+## Alpha.126 — alertas locais/remotos (05/11/2026)
+
+- [x] Política isolada de confirmação/retentativa de eventos (canal/permissão bloqueados não confirmam evento).
+- [x] Roteamento de metas remotas na tela Controlar, sem duplicar alertas confirmados.
+- [x] Diagnóstico por canal, log privado sem conteúdo de avisos, teste manual opcional.
+- [ ] Build Android Gradle completo, testes instrumentados das permissões e canais em dois aparelhos, notificações em Doze e validação visual.
+
+## Alpha.125 · notificação local e remota (05/11/2026)
+
+- [x] Novo formatador puro e testes de dados inválidos, previsão e último contato remoto.
+- [x] Coleta de notificação movida para o executor de bateria já existente, com atualização limitada e sem rede extra.
+- [ ] Confirmar `:app:testDebugUnitTest :app:assembleDebug :app:lintDebug` no GitHub Actions.
+- [ ] Teste físico: carga/descarga, temperatura, previsão indisponível, dois aparelhos, queda de Wi-Fi, tela bloqueada e economia de bateria.
+
 ## Alpha.117 — Diagnóstico de conexão (04/11/2026)
 
 - [x] Novos módulos de diagnóstico, protocolos e UI incluídos com versionamento 117.

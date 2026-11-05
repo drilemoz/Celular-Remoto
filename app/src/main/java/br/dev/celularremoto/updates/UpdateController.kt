@@ -400,9 +400,6 @@ object UpdateController {
     }.getOrDefault(false)
 
     private fun notifyReady(context: Context) {
-        val manager = context.getSystemService(NotificationManager::class.java) ?: return
-        manager.createNotificationChannel(NotificationChannel(CHANNEL_ID, "Atualizações do Celular Remoto", NotificationManager.IMPORTANCE_DEFAULT))
-        if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
         val activity = Intent(context, MainActivity::class.java).apply {
             putExtra(MainActivity.EXTRA_OPEN_UPDATES, true)
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -410,11 +407,14 @@ object UpdateController {
         val pending = PendingIntent.getActivity(context, NOTICE_ID, activity,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val version = UpdatePreferences.getString(context, "download_version")
-        manager.notify(NOTICE_ID, Notification.Builder(context, CHANNEL_ID)
+        val note = Notification.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_bell)
             .setContentTitle("Celular Remoto $version")
             .setContentText("APK verificado. Toque para confirmar a instalação.")
-            .setContentIntent(pending).setAutoCancel(true).build())
+            .setContentIntent(pending).setAutoCancel(true).build()
+        br.dev.celularremoto.core.AlertDelivery.publish(context, CHANNEL_ID,
+            "Atualizações do Celular Remoto", "UPDATE_READY", NOTICE_ID, note,
+            NotificationManager.IMPORTANCE_DEFAULT)
     }
 
     /** Chamado exclusivamente por clique local em UI; não por broadcast, rede ou agendador. */

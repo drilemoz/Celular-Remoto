@@ -12,6 +12,10 @@ import android.Manifest
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import br.dev.celularremoto.core.MonitorNotificationContent
+import br.dev.celularremoto.core.BatteryReader
+import br.dev.celularremoto.core.BatterySessionStore
+import br.dev.celularremoto.core.RecentDevices
 import br.dev.celularremoto.core.MonitorNotificationPolicy
 import br.dev.celularremoto.core.LocationShareStore
 import br.dev.celularremoto.core.EventJournal
@@ -88,6 +92,37 @@ class MonitorService : Service() {
         Thread(job, "CelularRemoto-battery-worker").apply { isDaemon = true }
     }
     // Verificações a cada 30 s, sem bloquear a thread principal com escrita em disco.
+    @Volatile private var batteryNotification: MonitorNotificationContent.Battery? = null
+    private var lastBatteryNotificationReadMs = 0L // tempo monotônico; worker serial, sem nova thread
+
+    /** Aproveita o executor de bateria existente: IO nunca roda na thread principal. */
+    private fun refreshBatteryNotificationFromWorker() {
+        val elapsed = SystemClock.elapsedRealtime()
+        if (lastBatteryNotificationReadMs > 0L && elapsed - lastBatteryNotificationReadMs in 0..54_999L) return
+        lastBatteryNotificationReadMs = elapsed
+        val now = System.currentTimeMillis()
+        val raw = BatteryReader.snapshot(this)
+        val active = BatterySessionStore.report(this).optJSONObject("active")
+        val charging = raw.optString("state") == "Carregando"
+        val discharging = raw.optString("state") == "Descarregando"
+        val mode = active?.optString("kind")
+        val matchingMode = (charging && mode == "CHARGE") || (discharging && mode == "DISCHARGE")
+        fun number(field: String): Double? = if (raw.isNull(field)) null else
+            raw.optDouble(field).takeIf { it.isFinite() }
+        batteryNotification = MonitorNotificationContent.Battery(
+            percent = raw.optInt("levelPercent", -1).takeIf { it in 0..100 },
+            state = raw.optString("state", "Desconhecido"),
+            temperatureC = number("temperatureC"),
+            currentMa = number("currentMa"),
+            forecastMinutes = if (matchingMode && active?.isNull("forecastMinutes") == false)
+                active.optLong("forecastMinutes", -1L).takeIf { it in 1..10_080 } else null,
+            ratePercentHour = if (matchingMode && active?.isNull("forecastRatePercentHour") == false)
+                active.optDouble("forecastRatePercentHour").takeIf { it.isFinite() } else null,
+            observedAtMs = raw.optLong("updatedMs", now)
+        )
+        mainHandler.post { refreshMainNotification() }
+    }
+
     private val batteryLabPulse = object : Runnable {
         override fun run() {
             if (!serviceActive || !SettingsStore.isMonitorEnabled(this@MonitorService)) return
@@ -97,6 +132,9 @@ class MonitorService : Service() {
                     br.dev.celularremoto.core.BatterySessionStore.tick(this@MonitorService)
                     br.dev.celularremoto.core.BatteryGoalAlerts.check(this@MonitorService)
                 }.onFailure { Log.w("CelularBattery", "Coleta de bateria indisponível", it) }
+                // Uma falha em Labs/alertas não deve impedir a atualização da notificação.
+                runCatching { refreshBatteryNotificationFromWorker() }
+                    .onFailure { Log.w("CelularBattery", "Resumo para notificação indisponível", it) }
             }
             mainHandler.postDelayed(this, 30_000L)
         }
@@ -182,7 +220,7 @@ class MonitorService : Service() {
         mainHandler.removeCallbacks(healthWatchdog)
         mainHandler.post(healthWatchdog)
         mainHandler.removeCallbacks(batteryLabPulse)
-        mainHandler.postDelayed(batteryLabPulse, 30_000L)
+        mainHandler.post(batteryLabPulse)
         AuthenticatedAccess.unsubscribe(accessListener)
         AuthenticatedAccess.subscribe(accessListener)
         mainHandler.removeCallbacks(alertCleanup)
@@ -193,7 +231,8 @@ class MonitorService : Service() {
     private fun notificationsAllowed(): Boolean = Build.VERSION.SDK_INT < 33 ||
         checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
-    private fun buildMainNotification(state: MonitorNotificationPolicy.State, accessLine: String): Notification {
+    private fun buildMainNotification(state: MonitorNotificationPolicy.State, accessLine: String,
+        battery: MonitorNotificationContent.Battery? = null, remoteLine: String = ""): Notification {
         val open = PendingIntent.getActivity(this, 0,
             Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_OPEN_MONITOR, true),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
@@ -205,11 +244,13 @@ class MonitorService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val summary = MonitorNotificationPolicy.headline(state)
         val modules = MonitorNotificationPolicy.modules(state)
-        val expanded = listOf(summary, accessLine, modules).filter { it.isNotBlank() }.joinToString("\n")
+        val localLine = MonitorNotificationContent.batteryLine(battery)
+        val expanded = listOf(localLine, remoteLine, "Monitorado: $summary", accessLine,
+            "Recursos: $modules").filter { it.isNotBlank() }.joinToString("\n")
         val privateNotification = Notification.Builder(this, CHANNEL)
             .setSmallIcon(br.dev.celularremoto.R.drawable.ic_stat_shield)
-            .setContentTitle("Monitoramento protegido")
-            .setContentText(summary + if (state.locationActive) " · Localização ativa" else "")
+            .setContentTitle(MonitorNotificationContent.title(battery))
+            .setContentText("${battery?.state ?: "Monitorando"} · $summary")
             .setStyle(Notification.BigTextStyle().bigText(expanded))
             .setContentIntent(open)
             .setOngoing(true)
@@ -248,11 +289,16 @@ class MonitorService : Service() {
         } else if (lastControllerSeenMs > 0L) {
             "Último acesso: " + android.text.format.DateFormat.format("HH:mm", lastControllerSeenMs)
         } else ""
-        val key = listOf(state, accessLine).joinToString("|")
+        val now = System.currentTimeMillis()
+        val battery = MonitorNotificationContent.valid(batteryNotification, now)
+        val selected = SettingsStore.getRemoteHost(this)
+        val peer = RecentDevices.list(this).firstOrNull { it.host == selected }
+        val remoteLine = MonitorNotificationContent.remoteLine(peer?.name, peer?.lastSuccessMs ?: 0L, now)
+        val key = listOf(state, accessLine, battery, remoteLine).joinToString("|")
         if (key == lastNotificationSignature) return
         lastNotificationSignature = key
         getSystemService(NotificationManager::class.java)
-            ?.notify(mainNotificationId, buildMainNotification(state, accessLine))
+            ?.notify(mainNotificationId, buildMainNotification(state, accessLine, battery, remoteLine))
     }
 
     /** Reinicia somente o listener TCP; não tenta abrir Activities nem revogar consentimento. */
@@ -340,6 +386,8 @@ class MonitorService : Service() {
         br.dev.celularremoto.core.DeviceStateReader.stop()
         foregroundStarted = false
         lastNotificationSignature = null
+        batteryNotification = null
+        lastBatteryNotificationReadMs = 0L
         lastControllerSeenMs = 0L
         serviceActive = false
         isServiceActive = false

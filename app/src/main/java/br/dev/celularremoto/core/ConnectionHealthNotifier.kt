@@ -17,11 +17,6 @@ internal object ConnectionHealthNotifier {
 
     fun alert(context: Context, transition: String) {
         if (!ConnectionHealthStore.alertsEnabled(context)) return
-        if (Build.VERSION.SDK_INT >= 33 &&
-            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
-        val manager = context.getSystemService(NotificationManager::class.java) ?: return
-        manager.createNotificationChannel(NotificationChannel(CHANNEL,
-            "Estabilidade da conexão", NotificationManager.IMPORTANCE_DEFAULT))
         val title = if (transition == "lost") "Celular Remoto: sem resposta" else "Celular Remoto: comunicação recuperada"
         val message = if (transition == "lost")
             "Três verificações autenticadas falharam. Abra o diagnóstico para conferir a rede."
@@ -36,6 +31,7 @@ internal object ConnectionHealthNotifier {
             .setSmallIcon(android.R.drawable.stat_notify_sync)
             .setContentTitle(title).setContentText(message).setContentIntent(pending)
             .setAutoCancel(true).build()
-        manager.notify(NOTIFICATION_ID, notification)
+        AlertDelivery.publish(context, CHANNEL, "Estabilidade da conexão", "CONNECTION",
+            NOTIFICATION_ID, notification, NotificationManager.IMPORTANCE_DEFAULT)
     }
 }

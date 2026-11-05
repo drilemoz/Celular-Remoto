@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.124
+# Celular Remoto v0.1.0-alpha.126
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,22 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.124 / versionCode 124** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.126 / versionCode 126** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Diagnóstico e entrega de alertas (alpha.126)
+
+- Central local de publicação para saúde, metas, estabilidade de conexão, atualização pronta e eventos remotos: valida POST_NOTIFICATIONS, permissão global e importância de cada canal, registrando apenas origem genérica, canal, horário e resultado (sem host, mensagens, localização ou credenciais).
+- Eventos recentes de saúde e de metas que não foram publicados devido a bloqueio permanecem pendentes por até 24 horas. Não marcar como entregue antes de o Android aceitar a notificação. Alertas antigos e condições já resolvidas não devem reaparecer.
+- Alertas remotos de metas são analisados nas respostas autenticadas da tela Controlar, além de Bateria e do JobScheduler de melhor esforço (15 min quando ativado).
+- Configurações → Alertas e proteção apresenta diagnóstico de canais, últimas tentativas e ação de notificação de teste. Um resultado "aceito pelo Android" não comprova que foi exibido ou lido.
+- Continua com consentimentos e canais anteriores; nenhuma nova permissão, serviço, coleta ou socket. Testes de dispositivos, Doze e compilação Android ainda necessários.
+
+## Notificação ativa com bateria local e estado remoto (alpha.125)
+
+- A notificação persistente do `MonitorService` agora resume percentual, temperatura da **bateria** e estado de carga do próprio aparelho. Inclui corrente líquida em mA quando medida (sem inverter sinais) e previsão de carga ou autonomia **somente** quando a sessão oferece estimativa válida.
+- Quando expandida, diferencia **Monitorado** (servidor local, acessos autenticados) e **Remoto** (aparelho selecionado no controlador, com horário da última resposta). Não promete socket permanente nem inventa conexão atual quando a resposta é antiga.
+- Aproveita o executor de bateria já existente, com atualização limitada a aproximadamente 1 minuto; não cria serviço ou conexão adicionais. Evita leituras ou armazenamento de sessões na thread principal. Tela bloqueada mantém notificação pública genérica.
+- Testes de conteúdo e casos inválidos adicionados. Verificar compilação Android real e comportamento com tela apagada nos dois aparelhos antes de considerar aprovado.
 
 ## Controlar: 12 comandos sempre visíveis (alpha.124)
 

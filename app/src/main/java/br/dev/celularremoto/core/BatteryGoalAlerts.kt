@@ -31,20 +31,17 @@ object BatteryGoalAlerts {
             .putLong("lastObservedAt", 0L).apply()
     }
 
-    private fun notifyOwner(context: Context, kind: String, message: String) {
-        if (!SettingsStore.localHealthAlerts(context) ||
-            (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED)) return
-        // A classificação de temperatura crítica já possui notificação própria.
-        if (kind == "HOT" && prefs(context).getInt("hot", 43) == 43) return
-        val nm = context.getSystemService(NotificationManager::class.java) ?: return
-        nm.createNotificationChannel(NotificationChannel(CHANNEL, "Metas e avisos da bateria", NotificationManager.IMPORTANCE_HIGH))
+    private fun notifyOwner(context: Context, kind: String, message: String): AlertDeliveryPolicy.Result {
+        // Na temperatura padrão de 43 °C, HealthAlertMonitor já notifica esse mesmo fato.
+        if (kind == "HOT" && prefs(context).getInt("hot", 43) == 43)
+            return AlertDeliveryPolicy.Result.SUPPRESSED
         val open = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        nm.notify(395 + when (kind) { "GOAL" -> 0; "LOW" -> 1; else -> 2 },
-            Notification.Builder(context, CHANNEL).setSmallIcon(R.drawable.ic_stat_shield)
-                .setContentTitle("Celular Remoto · Bateria").setContentText(message.take(125))
-                .setContentIntent(open).setAutoCancel(true).setVisibility(Notification.VISIBILITY_PRIVATE).build())
+        val note = Notification.Builder(context, CHANNEL).setSmallIcon(R.drawable.ic_stat_shield)
+            .setContentTitle("Celular Remoto · Bateria").setContentText(message.take(125))
+            .setContentIntent(open).setAutoCancel(true).setVisibility(Notification.VISIBILITY_PRIVATE).build()
+        return AlertDelivery.publish(context, CHANNEL, "Metas e avisos da bateria", "LOCAL_GOAL",
+            395 + when (kind) { "GOAL" -> 0; "LOW" -> 1; else -> 2 }, note)
     }
 
     /** Chamado pelo serviço já existente; nenhum outro serviço ou receiver é necessário. */
@@ -78,8 +75,21 @@ object BatteryGoalAlerts {
         newEvents.forEach { (kind, message) ->
             sequence++
             events.put(JSONObject().put("seq", sequence).put("at", now)
-                .put("kind", kind).put("message", message))
-            notifyOwner(context, kind, message)
+                .put("kind", kind).put("message", message).put("posted", false))
+        }
+        // A notificação bloqueada fica pendente apenas por 24h; sem duplicar o evento.
+        for (index in 0 until events.length()) {
+            val item = events.optJSONObject(index) ?: continue
+            if (!item.has("posted") || item.optBoolean("posted") ||
+                !AlertDeliveryPolicy.retryAllowed(item.optLong("at"), now, false)) continue
+            if (!AlertDeliveryPolicy.goalStillRelevant(item.optString("kind"), percent,
+                    temperature, goal, low, hot)) {
+                item.put("posted", true).put("resolved", true)
+                continue
+            }
+            if (!SettingsStore.localHealthAlerts(context)) continue
+            val delivery = notifyOwner(context, item.optString("kind"), item.optString("message"))
+            if (AlertDeliveryPolicy.acknowledged(delivery)) item.put("posted", true)
         }
         val limited = JSONArray()
         for (index in (events.length() - MAX_EVENTS).coerceAtLeast(0) until events.length())

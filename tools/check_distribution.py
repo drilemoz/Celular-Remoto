@@ -1781,3 +1781,34 @@ assert all(x not in main124 for x in ['expandedRemoteFunctions', 'expanded_remot
 assert (root / 'app/src/test/java/br/dev/celularremoto/ui/RemoteActionsRenderKeyTest.kt').is_file()
 assert (root / 'docs/VALIDATION_ALPHA124.md').is_file()
 print('PASSOU: alpha.124 todas as ações sempre visíveis, cache visual seguro e sem estado oculto')
+
+# Alpha.125 — notificação com bateria local e estado do remoto sem rede extra.
+noti125 = (root / 'app/src/main/java/br/dev/celularremoto/core/MonitorNotificationContent.kt').read_text()
+service125 = (root / 'app/src/main/java/br/dev/celularremoto/service/MonitorService.kt').read_text()
+assert 'MonitorNotificationContent.batteryLine(battery)' in service125
+assert 'MonitorNotificationContent.remoteLine(' in service125
+assert 'BatterySessionStore.report(this).optJSONObject("active")' in service125
+assert 'refreshBatteryNotificationFromWorker()' in service125
+assert 'mainHandler.post(batteryLabPulse)' in service125
+assert 'batteryExecutor.execute {' in service125 and 'lastBatteryNotificationReadMs in 0..54_999L' in service125
+assert '.setPublicVersion(publicNotification)' in service125
+assert 'RemoteClient' not in noti125
+assert (root / 'app/src/test/java/br/dev/celularremoto/core/MonitorNotificationContentTest.kt').exists()
+assert (root / 'docs/VALIDATION_ALPHA125.md').exists()
+print('PASSOU: alpha.125 notificação local/remota sem socket permanente ou IO na thread principal')
+
+# Alpha.126 — centralização da entrega, sem confirmar notificações bloqueadas.
+delivery = (root / 'app/src/main/java/br/dev/celularremoto/core/AlertDelivery.kt').read_text()
+policy = (root / 'app/src/main/java/br/dev/celularremoto/core/AlertDeliveryPolicy.kt').read_text()
+control = (root / 'app/src/main/java/br/dev/celularremoto/ui/RemoteConnectionManager.kt').read_text()
+health = (root / 'app/src/main/java/br/dev/celularremoto/core/HealthAlertMonitor.kt').read_text()
+goals = (root / 'app/src/main/java/br/dev/celularremoto/core/BatteryGoalAlerts.kt').read_text()
+assert 'areNotificationsEnabled()' in delivery and 'getNotificationChannel(channelId)' in delivery
+assert 'POST_NOTIFICATIONS' in delivery and 'MAX_LOG = 48' in delivery
+assert 'fun retryAllowed(' in policy and '24L * 60 * 60_000L' in policy
+assert 'ControllerBatteryEvents.onReport(appContext, host, snapshot)' in control
+assert 'pendingSeq' in health and 'AlertDeliveryPolicy.acknowledged' in health
+assert 'put("posted", false)' in goals and 'AlertDeliveryPolicy.acknowledged' in goals
+assert (root / 'app/src/test/java/br/dev/celularremoto/core/AlertDeliveryPolicyTest.kt').exists()
+assert (root / 'docs/VALIDATION_ALPHA126.md').exists()
+print('PASSOU: alpha.126 notificações por canal e confirmação somente após publicação')

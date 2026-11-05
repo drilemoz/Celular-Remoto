@@ -38,24 +38,22 @@ object ControllerBatteryEvents {
             val at = item.optLong("at")
             if (seq <= lastSeq && at <= lastTime) continue
             if (at > now + 60_000L || now - at > 24L * 60L * 60_000L || at < lastTime) continue
-            maxSeq = maxOf(maxSeq, seq)
-            maxTime = maxOf(maxTime, at)
-            if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) continue
-            val manager = context.getSystemService(NotificationManager::class.java) ?: continue
-            manager.createNotificationChannel(NotificationChannel(CHANNEL,
-                "Metas e bateria de aparelhos pareados", NotificationManager.IMPORTANCE_HIGH))
+            // Só confirmar a sequência depois que o Android aceitar a notificação.
             val name = RecentDevices.list(context).firstOrNull { it.host == host }?.name ?: "Aparelho remoto"
             val ago = ((now - at) / 60_000L).coerceAtLeast(0L)
             val text = item.optString("message", "Evento de bateria").take(100) +
                 if (ago > 5L) " · há $ago min" else ""
             val launch = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-            manager.notify(410 + ((id + seq).hashCode() and 511),
-                Notification.Builder(context, CHANNEL).setSmallIcon(R.drawable.ic_battery)
-                    .setContentTitle("$name · bateria").setContentText(text)
-                    .setContentIntent(launch).setAutoCancel(true)
-                    .setVisibility(Notification.VISIBILITY_PRIVATE).build())
+            val note = Notification.Builder(context, CHANNEL).setSmallIcon(R.drawable.ic_battery)
+                .setContentTitle("$name · bateria").setContentText(text)
+                .setContentIntent(launch).setAutoCancel(true)
+                .setVisibility(Notification.VISIBILITY_PRIVATE).build()
+            val delivery = AlertDelivery.publish(context, CHANNEL, "Metas e bateria de aparelhos pareados",
+                "REMOTE_GOAL", 410 + ((id + seq).hashCode() and 511), note)
+            if (!AlertDeliveryPolicy.acknowledged(delivery)) break
+            maxSeq = maxOf(maxSeq, seq)
+            maxTime = maxOf(maxTime, at)
         }
         if (maxSeq != lastSeq || maxTime != lastTime)
             p.edit().putLong("seq_$id", maxSeq).putLong("time_$id", maxTime).apply()

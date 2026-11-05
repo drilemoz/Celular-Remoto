@@ -794,6 +794,87 @@ private fun MainActivity.fillHealthSettings(layout: LinearLayout) {
     layout.addView(dialogMetricRow("Estado local", health.optString("level", "Sem avaliação")))
     layout.addView(dialogMetricRow("Motivo", health.optString("reason", "Sem leitura")))
     layout.addView(label("Faixas sugeridas: bateria ≤20% ou ≥38 °C para atenção; ≤10% ou ≥43 °C para alerta crítico. O Android pode sinalizar severidade térmica independentemente. Esses limites são orientativos e têm histerese.", 12f, muted = true))
+    sectionGap(layout, 14)
+    layout.addView(settingsSummaryBand("Entrega de notificações",
+        "Diagnóstico local: permissão, aplicativo e canais. Enviado não significa lido.", R.drawable.ic_bell))
+    sectionGap(layout, 8)
+    val delivery = br.dev.celularremoto.core.AlertDelivery.diagnostic(this)
+    layout.addView(dialogMetricRow("Notificações gerais",
+        if (delivery.optBoolean("appEnabled")) "Permitidas pelo Android" else "Bloqueadas no Android"))
+    val channels = delivery.optJSONArray("channels")
+    if (channels != null) for (i in 0 until channels.length()) {
+        val channel = channels.optJSONObject(i) ?: continue
+        val state = when (channel.optString("status")) {
+            "POSTED" -> "Permitido"
+            "PERMISSION_DENIED" -> "Permissão negada"
+            "APP_BLOCKED" -> "Aplicativo bloqueado"
+            "CHANNEL_BLOCKED" -> "Canal desativado"
+            else -> "Indisponível"
+        }
+        layout.addView(dialogMetricRow(channel.optString("name"), state))
+    }
+    sectionGap(layout, 6)
+    layout.addView(settingsSlimRow(R.drawable.ic_settings, "Ajustar notificações no Android",
+        "Revise a permissão geral e cada canal") {
+        runCatching {
+            startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            })
+        }.onFailure { message("Não foi possível abrir os ajustes de notificações.") }
+    })
+    sectionGap(layout, 6)
+    layout.addView(settingsSlimRow(R.drawable.ic_activity, "Atualizar diagnóstico",
+        "Reconsultar as permissões e os canais") { openSettingsSection("health") })
+    sectionGap(layout, 6)
+    layout.addView(settingsSlimRow(R.drawable.ic_bell, "Enviar notificação de teste",
+        "Verifica se o Android aceita um aviso local") {
+        val channel = "celular_alert_test"
+        val open = android.app.PendingIntent.getActivity(this, 788, Intent(this, MainActivity::class.java),
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+        val note = android.app.Notification.Builder(this, channel)
+            .setSmallIcon(R.drawable.ic_stat_shield)
+            .setContentTitle("Celular Remoto · teste de alertas")
+            .setContentText("Aviso local de teste; nenhuma informação remota foi enviada.")
+            .setContentIntent(open).setAutoCancel(true)
+            .setVisibility(android.app.Notification.VISIBILITY_PRIVATE).build()
+        val outcome = br.dev.celularremoto.core.AlertDelivery.publish(this, channel,
+            "Teste de notificações", "TEST_ONLY", 788, note,
+            android.app.NotificationManager.IMPORTANCE_DEFAULT)
+        message(if (outcome == br.dev.celularremoto.core.AlertDeliveryPolicy.Result.POSTED)
+            "Aviso entregue ao gerenciador do Android. Confira se apareceu na área de notificações."
+        else "Android não aceitou o aviso: ${outcome.name}. Verifique o canal e as permissões.")
+        openSettingsSection("health")
+    })
+    val history = delivery.optJSONArray("history")
+    if (history != null && history.length() > 0) {
+        sectionGap(layout, 8)
+        layout.addView(label("Últimas tentativas (sem conteúdo sensível)", 12f, muted = true))
+        for (i in (history.length() - 6).coerceAtLeast(0) until history.length()) {
+            val entry = history.optJSONObject(i) ?: continue
+            val state = when (entry.optString("result")) {
+                "POSTED" -> "Aceita pelo Android"
+                "PERMISSION_DENIED" -> "Permissão negada"
+                "APP_BLOCKED" -> "Aplicativo bloqueado"
+                "CHANNEL_BLOCKED" -> "Canal bloqueado"
+                "SUPPRESSED" -> "Não enviada: duplicada"
+                else -> "Falha ou indisponível"
+            }
+            val origin = when (entry.optString("source")) {
+                "LOCAL_HEALTH" -> "Saúde local"
+                "LOCAL_GOAL" -> "Meta local"
+                "REMOTE_HEALTH" -> "Saúde remota"
+                "REMOTE_GOAL" -> "Meta remota"
+                "TEST_ONLY" -> "Teste manual"
+                "CONNECTION" -> "Conexão"
+                "UPDATE_READY" -> "Atualização pronta"
+                else -> "Evento do aplicativo"
+            }
+            val whenAt = entry.optLong("at", 0L)
+            val time = if (whenAt > 0L) java.text.SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
+                .format(java.util.Date(whenAt)) else "sem horário"
+            layout.addView(dialogMetricRow("$origin · $time", state))
+        }
+    }
 }
 
 private fun MainActivity.requestHealthNotificationPermission() {

@@ -202,6 +202,7 @@ internal class RemoteConnectionManager(context: Context) {
                     ConnectionHealthMonitor.record(appContext, host, true, lastRoundTripMs)
                     cached = snapshot
                     br.dev.celularremoto.core.ControllerHealthAlerts.onSnapshot(appContext, host, snapshot)
+                    br.dev.celularremoto.core.ControllerBatteryEvents.onReport(appContext, host, snapshot)
                     cachedHost = host
                     state = "connected"
                     issue = null

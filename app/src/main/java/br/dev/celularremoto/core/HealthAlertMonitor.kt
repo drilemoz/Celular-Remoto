@@ -46,8 +46,23 @@ object HealthAlertMonitor {
             .putLong("seq", if (shouldRecord) seq + 1L else seq)
             .putLong("occurredMs", if (shouldRecord) now else settings.getLong("occurredMs", 0L))
             .apply()
-        if (shouldRecord && next.level != HealthAlertPolicy.Level.NORMAL && SettingsStore.localHealthAlerts(context))
-            notifyLocal(context, next, level, temp)
+        val deliveryPrefs = prefs(context)
+        if (next.level == HealthAlertPolicy.Level.NORMAL) {
+            // Não alertar condição antiga já resolvida ao reativar notificações.
+            deliveryPrefs.edit().remove("pendingSeq").apply()
+        } else {
+            if (shouldRecord) deliveryPrefs.edit().putLong("pendingSeq", seq + 1L).apply()
+            val pending = deliveryPrefs.getLong("pendingSeq", 0L)
+            val occurred = deliveryPrefs.getLong("occurredMs", 0L)
+            if (pending > 0L && !AlertDeliveryPolicy.retryAllowed(occurred, now, false))
+                deliveryPrefs.edit().remove("pendingSeq").apply()
+            if (pending > 0L && AlertDeliveryPolicy.retryAllowed(occurred, now, false) &&
+                SettingsStore.localHealthAlerts(context)) {
+                val delivery = notifyLocal(context, next, level, temp)
+                if (AlertDeliveryPolicy.acknowledged(delivery))
+                    deliveryPrefs.edit().remove("pendingSeq").apply()
+            }
+        }
         // Opt-in: captura própria pode ser suspensa somente em condição severa.
         if (protectionNeeded) {
             ScreenShareService.stop(context)
@@ -73,18 +88,14 @@ object HealthAlertMonitor {
         }
     }
 
-    private fun notifyLocal(context: Context, status: HealthAlertPolicy.Status, percent: Int?, temp: Double?) {
-        if (Build.VERSION.SDK_INT >= 33 &&
-            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
-        val nm = context.getSystemService(NotificationManager::class.java) ?: return
-        nm.createNotificationChannel(NotificationChannel(CHANNEL, "Saúde da bateria e temperatura",
-            NotificationManager.IMPORTANCE_HIGH))
+    private fun notifyLocal(context: Context, status: HealthAlertPolicy.Status, percent: Int?,
+        temp: Double?): AlertDeliveryPolicy.Result {
         val launch = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val details = listOfNotNull(percent?.let { "$it%" }, temp?.let { "%.1f °C".format(it) }).joinToString(" · ")
         val note = Notification.Builder(context, CHANNEL).setSmallIcon(br.dev.celularremoto.R.drawable.ic_stat_shield)
             .setContentTitle(status.reason).setContentText(details)
             .setContentIntent(launch).setAutoCancel(true).setVisibility(Notification.VISIBILITY_PRIVATE).build()
-        nm.notify(290, note)
+        return AlertDelivery.publish(context, CHANNEL, "Saúde da bateria e temperatura", "LOCAL_HEALTH", 290, note)
     }
 }

@@ -1,4 +1,9 @@
-# Estado atual — alpha.124
+# Estado atual — alpha.126
+
+`AlertDelivery` e `AlertDeliveryPolicy` centralizam tentativa de publicação dos avisos locais, remotos, de estabilidade e de atualização pronta: pré-condições de permissão, bloqueio global e canal, registro anônimo limitado (48 entradas) e retry conservador de eventos não publicados. Alteração não modifica o serviço de monitoramento, nem usa novo socket. Controlar passa a interpretar eventos remotos de metas, e Configurações → Alertas e proteção permite diagnosticar e testar canais. A confirmação de publicação pelo NotificationManager não equivale a entrega visual ou leitura. Build real ainda pendente.
+
+
+Alpha.125 usa o único `MonitorService` e seu executor serial de bateria para alimentar, a cada ~60 s, uma notificação resumida com leituras locais e previsão conservadora. `MonitorNotificationContent` formata dados medidos e não chama Android; a linha remota usa somente a **última resposta autenticada registrada**, sem confundir com socket persistente. A notificação pública na tela bloqueada permanece genérica. Nenhuma segunda coleta/serviço/network-poll foi introduzida. Build Android real ainda pendente.
 
 Alpha.124 mantém os doze controles visíveis em Controlar (4 atalhos + 8 outras funções), sem dobra e sem estado de expansão. A seção usa cache de Views na Activity, invalidado por host, presença de chave, eventos, tema, escala de fonte e largura; a telemetria continua consultada e atualizada. A alpha.123 já acrescentou AMOLED e responsividade. Serviços, AES-GCM e `WIRE_COMPAT=0.1.0-alpha.111` não mudaram. Build Android completo da alpha.124 ainda pendente.
 
@@ -55,9 +60,9 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 ## Distribuição e assinatura
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.124` e `versionCode=124`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.126` e `versionCode=126`.
 
-- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.124.apk`.
+- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.126.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.
 - Com quatro Secrets, Gradle gera APK Release assinado e AAB. Sem Secrets, o arquivo é Debug de teste e não preserva necessariamente a assinatura entre execuções.
 - Releases são prévias, não substituem a futura revisão da Google Play e nem os ensaios reais.

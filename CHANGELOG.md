@@ -1,3 +1,21 @@
+## 0.1.0-alpha.126 (versionCode 126) | 05/11/2026
+
+- Unifica publicação e diagnóstico de avisos de saúde, metas locais/remotas, estabilidade de conexão e atualização pronta, verificando permissão do Android, estado global e canais individualmente.
+- Corrige confirmação prematura de alertas quando o Android bloqueia notificações: novos eventos recentes podem ser reprocessados sem duplicar aqueles já aceitos; expiração de 24 horas e supressão de evento resolvido.
+- Controlar também processa eventos de metas do remoto em respostas autenticadas; consulta periódica segue opcional e econômica.
+- Ajustes → Alertas e proteção exibe estados dos canais, histórico sem dados sensíveis, atalhos do Android e notificação local de teste.
+- Sem nova permissão ou serviço, sem alteração no protocolo AES-GCM, nos cálculos elétricos, no workflow único ou na instalação remota.
+- Compilação Gradle Android completa e testes físicos pendentes.
+
+## 0.1.0-alpha.125 (versionCode 125) | 05/11/2026
+
+- Notificação foreground renovada com porcentagem e temperatura locais, estado e corrente líquida da bateria.
+- Previsão restante de carga/autonomia aparece apenas quando validada pelas sessões automáticas. Informações sem medição não são inventadas.
+- Estado monitorado e última resposta autenticada do aparelho remoto em linhas distintas, sem afirmar conexão TCP persistente.
+- Reuso do único executor de bateria, cache temporário para renderizar notificação a cada ~60 s, sem novo serviço ou sondagem remota.
+- Conteúdo da tela bloqueada permanece genérico. Testes Kotlin de formatação, medições inválidas, resposta remota desatualizada e previsão.
+- Teste CI Android e validação em aparelho ainda pendentes.
+
 ## 0.1.0-alpha.124 (versionCode 124) | 05/11/2026
 
 - Todos os doze comandos da tela Controlar permanecem **sempre visíveis**: quatro atalhos rápidos e oito outras funções, em grade responsiva. Removidos o botão "Ocultar/Mostrar" e seu estado de expansão salvo.
