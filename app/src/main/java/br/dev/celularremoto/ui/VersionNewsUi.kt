@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Bateria mais clara" to "Percentual e estado de carga em destaque, com medições elétricas em grade de três ou duas colunas conforme a tela.",
-        "Resumo e previsões" to "Sessões automáticas apresentam previsão, cobertura e evolução com dados reais; intervalos não observados não são inventados.",
-        "Histórico compacto" to "Filtros, comparação e relatórios preservados. As sessões agora aparecem em uma lista com separadores, sem cartões grandes repetidos."
+        "Ajustes mais compactos" to "Telas internas sem painel externo repetido, navegação simples e status legíveis em telas estreitas.",
+        "Central de permissões" to "Acessos comuns, SMS, especiais e por sessão em quatro categorias; estados reais e solicitações locais preservados.",
+        "Atualizações e diálogos" to "Verificação e download agrupados, opções em linhas compactas e janelas de seleção com menos cartões. Instalação continua manual."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -36,13 +36,16 @@ internal fun MainActivity.showVersionNews() {
 internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayout) {
     layout.addView(label("Histórico das melhorias anteriores", 14f, strong = true))
     layout.addView(label("As mudanças mais recentes aparecem na primeira abertura de cada versão.", 11.5f, muted = true))
-    PREVIOUS_NEWS.forEach { (title, details) ->
-        layout.addView(dialogCardRow(title, details, ""))
-        sectionGap(layout, 6)
+    PREVIOUS_NEWS.forEachIndexed { index, (title, details) ->
+        layout.addView(settingsSlimRow(R.drawable.ic_info, title, details, "") {
+            showAppNotice(title, details)
+        })
+        if (index < PREVIOUS_NEWS.lastIndex) compactDivider(layout, 7)
     }
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Bateria compacta (alpha.120)" to "Indicador de percentual, métricas adaptativas e histórico em lista, mantendo diagnósticos e cálculos existentes.",
         "Controlar e Monitorado compactos" to "A alpha.119 trouxe telemetria compacta, painel único de Tela/Câmera/Foto e controles secundários mais densos sem remover confirmações locais.",
         "Design compacto inicial" to "A alpha.118 modernizou Início, navegação, categorias de Ajustes e a organização geral das telas em grades adaptativas.",
         "Estabilidade da conexão" to "Em Controlar ou Configurações, acompanhe latência, tentativas autenticadas, períodos sem medição, falhas e recuperação por aparelho.",

@@ -128,56 +128,93 @@ internal object PermissionCenter {
     }
 }
 
-/** Primeiro uso: abre a página sem solicitar permissões secretamente ou ativar transmissão. */
+/** Primeira instalação e Configurações usam a mesma lista real de acessos.
+ * A navegação é por categoria e não aciona nenhum grant ao abrir a página. */
 internal fun MainActivity.renderPermissionCenter(page: LinearLayout) {
-    page.addView(iconSectionHeader(R.drawable.ic_shield, "Central de permissões",
-        "Autorize no próprio aparelho o que deseja usar"))
-    sectionGap(page, 8)
-    page.addView(label("As autorizações do Android não ativam compartilhamento remoto por si só. Câmera, áudio, SMS e notificações ainda dependem das opções locais e de sessões autorizadas.", 12.5f, muted = true))
     val entries = PermissionCenter.entries()
     val pending = PermissionCenter.pending(this)
-    val granted = entries.count { PermissionCenter.grantStatus(this, it) in listOf("Autorizada", "Aproximada", "Automática") }
-    page.addView(label("$granted autorizações disponíveis · ${pending.size} pendentes · ${entries.size - granted - pending.size} por sessão/indisponíveis", 12.5f, strong = true))
-    sectionGap(page, 7)
-    page.addView(button("Solicitar permissões comuns pendentes", emphasis = true) {
-        startPermissionCenterRequests(includeSms = false)
-    })
-    page.addView(actionButton("Solicitar todas as permissões, incluindo SMS") {
-        showAppConfirm("Permissões de SMS e dados sensíveis",
-            "Serão exibidos os pedidos do Android para câmera, localização, notificações, áudio, telefonia e SMS que estiverem pendentes. SMS pode ser bloqueado pelo Android/instalador e, na Google Play, exige requisitos adicionais. Nenhum acesso remoto será ativado por essa ação. Acessibilidade, leitura de notificações e localização em segundo plano exigem etapas manuais separadas.",
-            R.drawable.ic_shield, "Prosseguir") { startPermissionCenterRequests(includeSms = true) }
-    })
-    page.addView(actionButton("Abrir permissões nas Configurações do Android") {
+    val granted = entries.count { PermissionCenter.grantStatus(this, it) in
+        listOf("Autorizada", "Aproximada", "Automática") }
+    page.addView(settingsSummaryBand("Acessos do aparelho",
+        "$granted autorizados · ${pending.size} pendentes · " +
+            "${entries.size - granted - pending.size} por sessão/indisponíveis",
+        R.drawable.ic_shield))
+    sectionGap(page, 10)
+    settingsActionPair(page, "Solicitar comuns", { startPermissionCenterRequests(includeSms = false) },
+        "Incluir SMS", {
+            showAppConfirm("Permissões sensíveis de SMS",
+                "O Android solicitará as permissões comuns e de SMS ainda pendentes. " +
+                    "O sistema pode restringir SMS. Nenhuma função remota será ativada automaticamente; " +
+                    "acessos especiais precisam de autorização manual.",
+                R.drawable.ic_shield, "Prosseguir") {
+                startPermissionCenterRequests(includeSms = true)
+            }
+        }, emphasizeFirst = true)
+    sectionGap(page, 5)
+    page.addView(settingsSlimRow(R.drawable.ic_settings,
+        "Permissões no Android", "Abrir os ajustes oficiais do aplicativo") {
         openAppPermissionSettings()
     })
-    sectionGap(page, 8)
+    compactDivider(page)
+    sectionGap(page, 10)
+
     val groups = listOf(
-        "PERMISSÕES DO SISTEMA" to entries.filter { it.kind == "runtime" },
-        "SMS (ACESSO SENSÍVEL)" to entries.filter { it.kind == "sms" },
-        "ACESSOS ESPECIAIS" to entries.filter { it.kind == "special" },
-        "AUTORIZAÇÃO POR SESSÃO" to entries.filter { it.kind == "session" }
+        "Comuns" to entries.filter { it.kind == "runtime" },
+        "SMS" to entries.filter { it.kind == "sms" },
+        "Especiais" to entries.filter { it.kind == "special" },
+        "Sessões" to entries.filter { it.kind == "session" }
     )
-    groups.forEach { (title, items) ->
-        page.addView(label(title, 11f, strong = true, muted = true))
-        sectionGap(page, 3)
-        items.forEach { item ->
+    var active = 0
+    val filters = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+    val groupHost = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+    page.addView(filters)
+    sectionGap(page, 5)
+    page.addView(groupHost)
+    fun showSelected() {
+        filters.removeAllViews()
+        compactActionGrid(filters, groups.mapIndexed { index, (name, items) ->
+            val missing = items.count { PermissionCenter.grantStatus(this, it) == "Pendente" }
+            compactActionTile(items.first().icon, name,
+                "$missing pendente(s)", selected = index == active) {
+                active = index
+                showSelected()
+            }
+        }, preferredColumns = if (compactColumns() == 2) 2 else 4)
+        groupHost.removeAllViews()
+        val (title, items) = groups[active]
+        groupHost.addView(settingsSubheading("$title · ${items.size} opções"))
+        items.forEachIndexed { index, item ->
             val state = PermissionCenter.grantStatus(this, item)
-            val summary = "${item.reason}  •  $state"
-            page.addView(iconMenuRow(item.icon, item.label, summary,
-                badge = if (state == "Autorizada" || state == "Automática" || state == "Aproximada") SettingsBadgeKind.ACTIVE
-                else if (state == "Pendente") SettingsBadgeKind.INACTIVE else SettingsBadgeKind.ACTION,
-                actionLabel = when (state) {
-                    "Autorizada", "Automática", "Aproximada" -> "OK"
-                    "Indisponível" -> "N/D"
-                    "Por sessão" -> "INFO"
-                    else -> "ABRIR"
-                }) { openPermissionAccess(item) })
-            sectionGap(page, 5)
+            val visible = when(state) {
+                "Autorizada" -> "OK"
+                "Aproximada" -> "Aprox."
+                "Automática" -> "Sistema"
+                "Indisponível" -> "N/D"
+                "Por sessão" -> "Sessão"
+                else -> "Pendente"
+            }
+            groupHost.addView(settingsSlimRow(item.icon, item.label,
+                item.reason, visible) { openPermissionAccess(item) })
+            if (index < items.lastIndex) compactDivider(groupHost, 32)
         }
-        sectionGap(page, 9)
+        if (active == 2) {
+            sectionGap(groupHost, 9)
+            groupHost.addView(label("Acessibilidade, leitura de notificações e localização permanente " +
+                "dependem de uma etapa manual no Android.", 11f, muted = true))
+        }
+        if (active == 3) {
+            sectionGap(groupHost, 9)
+            groupHost.addView(label("Compartilhar tela exige consentimento por sessão. " +
+                "Fotos e arquivos usam o seletor seguro, sem acesso irrestrito.", 11f, muted = true))
+        }
     }
-    page.addView(label("A concessão depende do Android. Permissões negadas permanentemente podem exigir Configurações do app. READ_SMS/RECEIVE_SMS são restritas pelo instalador; fotos e arquivos usam o seletor seguro, sem acesso irrestrito.", 11.5f, muted = true))
-    page.addView(actionButton("Concluir e abrir o início") { navigateMainTab(2) })
+    showSelected()
+    sectionGap(page, 11)
+    page.addView(label("Permissões concedidas não habilitam compartilhamento remoto. " +
+        "Cada recurso continua sujeito às autorizações próprias e ao pareamento.",
+        11.5f, muted = true))
+    sectionGap(page, 7)
+    page.addView(actionButton("Concluir") { navigateMainTab(2) })
 }
 
 internal fun MainActivity.startPermissionCenterRequests(includeSms: Boolean) {

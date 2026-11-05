@@ -1,3 +1,15 @@
+# Celular Remoto — 0.1.0-alpha.121
+
+**Interface e permissões:** páginas internas de Configurações compactadas sem cartão externo; Central de Permissões agora por categorias Comuns, SMS, Especiais e Sessões, com estado real e botões explícitos. Permissões continuam opcionais conforme o uso e nenhuma função remota é ativada por grant.
+
+**Atualizações online:** estado, verificações, download e instalação organizados de forma mais enxuta. Pedidos remotos continuam autenticados e limitados à consulta/download; instalar requer toque e confirmação no próprio Android.
+
+**Diálogos e textos:** confirmações/seleções com menor rolagem e sem cards aninhados. Valores longos passam a se adaptar à largura e fontes grandes. Novidades mostram três destaques e histórico anterior com detalhes sob demanda.
+
+**Compatibilidade:** sem alterações no protocolo AES-GCM, nas chaves, sessões, permissões declaradas, fontes de leitura, APK signing ou workflow único. Necessária validação no GitHub Actions e em dispositivos reais.
+
+## Histórico da alpha.120
+
 # Celular Remoto — 0.1.0-alpha.120
 
 **Bateria redesenhada:** indicador principal de nível e barra, grade adaptativa de corrente/temperatura/potência, histórico em listas, sessões com previsões e cobertura de leituras organizadas em painéis compactos. Gráficos continuam derivados de amostras reais, com lacunas identificadas, e relatórios detalhados acessíveis por toque. Os quatro testes e o controle remoto foram preservados. O protocolo e a assinatura não mudaram. A compilação Android e a validação física ainda são necessárias.

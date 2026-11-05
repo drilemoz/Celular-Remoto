@@ -15,19 +15,21 @@ import kotlin.concurrent.thread
 
 /** Atualizações disponíveis só na tela local; nenhum comando remoto inicia instalação. */
 internal fun MainActivity.fillUpdatesSettings(layout: LinearLayout) {
-    layout.addView(iconSectionHeader(R.drawable.ic_folder_download, "Atualizações do aplicativo", "GitHub Releases · Celular Remoto"))
+    val status = UpdateController.state(this)
+    layout.addView(settingsSummaryBand("Atualizações online",
+        "Instalado: ${br.dev.celularremoto.transport.AppVersion.NAME} · $status",
+        R.drawable.ic_folder_download))
     sectionGap(layout, 8)
-    dialogIntro(layout, "Verificação online em segundo plano. Downloads somente de Releases assinadas, conferidos por SHA-256 e certificado Android. A instalação exige confirmação neste aparelho.")
-    sectionGap(layout, 8)
-    layout.addView(dialogMetricRow("Versão instalada", br.dev.celularremoto.transport.AppVersion.NAME))
-    layout.addView(dialogMetricRow("Estado", UpdateController.state(this)))
-    UpdateController.downloadProgress(this)?.let { layout.addView(dialogMetricRow("Transferência", it)) }
-    val time = UpdateController.lastCheck(this)
-    layout.addView(dialogMetricRow("Última consulta", if (time > 0) DateFormat.getDateTimeInstance().format(Date(time)) else "Nunca"))
+    val last = UpdateController.lastCheck(this)
+    val lastText = if (last > 0) DateFormat.getDateTimeInstance().format(Date(last)) else "Nunca"
+    layout.addView(dialogMetricRow("Última consulta", lastText))
     val version = UpdateController.availableVersion(this)
-    if (version.isNotBlank()) layout.addView(dialogMetricRow("Última encontrada", version))
-    sectionGap(layout, 12)
-    layout.addView(actionButton("Verificar atualização agora") {
+    if (version.isNotBlank()) layout.addView(dialogMetricRow("Nova versão", version))
+    UpdateController.downloadProgress(this)?.let {
+        layout.addView(dialogMetricRow("Download", it))
+    }
+    sectionGap(layout, 8)
+    fun verifyNow() {
         message("Consultando as Releases do GitHub…")
         thread(name = "CelularRemoto-update-manual") {
             val result = UpdateController.check(applicationContext, automatic = false)
@@ -36,22 +38,21 @@ internal fun MainActivity.fillUpdatesSettings(layout: LinearLayout) {
                 message(result)
             } }
         }
-    })
-    sectionGap(layout, 8)
+    }
     if (UpdateController.prepared(this)) {
-        layout.addView(actionButton("Instalar APK verificado") {
+        settingsActionPair(layout, "Verificar agora", { verifyNow() }, "Instalar APK", {
             showAppConfirm("Instalar atualização do Celular Remoto?",
-                "O Android pedirá sua confirmação. A instalação pode reiniciar o aplicativo e interromper a conexão remota e medições em andamento. Faça isso em um momento seguro.",
+                "O Android pedirá sua confirmação. A instalação pode reiniciar o app e " +
+                    "interromper uma medição ou conexão ativa.",
                 R.drawable.ic_shield, "Abrir instalador") {
                 message(UpdateController.installFromUserTap(this))
             }
-        })
-        sectionGap(layout, 8)
+        }, emphasizeFirst = true)
     } else if (version.isNotBlank() &&
         (UpdatePreferences.getString(this, "available_code").toIntOrNull() ?: 0) >
-            br.dev.celularremoto.BuildConfig.VERSION_CODE &&
+        br.dev.celularremoto.BuildConfig.VERSION_CODE &&
         UpdatePreferences.getLong(this, "download_id") == 0L) {
-        layout.addView(actionButton("Baixar APK agora") {
+        settingsActionPair(layout, "Verificar agora", { verifyNow() }, "Baixar APK", {
             thread(name = "CelularRemoto-update-download") {
                 val outcome = UpdateController.download(applicationContext)
                 runOnUiThread { if (!isFinishing && !isDestroyed) {
@@ -59,40 +60,54 @@ internal fun MainActivity.fillUpdatesSettings(layout: LinearLayout) {
                     message(outcome)
                 } }
             }
-        })
-        sectionGap(layout, 8)
+        }, emphasizeFirst = true)
+    } else {
+        layout.addView(actionButton("Verificar agora", emphasis = true) { verifyNow() })
     }
+    sectionGap(layout, 9)
+    layout.addView(settingsSubheading("Automação neste aparelho"))
     fun toggle(key: String, title: String, hint: String, current: Boolean) {
-        layout.addView(iconMenuRow(R.drawable.ic_settings, title,
-            "${if (current) "Ativado" else "Desativado"} · $hint",
-            badge = SettingsBadgeKind.forEnabled(current)) {
+        layout.addView(settingsToggleRow(R.drawable.ic_settings, title, hint, current) {
             UpdatePreferences.update(this, key, !current)
             UpdateScheduler.refresh(this)
             openSettingsSection("updates")
         })
-        sectionGap(layout, 9)
+        compactDivider(layout, 33)
     }
-    toggle("checking", "Verificação automática", "Sem abrir o aplicativo", UpdatePreferences.checking(this))
-    toggle("auto_download", "Download automático", "Prepara o APK sem instalar", UpdatePreferences.autoDownload(this))
-    toggle("unmetered", "Somente rede não tarifada", "Evita consumo de dados móveis", UpdatePreferences.unmetered(this))
-    toggle("battery_care", "Economia de energia", "Adia download abaixo de 25% e durante testes", UpdatePreferences.batteryCare(this))
+    toggle("checking", "Verificação automática", "Consultas sem abrir o aplicativo",
+        UpdatePreferences.checking(this))
+    toggle("auto_download", "Download automático", "Prepara o APK sem instalar",
+        UpdatePreferences.autoDownload(this))
+    toggle("unmetered", "Somente Wi-Fi não tarifado", "Não usar dados móveis",
+        UpdatePreferences.unmetered(this))
+    toggle("battery_care", "Economia de bateria", "Adiar em bateria baixa ou durante testes",
+        UpdatePreferences.batteryCare(this))
     val minutes = UpdatePreferences.intervalMinutes(this)
     val choices = listOf(30, 60, 180, 360, 720, 1440)
-    fun frequency(value: Int): String = if (value < 60) "$value minutos" else "${value / 60} hora${if (value == 60) "" else "s"}"
-    layout.addView(iconMenuRow(R.drawable.ic_activity, "Intervalo de consulta", "Aproximadamente a cada ${frequency(minutes)}", actionLabel = "ALTERAR") {
-        showSettingsChoiceDialog("Periodicidade de verificação", "O Android pode atrasar a execução para economizar energia.",
-            choices.map { frequency(it) to (if (it == 60) "Padrão recomendado" else "Verificação periódica aproximada") },
+    fun frequency(value: Int): String =
+        if (value < 60) "$value minutos" else "${value / 60} hora${if (value == 60) "" else "s"}"
+    layout.addView(settingsSlimRow(R.drawable.ic_activity, "Intervalo de consulta",
+        "Aproximadamente a cada ${frequency(minutes)}", "Alterar") {
+        showSettingsChoiceDialog("Periodicidade de verificação",
+            "O Android pode atrasar a execução para economizar energia.",
+            choices.map { frequency(it) to
+                (if (it == 60) "Padrão recomendado" else "Intervalo aproximado") },
             choices.indexOf(minutes)) { which ->
             UpdatePreferences.interval(this, choices[which])
             UpdateScheduler.refresh(this)
             openSettingsSection("updates")
         }
     })
-    sectionGap(layout, 12)
-    layout.addView(iconSectionHeader(R.drawable.ic_settings, "Atualização de aparelhos pareados", "Sem instalação remota"))
-    sectionGap(layout, 5)
-    toggle("remote_requests", "Aceitar pedidos remotos", "Autoriza apenas verificação e download solicitados por controlador pareado; desligado por padrão",
-        UpdatePreferences.remoteRequests(this))
+    sectionGap(layout, 11)
+    layout.addView(settingsSubheading("Aparelhos pareados"))
+    val requests = UpdatePreferences.remoteRequests(this)
+    layout.addView(settingsToggleRow(R.drawable.ic_shield, "Aceitar pedidos remotos",
+        "Permite consultar e baixar; nunca instalar remotamente", requests) {
+        UpdatePreferences.update(this, "remote_requests", !requests)
+        UpdateScheduler.refresh(this)
+        openSettingsSection("updates")
+    })
+    compactDivider(layout, 33)
     val host = SettingsStore.getRemoteHost(this)
     val key = if (host.isNotBlank()) RecentDevices.key(this, host) else null
     if (key == null) {
@@ -137,16 +152,16 @@ internal fun MainActivity.fillUpdatesSettings(layout: LinearLayout) {
                 }
             }
         }
-        layout.addView(actionButton("Consultar atualizador remoto") { remoteRequest("status") })
-        sectionGap(layout, 6)
-        layout.addView(actionButton("Verificar e baixar no remoto") {
-            showAppConfirm("Solicitar atualização no aparelho remoto?",
-                "O aparelho pareado verificará GitHub Releases e, se houver APK mais novo, tentará baixá-lo respeitando rede e bateria. Ele precisa autorizar pedidos remotos em Configurações. A instalação jamais acontece por este comando.",
-                R.drawable.ic_shield, "Solicitar") { remoteRequest("checkDownload") }
-        })
+        settingsActionPair(layout, "Consultar remoto", { remoteRequest("status") },
+            "Verificar e baixar", {
+                showAppConfirm("Solicitar atualização no remoto?",
+                    "O aparelho pareado verificará as Releases e tentará baixar um APK " +
+                        "respeitando suas opções de rede e bateria. A instalação permanece local.",
+                    R.drawable.ic_shield, "Solicitar") { remoteRequest("checkDownload") }
+            })
         sectionGap(layout, 5)
-        layout.addView(label("Após a solicitação, use Consultar atualizador remoto para acompanhar a transferência. Este comando requer Celular Remoto alpha.112 ou superior no aparelho de destino.", 12f, muted = true))
+        layout.addView(label("Acompanhe o download usando Consultar remoto. Requer alpha.112+ no destino.", 11f, muted = true))
     }
     sectionGap(layout, 12)
-    layout.addView(label("Instalação manual obrigatória em cada celular. A verificação em segundo plano é aproximada; apenas Releases com assinatura estável são oferecidas. Versões 111 e 112 permanecem compatíveis nas operações antigas. Transferência de APK por Wi-Fi local será uma evolução posterior.", 12f, muted = true))
+    layout.addView(label("A instalação exige confirmação local. São aceitas apenas Releases verificadas e assinadas. Consultas periódicas podem atrasar no Android.", 11.5f, muted = true))
 }

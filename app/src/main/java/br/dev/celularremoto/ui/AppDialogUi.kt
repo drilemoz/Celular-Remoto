@@ -48,15 +48,13 @@ private fun MainActivity.showThemedMessageDialog(
 ) {
     val (wrapper, layout) = visualDialogContainer()
     layout.addView(visualHeader(icon, title))
-    sectionGap(layout, 12)
-    layout.addView(panel(13).apply {
-        background = shape(fieldColor, 17)
-        addView(label(description, 13.5f).apply {
-            setPadding(0, 0, 0, 0)
-            setLineSpacing(dp(2).toFloat(), 1f)
-        })
+    sectionGap(layout, 9)
+    // Texto direto no diálogo; evita card dentro de card e rolagem desnecessária.
+    layout.addView(label(description, 13f).apply {
+        setPadding(dp(2), 0, dp(2), 0)
+        setLineSpacing(dp(2).toFloat(), 1f)
     })
-    sectionGap(layout, 15)
+    sectionGap(layout, 12)
     lateinit var dialog: AlertDialog
     val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     if (secondary != null) {
@@ -108,16 +106,15 @@ internal fun MainActivity.showSettingsChoiceDialog(
     require(items.isNotEmpty())
     val (wrapper, layout) = visualDialogContainer()
     layout.addView(visualHeader(R.drawable.ic_settings, title, description))
-    sectionGap(layout, 12)
+    sectionGap(layout, 8)
     lateinit var chooser: AlertDialog
     items.forEachIndexed { index, (name, hint) ->
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            background = shape(if (index == selected) fieldColor else surface, 15,
-                index == selected)
-            minimumHeight = dp(62)
-            setPadding(dp(10), dp(9), dp(9), dp(9))
+            background = if (index == selected) shape(fieldColor, 12) else null
+            minimumHeight = dp(52)
+            setPadding(dp(10), dp(7), dp(9), dp(7))
             isClickable = true
             isFocusable = true
             contentDescription = "$name. $hint. ${if (index == selected) "Selecionado" else "Selecionar"}"
@@ -139,7 +136,7 @@ internal fun MainActivity.showSettingsChoiceDialog(
         }
         row.addView(radio)
         layout.addView(row)
-        if (index < items.lastIndex) sectionGap(layout, 6)
+        if (index < items.lastIndex) compactDivider(layout, 7)
     }
     chooser = themedPopup(this).setView(wrapper).setNegativeButton("Cancelar", null).create()
     showManagedDialog(chooser)

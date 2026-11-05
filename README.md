@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.120
+# Celular Remoto v0.1.0-alpha.121
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,15 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.120 / versionCode 120** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.121 / versionCode 121** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Ajustes, permissões e atualizações compactos (alpha.121)
+
+- Telas internas de Configurações sem segundo cartão externo, com retorno à lista de categorias em linha e separador; mantém todos os destinos e a pesquisa por nome.
+- Central de permissões dividida em Comuns, SMS, Especiais e Sessões, com estado real e ações explícitas de solicitação; não concede nem habilita acesso remoto ao abrir uma aba. SMS mantém confirmação separada.
+- Atualizações com estado resumido, verificação, download/instalação (somente por toque local) e controles em linhas compactas. Os comandos remotos mantêm pareamento e confirmação; nenhum instalador remoto foi introduzido.
+- Diálogos mais enxutos e históricos de Novidades navegáveis, com detalhes por toque. Valores de status longos quebram linha, inclusive com fonte ampliada.
+- Nenhuma mudança no protocolo, nas chaves, permissões declaradas, medições, fluxo de assinatura ou workflow único. Compilação Android e testes físicos de UI ainda necessários.
 
 ## Bateria compacta e analítica (alpha.120)
 

@@ -54,12 +54,15 @@ internal fun MainActivity.renderSettingsModule() {
         // A página inicial possui seu próprio cabeçalho. Não repetir "Configurações".
         renderSettingsHome()
     } else {
-        val breadcrumb = actionButton("‹  Categorias  /  ${title ?: "Configurações"}") {
+        // Cabeçalho de navegação, sem um segundo botão/cartão com o nome inteiro.
+        val breadcrumb = settingsSlimRow(R.drawable.ic_settings,
+            title ?: "Configurações", "Voltar para categorias", "‹") {
             openSettingsSection("home")
-        }.apply { textSize = 13f; minimumHeight = dp(48) }
-        content.addView(breadcrumb, LinearLayout.LayoutParams(-1, dp(48)))
-        sectionGap(content, 9)
-        val page = panel(12)
+        }
+        content.addView(breadcrumb)
+        compactDivider(content)
+        sectionGap(content, 10)
+        val page = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         when (section) {
             "permissions" -> renderPermissionCenter(page)
             "updates" -> fillUpdatesSettings(page)

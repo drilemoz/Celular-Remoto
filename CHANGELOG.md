@@ -1,3 +1,11 @@
+## 0.1.0-alpha.121 (versionCode 121) | 04/11/2026
+
+- Redesenho das telas internas de Configurações: cabeçalho navegável e componentes sem cards aninhados; leitura de status mais responsiva em dispositivos estreitos e fontes ampliadas.
+- Central de permissões separada em quatro categorias compactas, mantendo estados reais e solicitação explícita. SMS e acessos especiais não são concedidos automaticamente.
+- Atualizações online compactadas com opções de consulta e download/instalação, switches informativos e controles remotos autenticados preservados. Instalação somente após toque/consentimento no Android.
+- Diálogos de aviso, confirmação e seleção menores; histórico de Novidades acessível por linhas expansíveis de detalhes.
+- Mantidos um workflow, protocolo AES-GCM, pareamento, dados e testes de bateria. Testes sintáticos/estruturais locais não substituem o build Android/validação física.
+
 ## 0.1.0-alpha.120 (versionCode 120) | 04/11/2026
 
 - Redesenho da aba Bateria: percentual, estado e barra de progresso em um painel principal; corrente líquida, temperatura e potência em indicadores compactos adaptativos.

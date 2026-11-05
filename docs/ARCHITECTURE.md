@@ -51,9 +51,9 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 ## Distribuição e assinatura
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.120` e `versionCode=120`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.121` e `versionCode=121`.
 
-- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.120.apk`.
+- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.121.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.
 - Com quatro Secrets, Gradle gera APK Release assinado e AAB. Sem Secrets, o arquivo é Debug de teste e não preserva necessariamente a assinatura entre execuções.
 - Releases são prévias, não substituem a futura revisão da Google Play e nem os ensaios reais.
@@ -373,3 +373,7 @@ Os relatórios incluem até 24 resumos Labs e 24 resumos de sessões automática
 - Estado de rede é temporal, não socket persistente; histórico local preserva tentativas, rtt, falhas e lacunas; nunca inferir tempo online a partir de ausência de sondagem.
 - Sondagens em UI ~30 s com backoff progressivo, sem duplicar polling regular do Controlar. Background via JobScheduler opcional de 15 min, sujeito a Doze.
 - Reconexão só experimenta endereços salvos com exatamente a mesma chave, sem sondagem da sub-rede; mantidos controle de usuário e pareamento.
+
+## Interface alpha.121
+
+As páginas internas usam `SettingsCompactUi.kt` como apresentação com linhas sem cards repetidos. Permissões são medidas localmente por `PermissionCenter`; abas não concedem autorizações. Atualizações usam o controlador/assinatura anterior e comandos remotos autenticados sem instalação. Novidades mantêm histórico integral e mostram apenas destaques da versão.

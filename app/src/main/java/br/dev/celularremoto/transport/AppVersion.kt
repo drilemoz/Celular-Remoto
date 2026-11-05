@@ -9,7 +9,7 @@ package br.dev.celularremoto.transport
  * Protocolo v1 (WireProtocol.VERSION) não deve ser alterado sem revisar operações.
  */
 object AppVersion {
-    const val NAME = "0.1.0-alpha.120"
+    const val NAME = "0.1.0-alpha.121"
     const val WIRE_COMPAT = "0.1.0-alpha.111"
 
     fun compatible(remote: String?): Boolean = remote == WIRE_COMPAT || remote == NAME

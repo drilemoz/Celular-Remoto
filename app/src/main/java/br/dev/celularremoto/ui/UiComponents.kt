@@ -211,11 +211,24 @@ internal fun MainActivity.dialogCardRow(
 }
 
 internal fun MainActivity.dialogMetricRow(name: String, value: String): LinearLayout = LinearLayout(this).apply {
-    orientation = LinearLayout.HORIZONTAL
+    // Informações longas (datas e diagnósticos remotos) não ficam cortadas em 320dp.
+    val stacked = name.length + value.length > 43 || resources.configuration.fontScale > 1.20f
+    orientation = if (stacked) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
     gravity = Gravity.CENTER_VERTICAL
-    setPadding(0, dp(4), 0, dp(4))
-    addView(label(name, 11.5f, muted = true), LinearLayout.LayoutParams(0, -2, 1f))
-    addView(label(value, 13.5f, strong = true))
+    setPadding(0, dp(5), 0, dp(5))
+    val nameView = label(name, 11.5f, muted = true).apply { setPadding(0, 0, 0, 0) }
+    val valueView = label(value, 13f, strong = true).apply {
+        setPadding(0, if (stacked) dp(2) else 0, 0, 0)
+        maxLines = if (stacked) 3 else 2
+        if (!stacked) gravity = Gravity.END
+    }
+    if (stacked) {
+        addView(nameView)
+        addView(valueView)
+    } else {
+        addView(nameView, LinearLayout.LayoutParams(0, -2, 1f))
+        addView(valueView, LinearLayout.LayoutParams(0, -2, 1f))
+    }
 }
 
 

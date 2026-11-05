@@ -1616,7 +1616,7 @@ assert 'fun installFromUserTap(context: Context)' in update
 assert 'installFromUserTap' not in server and 'installFromUserTap' not in client
 assert 'intervalMinutes(ctx: Context)' in remote_preferences and '?: 60' in remote_preferences
 assert '30, 60, 180, 360, 720, 1440' in remote_preferences
-assert 'Verificar e baixar no remoto' in remote_ui and 'remote_requests' in remote_ui
+assert 'Verificar e baixar' in remote_ui and 'remote_requests' in remote_ui
 print('PASSOU: alpha.112 compatibilidade 111, atualização remota apenas após opt-in, instalação local')
 
 # alpha.113 — não esconder descarga líquida ao carregar; previsões exigem evidência.
@@ -1723,3 +1723,20 @@ assert "widthDp < 360 || fontScale > 1.20f" in (ui_root / "BatteryDashboardPolic
 assert "minimumHeight = dp(49)" in compact120 and "contentDescription =" in compact120
 assert (root / "docs/VALIDATION_ALPHA120.md").exists()
 print("PASSOU: alpha.120 Bateria compacta; leitura, comparacao, alertas, coleta e protocolos preservados")
+
+# Alpha.121 — Configurações em categorias, consentimentos locais e atualizador sem instalação remota.
+compact121 = (ui_root / 'SettingsCompactUi.kt').read_text()
+permissions121 = (ui_root / 'PermissionCenterUi.kt').read_text()
+updates121 = (ui_root / 'UpdatesSettingsUi.kt').read_text()
+dialog121 = (ui_root / 'AppDialogUi.kt').read_text()
+settings121 = (ui_root / 'SettingsScreenUi.kt').read_text()
+assert all(x in compact121 for x in ['settingsSlimRow(', 'settingsToggleRow(', 'settingsSummaryBand(', 'settingsActionPair('])
+assert all(x in permissions121 for x in ['"Comuns"', '"SMS"', '"Especiais"', '"Sessões"', 'startPermissionCenterRequests(includeSms = false)', 'startPermissionCenterRequests(includeSms = true)', 'openPermissionAccess(item)'])
+assert 'PermissionCenter.grantStatus(this, item)' in permissions121
+assert 'settingsToggleRow(' in updates121 and 'UpdateController.installFromUserTap(this)' in updates121
+assert 'RemoteClient.appUpdate(targetHost, expectedKey, applicationContext, accessMethod, action)' in updates121
+assert 'showAppConfirm("Solicitar atualização no remoto?' in updates121
+assert 'showManagedDialog' in dialog121 and 'onPrimary?.invoke()' in dialog121
+assert 'val page = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }' in settings121
+assert (root / 'docs/VALIDATION_ALPHA121.md').exists()
+print('PASSOU: alpha.121 interface compacta; permissões, atualizações e confirmações locais preservadas')

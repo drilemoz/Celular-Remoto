@@ -1,3 +1,12 @@
+# Regras da alpha.121 — Configurações e diálogos compactos (04/11/2026)
+
+- Base alpha.120; versão obrigatória `0.1.0-alpha.121`, `versionCode 121`. Próxima versão: alpha.122/122; sincronizar Gradle, AppVersion, docs, README, CHANGELOG, Novidades, testes e notas de release.
+- `SettingsCompactUi.kt` fornece somente componentes visuais. Não introduzir efeitos de rede, permissões, instalação ou compartilhamento ao desenhar componentes.
+- Central de Permissões tem categorias Comuns/SMS/Especiais/Sessões, com estados medidos pelo Android. Solicitar permissões é uma ação explícita, SMS é sensível, acessos especiais exigem ação manual e MediaProjection é por sessão.
+- Atualizações mantêm validação de APK, assinatura e download sob demanda/automático. Instalar somente após toque local e confirmação Android. Não permitir instalação remota silenciosa.
+- Diálogos devem manter as confirmações e a distinção de ações destrutivas. Listas compactas devem conservar descrições acessíveis, texto de fonte ampliada e área de toque ≥48dp.
+- Preservar protocolo AES-GCM, pareamento, WIRE_COMPAT alpha.111, serviço e workflow únicos. Validar CI Android e aparelhos reais antes de afirmar APK estável.
+
 # Regras da alpha.120 — Bateria compacta e analítica (04/11/2026)
 
 - Base alpha.119; versão `0.1.0-alpha.120`, `versionCode 120`; próxima alteração alpha.121/121. Gradle, AppVersion, README, CHANGELOG, notas, documentação e Novidades sincronizados.
