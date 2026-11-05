@@ -7,6 +7,7 @@ import br.dev.celularremoto.core.RemoteOperationHistoryPolicy
 import android.content.Intent
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import org.json.JSONObject
 import java.util.Locale
@@ -16,12 +17,12 @@ import br.dev.celularremoto.core.SettingsStore
 /** A atualização mostra uma fotografia autenticada do estado, não um canal persistente. */
 internal fun MainActivity.displayResult(root: JSONObject, fromCache: Boolean = false) {
     val container = resultBox ?: return
-    container.removeAllViews()
     val battery = root.optJSONObject("battery")
     if (battery == null) {
         displayEmptyRemoteDashboard()
         return
     }
+    container.removeAllViews()
     val network = root.optJSONObject("network")
     val level = if (battery.has("levelPercent") && !battery.isNull("levelPercent"))
         battery.optInt("levelPercent", -1).takeIf { it in 0..100 }?.let { "$it%" } ?: "--%"
@@ -75,7 +76,7 @@ internal fun MainActivity.displayResult(root: JSONObject, fromCache: Boolean = f
         }
     }
     sectionGap(container, 18)
-    renderRemoteActions(container, root, fromCache)
+    renderRemoteActions(container, root)
     val selectedHost = SettingsStore.getRemoteHost(this)
     val recent = RemoteOperationHistory.read(this, selectedHost).firstOrNull()
     if (recent != null) {
@@ -109,7 +110,7 @@ internal fun MainActivity.displayEmptyRemoteDashboard() {
     sectionGap(container, 10)
     container.addView(label("Os dados serão exibidos depois de uma consulta autenticada.", 11.5f, muted = true))
     sectionGap(container, 18)
-    renderRemoteActions(container, null, true)
+    renderRemoteActions(container, null)
 }
 
 private fun MainActivity.mobileDashboardHeader(parent: LinearLayout, title: String, side: String) {
@@ -166,13 +167,30 @@ private fun MainActivity.mobileNetworkRow(title: String, subtitle: String, onCli
         addView(label("›", 23f, muted = true))
     }
 
-/** Quatro atalhos fixos + oito funções extras. A dobra não altera disponibilidade. */
-private fun MainActivity.renderRemoteActions(container: LinearLayout, snapshot: JSONObject?, cachedReading: Boolean) {
+/** Quatro atalhos fixos e oito comandos sempre visíveis, com ou sem primeira leitura.
+ * Reutilizar as Views quando os comandos/autorizações não mudam evita reconstruir 12
+ * cartões em cada sondagem periódica de telemetria. Não armazena snapshot nem chave.
+ */
+private fun MainActivity.renderRemoteActions(container: LinearLayout, snapshot: JSONObject?) {
     val host = SettingsStore.getRemoteHost(this)
     val keyAvailable = host.isNotBlank() && br.dev.celularremoto.core.RecentDevices.key(this, host) != null
     val eventCount = snapshot?.optJSONArray("events")?.let { events ->
         (0 until events.length()).count { events.optJSONObject(it)?.optString("type") == "notificacao" }
     } ?: 0
+    val cacheKey = RemoteActionsRenderKey(
+        host = host,
+        keyAvailable = keyAvailable,
+        eventCount = eventCount,
+        theme = "${SettingsStore.theme(this)}:${darkTheme()}:${amoledTheme()}",
+        fontScale = resources.configuration.fontScale,
+        widthDp = resources.configuration.screenWidthDp
+    )
+    remoteActionsUiCache?.takeIf { it.first == cacheKey }?.second?.let { panel ->
+        (panel.parent as? ViewGroup)?.removeView(panel)
+        container.addView(panel)
+        return
+    }
+    val actionsPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     val cards = listOf(
         actionTile(R.drawable.ic_folder_download, "Arquivos", "Downloads fixos", enabled = true) {
             startActivity(Intent(this, RemoteFilesActivity::class.java).apply {
@@ -245,25 +263,15 @@ private fun MainActivity.renderRemoteActions(container: LinearLayout, snapshot: 
     guarded(cards)
     val shortcuts = listOf(cards[4], cards[0], cards[6], cards[11]) // Tela, Arquivos, Câmeras, Localização
     val others = cards.filterNot { it in shortcuts }
-    mobileDashboardHeader(container, "Acesso rápido", "4 atalhos")
-    mobileActionGrid(container, shortcuts)
-    sectionGap(container, 8)
-    mobileDashboardHeader(container, "Outras funções", "8 comandos")
-    val toggle = actionButton(if (expandedRemoteFunctions) "Ocultar 8 comandos" else "Mostrar mais 8 comandos") {
-        expandedRemoteFunctions = !expandedRemoteFunctions
-        // Redesenhar somente a seção remota; não refazer polling ou reconectar.
-        if (snapshot == null) displayEmptyRemoteDashboard() else displayResult(snapshot,
-            fromCache = cachedReading)
-    }.apply {
-        textSize = 13.5f
-        background = shape(surface, 13, true)
-        minimumHeight = dp(48)
-    }
-    if (expandedRemoteFunctions) {
-        mobileActionGrid(container, others)
-        sectionGap(container, 9)
-    }
-    container.addView(toggle, LinearLayout.LayoutParams(-1, dp(50)))
+    mobileDashboardHeader(actionsPanel, "Acesso rápido", "4 atalhos")
+    mobileActionGrid(actionsPanel, shortcuts)
+    sectionGap(actionsPanel, 8)
+    mobileDashboardHeader(actionsPanel, "Outras funções", "8 comandos")
+    // Os oito comandos não são recolhíveis: sempre acessíveis sem toque adicional.
+    mobileActionGrid(actionsPanel, others)
+    sectionGap(actionsPanel, 9)
+    remoteActionsUiCache = cacheKey to actionsPanel
+    container.addView(actionsPanel)
 }
 
 private fun MainActivity.mobileActionGrid(parent: LinearLayout, tiles: List<LinearLayout>) {

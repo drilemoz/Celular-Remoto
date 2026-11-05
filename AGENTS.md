@@ -1,3 +1,11 @@
+# Celular Remoto v0.1.0-alpha.124 — comandos sempre visíveis (05/11/2026)
+
+- Base: alpha.123. Próxima versão obrigatória **alpha.125/versionCode 125**. Sincronizar app/build.gradle.kts, AppVersion, README, CHANGELOG, docs, teste de versão e Novidades.
+- `RemoteDashboardUi.kt`: **4 atalhos e 8 outras funções devem ser mostrados SEMPRE** em Controlar, mesmo antes da primeira leitura. Não reintroduzir botão de ocultar/expandir ou `expandedRemoteFunctions`. Todos os 12 callbacks/rotas originais permanecem e ainda exigem chave/consentimentos correspondentes.
+- `RemoteActionsRenderKey` invalida cache visual quando aparelho, presença da chave, quantidade de notificações, tema, escala de fonte ou largura da tela mudar. Cache mantém somente Views do controlador, nunca credenciais ou snapshots.
+- Não alterar AES-GCM, `WIRE_COMPAT=alpha.111`, fluxo de atualizações, serviço único, permissões e gravações. Preservar um único workflow.
+- Validar Android/Gradle real no GitHub Actions e UI em 320, 360 e 393dp, fontes ampliadas, temas e dois aparelhos antes de tratar o APK como aprovado.
+
 # Celular Remoto v0.1.0-alpha.123 — regras de aparência e acessibilidade (05/11/2026)
 
 - Base alpha.122; próxima versão obrigatória **alpha.124/versionCode 124**. Sincronizar Gradle, AppVersion, documentação, testes, Novidades e notas a cada alteração.

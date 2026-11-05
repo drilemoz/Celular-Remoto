@@ -1509,8 +1509,8 @@ assert 'listOf(cards[4], cards[0], cards[6], cards[11])' in dashboard105
 assert 'val others = cards.filterNot { it in shortcuts }' in dashboard105
 assert dashboard105.count('actionTile(R.drawable.') == 12
 assert 'if (!keyAvailable) tiles.forEach' in dashboard105
-assert 'fromCache = cachedReading' in dashboard105
-print('PASSOU: alpha.105, barra inferior, 12 ações preservadas, dobra e leitura antiga distinguida')
+assert 'val liveReading = !fromCache && remoteConnection.state == "connected"' in dashboard105
+print('PASSOU: alpha.105, barra inferior, 12 ações preservadas e leitura antiga distinguida')
 
 # Alpha.106: UI de bateria, coleta limitada e novo endpoint mantendo AES-GCM e versão.
 ui_battery = (ui_root / 'BatteryScreenUi.kt').read_text(encoding='utf-8')
@@ -1760,3 +1760,24 @@ assert 'fun stackSecondaryActions' in appearance123 and 'if (stacked)' in settin
 assert 'navigationHeightDp' in nav123 and 'maxLines = 2' in nav123
 assert (root / 'app/src/test/java/br/dev/celularremoto/ui/AppearancePolicyTest.kt').is_file()
 print('PASSOU: alpha.123 AMOLED, fontes ampliadas, navegação e botões responsivos')
+
+# Alpha.124 — as 12 ações ficam visíveis sem alternância e o cache invalida mudanças.
+dashboard124 = (ui_root / 'RemoteDashboardUi.kt').read_text(encoding='utf-8')
+main124 = (ui_root / 'MainActivity.kt').read_text(encoding='utf-8')
+key124 = (ui_root / 'RemoteActionsRenderKey.kt').read_text(encoding='utf-8')
+assert dashboard124.count('actionTile(R.drawable.') == 12, 'Deve preservar exatamente 12 comandos remotos'
+assert 'val shortcuts = listOf(cards[4], cards[0], cards[6], cards[11])' in dashboard124
+assert 'val others = cards.filterNot { it in shortcuts }' in dashboard124
+assert 'mobileActionGrid(actionsPanel, shortcuts)' in dashboard124
+assert 'mobileActionGrid(actionsPanel, others)' in dashboard124
+visible_section = dashboard124.split('mobileDashboardHeader(actionsPanel, "Outras funções", "8 comandos")', 1)[1].split('mobileActionGrid(actionsPanel, others)', 1)[0]
+assert not re.search(r'\bif\s*\(', visible_section), 'Outras funções não podem depender de uma condição de expansão'
+assert 'remoteActionsUiCache = cacheKey to actionsPanel' in dashboard124
+assert 'if (mode != 1) remoteActionsUiCache = null' in main124
+assert 'remoteActionsUiCache?.takeIf { it.first == cacheKey }' in dashboard124
+assert 'keyAvailable' in key124 and 'eventCount' in key124 and 'fontScale' in key124
+assert all(x not in dashboard124 for x in ['expandedRemoteFunctions', 'Ocultar 8 comandos', 'Mostrar mais 8 comandos'])
+assert all(x not in main124 for x in ['expandedRemoteFunctions', 'expanded_remote_functions'])
+assert (root / 'app/src/test/java/br/dev/celularremoto/ui/RemoteActionsRenderKeyTest.kt').is_file()
+assert (root / 'docs/VALIDATION_ALPHA124.md').is_file()
+print('PASSOU: alpha.124 todas as ações sempre visíveis, cache visual seguro e sem estado oculto')

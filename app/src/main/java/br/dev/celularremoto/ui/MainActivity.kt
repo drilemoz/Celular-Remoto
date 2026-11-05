@@ -69,7 +69,6 @@ class MainActivity : Activity() {
     internal var messagesError: String? = null
     internal var messagesTechnicalExpanded = false
     internal var messagesRequestGeneration = 0
-    internal var expandedRemoteFunctions = false
     internal var mode = 2 // 2: início, 0: monitorado, 1: controle, 3: ajustes, 4: mensagens, 5: bateria
     internal var batteryRemote = false
     internal var batteryData: org.json.JSONObject? = null
@@ -110,6 +109,7 @@ class MainActivity : Activity() {
     private val monitorUiInvalidation = Runnable {
         if (active && !isFinishing && !isDestroyed && mode == 0) refreshMonitorIfChanged()
     }
+    internal var remoteActionsUiCache: Pair<RemoteActionsRenderKey, LinearLayout>? = null
     internal var resultBox: LinearLayout? = null
     companion object {
         const val EXTRA_OPEN_MONITOR = "br.dev.celularremoto.OPEN_MONITOR"
@@ -156,7 +156,6 @@ class MainActivity : Activity() {
         batteryHistoryType = savedInstanceState?.getString("battery_history_type", "ALL") ?: "ALL"
         batteryHistoryPeriod = savedInstanceState?.getString("battery_history_period", "ALL") ?: "ALL"
         messagesTab = savedInstanceState?.getInt("messages_tab", 0)?.coerceIn(0, 1) ?: 0
-        expandedRemoteFunctions = savedInstanceState?.getBoolean("expanded_remote_functions", false) ?: false
         if (mode == 4) {
             messagesHost = SettingsStore.getRemoteHost(this)
             messagesBaselineMs = lastMessageViewedMs[messagesHost] ?: 0L
@@ -241,7 +240,6 @@ class MainActivity : Activity() {
         outState.putString("battery_history_type", batteryHistoryType)
         outState.putString("battery_history_period", batteryHistoryPeriod)
         outState.putInt("messages_tab", messagesTab)
-        outState.putBoolean("expanded_remote_functions", expandedRemoteFunctions)
         outState.putString("settings_section", settingsSection)
         outState.putStringArrayList("pending_permission_groups", ArrayList(permissionCenterQueue.map { it.joinToString("|") }))
         outState.putInt("settings_return_mode", settingsReturnMode)
@@ -304,6 +302,8 @@ class MainActivity : Activity() {
         super.onPause()
     }
     internal fun render() {
+        // Não manter Views do controlador na memória quando o usuário mudar de aba.
+        if (mode != 1) remoteActionsUiCache = null
         content.removeAllViews()
         if (mode != 0) displayedMonitorState = null
         if (mode == 4) { renderBottomNavigation(); refreshPermissionsNotice(); renderRemoteMessagesPage(); return }

@@ -1,3 +1,10 @@
+## 0.1.0-alpha.124 (versionCode 124) | 05/11/2026
+
+- Todos os doze comandos da tela Controlar permanecem **sempre visíveis**: quatro atalhos rápidos e oito outras funções, em grade responsiva. Removidos o botão "Ocultar/Mostrar" e seu estado de expansão salvo.
+- Cache leve da grade de ações, reutilizado entre sondagens de telemetria e invalidado ao trocar aparelho, autorização, quantidade de notificações, tema ou largura/escala de fonte. Menos alocações de Views no controlador; sem reter snapshots nem segredos.
+- Evitada a remoção redundante do painel quando a resposta remota não possui bateria. As medições, comandos autenticados e limitações de permissões permanecem intactos.
+- Regressão estrutural e teste Kotlin/JVM do identificador do cache adicionados. Compilação Android completa e ensaios em dois aparelhos pendentes.
+
 ## 0.1.0-alpha.123 (versionCode 123) | 05/11/2026
 
 - Novo tema **Preto AMOLED**, mantendo Claro, Escuro e Seguir o sistema. A tela principal tem fundo preto e as superfícies/diálogos recebem tratamento próprio; telas secundárias passam a reconhecer AMOLED como modo escuro.

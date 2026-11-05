@@ -1,3 +1,11 @@
+# Celular Remoto v0.1.0-alpha.124 — todos os comandos visíveis e menos recriações de UI
+
+- **Controlar:** as oito "Outras funções" são sempre exibidas em grade abaixo dos quatro atalhos principais. Não existe mais botão para recolher comandos nem estado antigo de expansão.
+- A grade responsiva continua com 1 a 4 colunas, rótulos acessíveis e pareamento obrigatório para executar ações.
+- A seção de ações é reutilizada entre sondagens autenticadas quando aparelho, chave, eventos e apresentação permanecem iguais, diminuindo alocações na interface. O resumo de telemetria ainda é atualizado normalmente.
+- Nenhuma alteração em permissões, protocolos criptografados, bateria, serviços de captura, assinatura ou atualizações automáticas.
+- Verificações locais não substituem build Android completo e teste visual/físico.
+
 # Celular Remoto v0.1.0-alpha.123 — aparência e acessibilidade
 
 - Adicionado tema **Preto AMOLED** com fundo preto e diálogos escuros coerentes; Claro, Escuro e Seguir o sistema preservados.
