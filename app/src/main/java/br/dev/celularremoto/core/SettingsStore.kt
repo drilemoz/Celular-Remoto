@@ -186,6 +186,42 @@ object SettingsStore {
     fun recoveryLastEvent(context: Context) = prefs(context).getString("recovery_last_event", "Nenhum evento registrado").orEmpty()
     fun recoveryLastEventMs(context: Context) = prefs(context).getLong("recovery_last_event_ms", 0L)
 
+    /** Nunca habilitados implicitamente. Modos: off, teste de 30 min e durante Monitorado. */
+    fun connectionWakeMode(context: Context): String = prefs(context)
+        .getString("connection_cpu_wake_mode", "off").orEmpty().takeIf {
+            br.dev.celularremoto.service.ConnectionPowerPolicy.validMode(it)
+        } ?: "off"
+    fun connectionWakeDeadline(context: Context): Long =
+        prefs(context).getLong("connection_cpu_test_deadline", 0L)
+    fun setConnectionWakeMode(context: Context, mode: String) {
+        require(br.dev.celularremoto.service.ConnectionPowerPolicy.validMode(mode))
+        prefs(context).edit().putString("connection_cpu_wake_mode", mode)
+            .putLong("connection_cpu_test_deadline", if (mode == "30m")
+                System.currentTimeMillis() + br.dev.celularremoto.service.ConnectionPowerPolicy.TEST_MS else 0L).apply()
+        br.dev.celularremoto.service.MonitorService.requestPowerRefresh(context)
+    }
+    fun connectionWifiLock(context: Context): Boolean =
+        prefs(context).getBoolean("connection_wifi_lock", false)
+    fun setConnectionWifiLock(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean("connection_wifi_lock", enabled).apply()
+        br.dev.celularremoto.service.MonitorService.requestPowerRefresh(context)
+    }
+    /** Mede lacunas na execução do supervisor; NÃO prova interrupção da rede. */
+    fun recordSupervisorGap(context: Context, gapMs: Long) {
+        if (gapMs <= 0) return
+        prefs(context).edit().putLong("connection_gap_ms", gapMs)
+            .putLong("connection_gap_time", System.currentTimeMillis())
+            .putInt("connection_gap_count", (supervisorGapCount(context) + 1).coerceAtMost(1_000_000)).apply()
+    }
+    fun supervisorGapCount(context: Context): Int = prefs(context).getInt("connection_gap_count", 0)
+    fun lastSupervisorGapMs(context: Context): Long = prefs(context).getLong("connection_gap_ms", 0L)
+    fun lastSupervisorGapTime(context: Context): Long = prefs(context).getLong("connection_gap_time", 0L)
+    fun recordConnectionNetworkEvent(context: Context, event: String) =
+        prefs(context).edit().putString("connection_network_event", event.take(70))
+            .putLong("connection_network_event_time", System.currentTimeMillis()).apply()
+    fun connectionNetworkEvent(context: Context): String =
+        prefs(context).getString("connection_network_event", "Sem eventos observados").orEmpty()
+
     fun autoStartEnabled(context: Context) = prefs(context).getBoolean("autostart", false)
     fun setAutoStart(context: Context, enabled: Boolean) = prefs(context).edit().putBoolean("autostart", enabled).apply()
 

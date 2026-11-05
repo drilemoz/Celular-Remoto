@@ -35,6 +35,7 @@ private val settingGroups = listOf(
     SettingsGroup("RECUPERAÇÃO E LOCALIZAÇÃO", listOf(
         SettingsDestination(R.drawable.ic_pin, "Localização", "Recuperação automática e GPS", "location"),
         SettingsDestination(R.drawable.ic_power, "Serviço e recuperação", "Inicialização, retomada e parada", "service"),
+        SettingsDestination(R.drawable.ic_wifi, "Conexão estável e WakeLock", "Doze, rede, CPU e economia de energia", "power"),
         SettingsDestination(R.drawable.ic_flashlight, "Som e lanterna", "Autorizações para localizar aparelho", "physical"),
     )),
     SettingsGroup("CÂMERA E TELA", listOf(

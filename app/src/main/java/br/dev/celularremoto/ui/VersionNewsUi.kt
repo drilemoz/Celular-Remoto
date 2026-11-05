@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Preparação do aparelho" to "Nova tela em Monitorado/Ajustes para verificar autorizações e prontidão dos comandos sem ativar recursos automaticamente.",
-        "Estado visto pelo controlador" to "O snapshot autenticado informa quais funções estão prontas, desativadas ou exigem nova autorização ou sessão local.",
-        "Atualização remota segura" to "Revise a opção de pedido remoto e a autorização do instalador no Android. Baixar não instala e nunca dispensa confirmação local."
+        "Conexão estável" to "Nova tela em Ajustes para ver Doze, restrições de bateria, rede e lacunas no supervisor.",
+        "WakeLock opcional" to "CPU desligada por padrão; escolha teste de 30 min ou manter durante Monitorado, com liberação ao parar.",
+        "Wi-Fi e recuperação" to "Wi-Fi Lock opcional, histórico de lacunas e atalhos para ajustes oficiais do Android/Xiaomi. Não há garantia de rede no Doze."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -45,6 +45,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Preparação remota (alpha.127)" to "Diagnóstico de prontidão local/remota e autorizações individuais; acesso autenticado e permissões locais preservados.",
         "Diagnóstico de alertas (alpha.126)" to "Permissões e canais verificados antes de publicar; registros e notificação de teste em Alertas e proteção.",
         "Notificação local e remota (alpha.125)" to "Percentual, corrente, temperatura, previsão e último contato remoto na notificação do Monitorado, com atualizações limitadas.",
         "Todos os comandos visíveis (alpha.124)" to "Doze comandos sempre disponíveis no Controlar, sem botão de ocultar, com cache visual seguro.",

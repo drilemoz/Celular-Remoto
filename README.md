@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.127
+# Celular Remoto v0.1.0-alpha.128
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,14 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.127 / versionCode 127** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.128 / versionCode 128** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Conexão estável e WakeLock (alpha.128)
+
+- Em **Ajustes → Conexão estável e WakeLock**, consultar status do Doze, economia de energia, isenção parcial e rede disponível.
+- WakeLock de CPU opt-in: desligado por padrão, teste de 30 minutos, ou durante serviço Monitorado. Wi-Fi Lock opcional e separado, ambos liberados na parada do serviço.
+- Indicação de lacunas do supervisor acima de 45 s: não prova queda de Wi-Fi, travamento ou desligamento do serviço. Acesso a configurações oficiais Android e orientações sobre Xiaomi.
+- Não concede isenção de bateria silenciosamente. Android pode ignorar WakeLock e bloquear rede no Doze. Sem novos serviços ou privilégios remotos.
 
 ## Preparação do monitorado e prontidão remota (alpha.127)
 

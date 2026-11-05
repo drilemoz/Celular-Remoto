@@ -36,6 +36,7 @@ internal fun MainActivity.renderSettingsModule() {
         "apps" to "Aplicativos instalados",
         "sms" to "SMS e telefonia",
         "service" to "Serviço e recuperação",
+        "power" to "Conexão estável",
         "physical" to "Som e lanterna",
         "lock" to "Bloqueio remoto",
         "files" to "Arquivos e recuperação",
@@ -76,6 +77,7 @@ internal fun MainActivity.renderSettingsModule() {
             "lock" -> fillRemoteLockSettings(page)
             "files" -> fillFileRecoverySettings(page)
             "service" -> fillServiceSettings(page)
+            "power" -> fillConnectionPowerSettings(page)
             "security" -> fillSecuritySettings(page)
             "appearance" -> fillAppearanceSettings(page)
             "diagnostics" -> fillDiagnosticsSettings(page)
@@ -514,6 +516,9 @@ private fun MainActivity.fillServiceSettings(layout: LinearLayout) {
         SettingsStore.setRecoveryJobs(this, !jobsEnabled)
         render()
     })
+    sectionGap(layout, 9)
+    layout.addView(iconMenuRow(R.drawable.ic_wifi, "Conexão estável e WakeLock",
+        "Diagnóstico Doze/Wi-Fi e opções de CPU ativa") { openSettingsSection("power") })
     sectionGap(layout, 9)
     layout.addView(iconMenuRow(R.drawable.ic_activity, "Consultar diagnóstico",
         "Ver detalhes técnicos do servidor, falhas e verificações") { openSettingsSection("diagnostics") })

@@ -1,3 +1,11 @@
+## 0.1.0-alpha.128 (versionCode 128) | 05/11/2026
+
+- Tela Configurações → Conexão estável e WakeLock: Doze, economia de bateria, status da rede, restrição de segundo plano, monitoramento e locks ativos.
+- WakeLock PARTIAL opcional com modos Desligado, Teste de 30 minutos e Enquanto Monitorado ativo; liberação ao parar e timeout de segurança de 10 minutos com renovação somente se o serviço executar.
+- Wi-Fi Lock de alto desempenho opcional; nenhum dos locks promete acesso contínuo durante Doze. Ambos desabilitados por padrão.
+- Supervisor registra lacunas de agendamento acima de 45 s e últimos eventos de rede; novas orientações para otimização de bateria e Xiaomi.
+- Mantidos criptografia AES-GCM, protocolo WIRE_COMPAT, notificações, controle remoto e único workflow. Build Android completo e testes físicos pendentes.
+
 ## 0.1.0-alpha.127 (versionCode 127) | 05/11/2026
 
 - Nova tela local de **Preparação do monitorado**, com diagnóstico dos pré-requisitos, estados reais e atalhos para autorizações oficiais.

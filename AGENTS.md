@@ -1,3 +1,11 @@
+# Celular Remoto v0.1.0-alpha.128 — conexão estável (05/11/2026)
+
+- Base alpha.127; próxima versão obrigatória alpha.129/versionCode 129, sincronizando todos os metadados.
+- WakeLock e Wi-Fi Lock somente no serviço Monitorado existente, desativados por padrão, nunca remotamente habilitados. Libere no onDestroy/Parar. WakeLock CPU de teste com expiração em 30 min e leases de no máximo 10 minutos.
+- Não prometer rede ativa durante Doze; isenção é parcial e o app apenas abre tela de Configurações oficial após toque local. Nunca abrir tela automaticamente, nem requerer nova permissão sensível.
+- Lacuna do supervisor indica tempo sem execução observada, não prova queda de rede. Preservar protocolo cifrado, um único workflow, permissões de captura e versionamento WIRE_COMPAT.
+- Verificar build real no GitHub Actions e dois aparelhos, medindo consumo térmico/elétrico durante o WakeLock. Validações locais não substituem compilação completa.
+
 # Celular Remoto v0.1.0-alpha.127 — preparação para controle remoto (05/11/2026)
 
 - Base alpha.126; próxima versão obrigatória alpha.128/versionCode 128. Sincronizar Gradle, AppVersion, README, CHANGELOG, documentação, testes e tela Novidades.

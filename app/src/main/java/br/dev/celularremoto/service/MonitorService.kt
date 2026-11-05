@@ -42,6 +42,14 @@ class MonitorService : Service() {
         const val ACCESS_CHANNEL = "celular_remoto_acessos"
         const val ACCESS_NOTIFICATION_ID = 43
         const val ACTION_STOP = "br.dev.celularremoto.STOP"
+        private const val ACTION_REFRESH_POWER = "br.dev.celularremoto.REFRESH_POWER"
+        /** Só notifica serviço existente; não o inicia se estiver desligado. */
+        fun requestPowerRefresh(context: Context) {
+            if (!isServiceActive) return
+            runCatching {
+                context.startService(Intent(context, MonitorService::class.java).setAction(ACTION_REFRESH_POWER))
+            }.onFailure { Log.w("CelularRemotoPower", "Não foi possível atualizar os locks", it) }
+        }
         @Volatile var isRunning = false
             private set
         /** Não confundir listener TCP fora do ar com serviço Android encerrado. */
@@ -56,6 +64,8 @@ class MonitorService : Service() {
     }
 
     private var server: MonitorServer? = null
+    private val connectionPower by lazy { ConnectionPowerController(applicationContext) }
+    private var lastServerTickElapsed = 0L
     private var stoppedExplicitly = false
     @Volatile private var serviceActive = false
     private var consecutiveFailures = 0
@@ -64,17 +74,29 @@ class MonitorService : Service() {
     private val networkManager by lazy { getSystemService(ConnectivityManager::class.java) }
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
+            SettingsStore.recordConnectionNetworkEvent(this@MonitorService, "Rede disponível ao Android")
             mainHandler.post {
                 if (serviceActive && SettingsStore.isMonitorEnabled(this@MonitorService)) ensureServerReady()
             }
+        }
+        override fun onLost(network: Network) {
+            SettingsStore.recordConnectionNetworkEvent(this@MonitorService, "Android informou perda de rede")
+            mainHandler.post { if (serviceActive) refreshMainNotification() }
         }
     }
     private val serverWatchdog = object : Runnable {
         override fun run() {
             if (!serviceActive || !SettingsStore.isMonitorEnabled(this@MonitorService)) return
+            val nowElapsed = SystemClock.elapsedRealtime()
+            ConnectionPowerPolicy.schedulingGap(lastServerTickElapsed, nowElapsed)?.let { gap ->
+                SettingsStore.recordSupervisorGap(this@MonitorService, gap)
+                Log.i("CelularRemotoPower", "Lacuna no supervisor: ${gap}ms; causa não confirmada")
+            }
+            lastServerTickElapsed = nowElapsed
+            connectionPower.sync(active = true)
             ensureServerReady()
             refreshMainNotification()
-            mainHandler.postDelayed(this, 15_000L)
+            mainHandler.postDelayed(this, ConnectionPowerPolicy.WATCHDOG_INTERVAL_MS)
         }
     }
     private val healthWatchdog = object : Runnable {
@@ -185,10 +207,15 @@ class MonitorService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_REFRESH_POWER && serviceActive && SettingsStore.isMonitorEnabled(this)) {
+            connectionPower.sync(active = true)
+            return START_STICKY
+        }
         if (intent?.action == ACTION_STOP || !SettingsStore.isMonitorEnabled(this)) {
             stoppedExplicitly = true
             serviceActive = false
             isServiceActive = false
+            connectionPower.release()
             SettingsStore.setMonitorEnabled(this, false)
             stopSelf()
             return START_NOT_STICKY
@@ -206,6 +233,8 @@ class MonitorService : Service() {
         serviceActive = true
         isServiceActive = true
         stoppedExplicitly = false
+        lastServerTickElapsed = SystemClock.elapsedRealtime()
+        connectionPower.sync(active = true)
         RecoveryScheduler.refresh(this)
         SettingsStore.recordRecoveryEvent(this, "Serviço iniciado ou restaurado")
         getSystemService(NotificationManager::class.java)?.cancel(98)
@@ -391,6 +420,8 @@ class MonitorService : Service() {
         lastControllerSeenMs = 0L
         serviceActive = false
         isServiceActive = false
+        connectionPower.release()
+        lastServerTickElapsed = 0L
         if (!stoppedExplicitly && SettingsStore.isMonitorEnabled(this)) {
             SettingsStore.recordRecoveryEvent(this, "Serviço Android encerrado; aguardando retomada")
             RecoveryScheduler.refresh(this)

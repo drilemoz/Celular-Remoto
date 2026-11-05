@@ -1,3 +1,13 @@
+# Celular Remoto v0.1.0-alpha.128 — conexão estável e WakeLock
+
+- Nova página Ajustes → Conexão estável e WakeLock com diagnóstico de Doze, otimizações, economia de energia, rede, bloqueios de CPU e Wi-Fi.
+- WakeLock parcial de CPU opcional (desligado, teste 30 min, ou enquanto Monitorado ativo). Wi-Fi Lock opcional e independente, com liberação ao parar o serviço.
+- Lacunas superiores a 45 s no supervisor e eventos Android de rede são registrados como indícios, não diagnóstico definitivo de Doze.
+- Ajustes de isenção abertos somente mediante ação local; sem pedir grant direto nem ativar funções remotas novas.
+- Validação estática/JVM disponível; compilação Android completa e ensaio em aparelho ainda pendentes.
+
+## Histórico
+
 # Celular Remoto v0.1.0-alpha.127 — preparação e prontidão remota
 
 - Acesse **Monitorado → Preparar aparelho** ou **Ajustes → Preparar aparelho monitorado** para revisar quais funções estão prontas, precisam de configuração, estão desativadas ou exigem consentimento a cada sessão.

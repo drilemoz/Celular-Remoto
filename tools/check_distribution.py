@@ -1826,3 +1826,14 @@ assert 'installFromUserTap' not in ui127 and 'RemoteClient' not in prep
 assert (root / 'docs/VALIDATION_ALPHA127.md').exists()
 assert (root / 'app/src/test/java/br/dev/celularremoto/core/RemotePreparationPolicyTest.kt').exists()
 print('PASSOU: alpha.127 preparo local e estados cifrados, sem concessão/instalação remota')
+
+# Alpha.128: gestão local e explícita de energia; não alterar protocolo ou capturas.
+power128 = (root / 'app/src/main/java/br/dev/celularremoto/service/ConnectionPowerController.kt').read_text()
+settings128 = (root / 'app/src/main/java/br/dev/celularremoto/ui/ConnectionPowerUi.kt').read_text()
+service128 = (root / 'app/src/main/java/br/dev/celularremoto/service/MonitorService.kt').read_text()
+assert 'PARTIAL_WAKE_LOCK' in power128 and 'CPU_LEASE_MS' in power128
+assert 'connectionPower.release()' in service128 and 'ACTION_REFRESH_POWER' in service128
+assert 'ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS' in settings128
+assert '"off", "30m", "monitor"' in (root / 'app/src/main/java/br/dev/celularremoto/service/ConnectionPowerPolicy.kt').read_text()
+assert (root / 'docs/VALIDATION_ALPHA128.md').exists()
+print('PASSOU: alpha.128 com WakeLock opt-in, diagnóstico Doze e liberação na parada')

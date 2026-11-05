@@ -1,4 +1,4 @@
-# Estado atual — alpha.127
+# Estado atual — alpha.128
 
 O bloco `readiness` agora é devolvido **somente no snapshot já autenticado** do servidor: esquema 1, estados genéricos por recurso, sem credenciais ou dados do usuário. A preparação local é UI de diagnóstico e não concede grants nem inicia sessões. `appUpdate` continua limitado a status, check e download; instalação requer toque local.
 
@@ -62,9 +62,9 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 ## Distribuição e assinatura
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.127` e `versionCode=127`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.128` e `versionCode=128`.
 
-- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.127.apk`.
+- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.128.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.
 - Com quatro Secrets, Gradle gera APK Release assinado e AAB. Sem Secrets, o arquivo é Debug de teste e não preserva necessariamente a assinatura entre execuções.
 - Releases são prévias, não substituem a futura revisão da Google Play e nem os ensaios reais.
