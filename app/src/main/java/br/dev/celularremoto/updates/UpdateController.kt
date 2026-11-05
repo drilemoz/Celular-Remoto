@@ -50,6 +50,24 @@ object UpdateController {
         UpdatePreferences.getLong(context, "download_code") > BuildConfig.VERSION_CODE &&
         UpdatePreferences.getLong(context, "download_id") > 0L
 
+    private fun installOriginAllowed(context: Context): Boolean =
+        Build.VERSION.SDK_INT < 26 || context.packageManager.canRequestPackageInstalls()
+
+    /** Progresso sem URL, caminho ou identidade do controlador; pode ser enviado pelo canal autenticado. */
+    private fun progressPercent(context: Context): Int? {
+        val id = UpdatePreferences.getLong(context, "download_id")
+        if (id <= 0L) return null
+        return runCatching {
+            val dm = context.getSystemService(DownloadManager::class.java) ?: return@runCatching null
+            dm.query(DownloadManager.Query().setFilterById(id))?.use { cursor ->
+                if (!cursor.moveToFirst()) return@use null
+                UpdateProgressPolicy.percent(
+                    cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)),
+                    cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)))
+            }
+        }.getOrNull()
+    }
+
 
     /** Estado de atualização limitado e sem URLs ou identificadores sensíveis. */
     fun remoteStatus(context: Context): JSONObject = JSONObject()
@@ -60,6 +78,12 @@ object UpdateController {
         .put("availableVersion", availableVersion(context).take(50))
         .put("downloadReady", prepared(context))
         .put("progress", downloadProgress(context).orEmpty().take(80))
+        .put("progressPercent", progressPercent(context) ?: -1)
+        .put("stateCode", UpdatePreferences.getString(context, "state_code").take(32))
+        .put("downloadVersion", UpdatePreferences.getString(context, "download_version").take(50))
+        .put("transferPending", UpdatePreferences.getLong(context, "download_id") > 0L && !prepared(context))
+        .put("installOriginAllowed", installOriginAllowed(context))
+        .put("requiresLocalInstall", true)
         .put("remoteAllowed", UpdatePreferences.remoteRequests(context))
         .put("autoCheck", UpdatePreferences.checking(context))
         .put("autoDownload", UpdatePreferences.autoDownload(context))
@@ -72,13 +96,18 @@ object UpdateController {
      */
     fun remoteAction(context: Context, action: String): Pair<Boolean, String> {
         if (action == "status") return true to "Estado consultado"
-        if (action !in setOf("check", "checkDownload", "download"))
+        if (action !in setOf("check", "checkDownload", "download", "cancel"))
             return false to "Operação de atualização desconhecida"
         if (!UpdatePreferences.remoteRequests(context))
             return false to "Autorize pedidos de atualização em Configurações → Atualizações no aparelho monitorado"
+        if (action == "cancel") {
+            if (remoteBusy.get()) return false to "Uma verificação está em andamento; aguarde para cancelar"
+            return cancelDownload(context)
+        }
         if (action == "download") {
             if (remoteBusy.get()) return false to "Já existe uma consulta remota em andamento"
-            return true to download(context)
+            val result = download(context)
+            return (UpdatePreferences.getString(context, "state_code") in setOf("downloading", "ready", "waiting")) to result
         }
         synchronized(remoteThrottle) {
             if (remoteBusy.get()) return false to "Atualização remota já em andamento"
@@ -87,6 +116,10 @@ object UpdateController {
                 return false to "Aguarde dois minutos antes de solicitar outra verificação"
             lastRemoteRequestAt = now
             remoteBusy.set(true)
+            if (!prepared(context)) {
+                UpdatePreferences.putString(context, "state_code", "checking")
+                UpdatePreferences.putString(context, "state", "Verificação remota solicitada; consultando as Releases…")
+            }
         }
         thread(name = "CelularRemoto-remote-update") {
             try {
@@ -94,9 +127,12 @@ object UpdateController {
                 if (action == "checkDownload" &&
                     (UpdatePreferences.getString(context, "available_code").toIntOrNull() ?: 0) > BuildConfig.VERSION_CODE)
                     download(context.applicationContext)
+            } catch (_: Exception) {
+                UpdatePreferences.putString(context, "state_code", "error")
+                UpdatePreferences.putString(context, "state", "Falha na solicitação remota; tente novamente")
             } finally { remoteBusy.set(false) }
         }
-        return true to "Solicitação recebida. Acompanhe o estado remoto em instantes."
+        return true to "Solicitação autenticada. A instalação permanece exclusivamente local."
     }
 
     fun downloadProgress(context: Context): String? {
@@ -109,7 +145,7 @@ object UpdateController {
             val done = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
             val total = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
             when (status) {
-                DownloadManager.STATUS_RUNNING -> if (total > 0) "Baixando: ${done * 100 / total}%" else "Baixando…"
+                DownloadManager.STATUS_RUNNING -> "Baixando: ${UpdateProgressPolicy.percent(done, total)?.let { "$it%" } ?: "tamanho desconhecido"}"
                 DownloadManager.STATUS_PENDING, DownloadManager.STATUS_PAUSED -> "Na fila (aguardando condições de rede)"
                 DownloadManager.STATUS_SUCCESSFUL -> "Download concluído; verificando assinatura…"
                 DownloadManager.STATUS_FAILED -> "Falha ao baixar"
@@ -155,7 +191,12 @@ object UpdateController {
         try {
             val release = findUpdate()
             if (release == null) {
-                if (!prepared(context)) {
+                if (UpdatePreferences.getLong(context, "download_id") > 0L && !prepared(context)) {
+                    UpdatePreferences.putString(context, "state_code", "downloading")
+                    UpdatePreferences.putString(context, "state", "Download anterior mantido; verificando transferência")
+                }
+                if (!prepared(context) && UpdatePreferences.getLong(context, "download_id") <= 0) {
+                    UpdatePreferences.clearAvailable(context)
                     UpdatePreferences.putString(context, "state_code", "current")
                     UpdatePreferences.putString(context, "state", "Nenhuma atualização assinada mais recente")
                 }
@@ -168,6 +209,9 @@ object UpdateController {
                 if (UpdatePreferences.getLong(context, "download_code") == release.code.toLong() &&
                     UpdatePreferences.getLong(context, "download_id") > 0L) {
                     reconcileDownload(context, UpdatePreferences.getLong(context, "download_id"))
+                } else if (prepared(context) && !automatic) {
+                    // Uma versão mais antiga verificada continua instalável; permitir baixar a nova por gesto.
+                    UpdatePreferences.putString(context, "state", "Nova versão ${release.version} encontrada; APK anterior ainda pronto")
                 } else {
                     UpdatePreferences.putString(context, "state_code", "available")
                     UpdatePreferences.putString(context, "state", "Nova versão ${release.version} disponível")
@@ -257,7 +301,8 @@ object UpdateController {
     }
 
     /** Enfileira no DownloadManager; persiste ID para acompanhar mesmo após fechar a interface. */
-    @Synchronized fun download(context: Context): String {
+    fun download(context: Context): String {
+        synchronized(checkLock) {
         val version = UpdatePreferences.getString(context, "available_version")
         val code = UpdatePreferences.getString(context, "available_code").toIntOrNull() ?: return "Sem atualização disponível"
         val sha = UpdatePreferences.getString(context, "available_sha")
@@ -267,15 +312,19 @@ object UpdateController {
                 true, "v$version", fileName) ||
             !UpdateRules.allowedAssetUrl(url, "v$version", fileName)) return "Metadados inválidos"
         if (UpdatePreferences.getLong(context, "download_id") > 0 &&
-            UpdatePreferences.getLong(context, "download_code") == code.toLong())
-            return state(context)
+            UpdatePreferences.getLong(context, "download_code") == code.toLong()) {
+            reconcileDownload(context, UpdatePreferences.getLong(context, "download_id"))
+            if (UpdatePreferences.getLong(context, "download_id") > 0L) return state(context)
+        }
         if (UpdatePreferences.batteryCare(context) &&
             runCatching { br.dev.celularremoto.core.BatteryLabStore.report(context)
                 .optJSONObject("active")?.optBoolean("active", false) == true }.getOrDefault(false)) {
+            UpdatePreferences.putString(context, "state_code", "waiting")
             UpdatePreferences.putString(context, "state", "Aguardando o fim do teste de bateria em andamento")
             return state(context)
         }
         if (!enoughBattery(context)) {
+            UpdatePreferences.putString(context, "state_code", "waiting")
             UpdatePreferences.putString(context, "state", "Aguardando bateria acima de 25% ou carregador")
             return state(context)
         }
@@ -286,10 +335,7 @@ object UpdateController {
             val sub = File(downloadDir, "updates")
             if (!sub.exists() && !sub.mkdirs()) return "Pasta de download indisponível"
             val previousId = UpdatePreferences.getLong(context, "download_id")
-            if (previousId > 0) {
-                dm.remove(previousId)
-                UpdatePreferences.clearDownload(context)
-            }
+            val previousFile = if (previousId > 0) file(context) else null
             val target = File(sub, fileName)
             if (target.exists() && !target.delete()) return "Não foi possível substituir APK anterior"
             val req = DownloadManager.Request(Uri.parse(url))
@@ -301,6 +347,12 @@ object UpdateController {
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
                 .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "updates/$fileName")
             val id = dm.enqueue(req)
+            // Só removemos o APK anterior depois de a nova transferência ter sido enfileirada.
+            // Falha ao enfileirar não destrói uma atualização que já estava pronta.
+            if (previousId > 0 && previousId != id) {
+                runCatching { dm.remove(previousId) }
+                if (previousFile != target) previousFile?.delete()
+            }
             UpdatePreferences.putLong(context, "download_id", id)
             UpdatePreferences.putLong(context, "download_code", code.toLong())
             UpdatePreferences.putString(context, "download_hash", sha.lowercase())
@@ -311,9 +363,37 @@ object UpdateController {
             UpdateVerifyJobService.scheduleFallback(context)
             state(context)
         } catch (e: Exception) {
+            UpdatePreferences.putString(context, "state_code", "error")
             UpdatePreferences.putString(context, "state", "Falha ao iniciar download: ${e.message?.take(90)}")
             state(context)
         }
+        }
+    }
+
+    /** Cancela somente uma transferência existente. Não instala nem concede permissões. */
+    fun cancelDownload(context: Context): Pair<Boolean, String> = synchronized(checkLock) {
+        val id = UpdatePreferences.getLong(context, "download_id")
+        if (id <= 0L || prepared(context))
+            return@synchronized false to "Não existe download pendente para cancelar"
+        val dm = context.getSystemService(DownloadManager::class.java)
+            ?: return@synchronized false to "Gerenciador de downloads indisponível"
+        val removed = runCatching { dm.remove(id) }.getOrElse {
+            return@synchronized false to "Não foi possível cancelar no Android; tente novamente"
+        }
+        // Se o download já saiu do DownloadManager, limpamos a referência obsoleta.
+        file(context)?.delete()
+        UpdatePreferences.clearDownload(context)
+        UpdateVerifyJobService.stopFallback(context)
+        UpdatePreferences.putString(context, "state_code", "cancelled")
+        UpdatePreferences.putString(context, "state", "Download cancelado. Nova tentativa disponível após verificar a versão.")
+        true to if (removed > 0) "Download cancelado" else "Download anterior não estava mais na fila; referência limpa"
+    }
+
+    /** Confere o trabalho após retorno ao app, sem download ou instalação implícitos. */
+    fun reconcilePending(context: Context): String {
+        val id = UpdatePreferences.getLong(context, "download_id")
+        if (id > 0L) runCatching { reconcileDownload(context, id) }
+        return state(context)
     }
 
     private fun file(context: Context): File? {
@@ -324,16 +404,24 @@ object UpdateController {
     }
 
     internal fun reconcileDownload(context: Context, id: Long) {
+        if (id != UpdatePreferences.getLong(context, "download_id")) return
         val dm = context.getSystemService(DownloadManager::class.java) ?: return
-        val status = dm.query(DownloadManager.Query().setFilterById(id))?.use { cursor ->
-            if (!cursor.moveToFirst()) null else cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
-        }
+        val status = runCatching {
+            dm.query(DownloadManager.Query().setFilterById(id))?.use { cursor ->
+                if (!cursor.moveToFirst()) null else cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+            }
+        }.getOrElse { return } // Erro temporário na consulta não apaga a transferência.
         when (status) {
             DownloadManager.STATUS_SUCCESSFUL -> verifyDownload(context, id)
             DownloadManager.STATUS_FAILED, null -> {
-                UpdatePreferences.putString(context, "state_code", "error")
-                UpdatePreferences.putString(context, "state", "O download foi interrompido; verifique a rede e tente novamente")
+                if (id != UpdatePreferences.getLong(context, "download_id")) return
+                // Falha do DownloadManager não é um APK validado. Mantemos a Release para nova tentativa.
+                val message = if (status == null) "Download não encontrado. Verifique espaço e tente novamente."
+                    else "Falha no download. Verifique rede/armazenamento e tente novamente."
+                file(context)?.delete()
                 UpdatePreferences.clearDownload(context)
+                UpdatePreferences.putString(context, "state_code", "error")
+                UpdatePreferences.putString(context, "state", message)
                 UpdateVerifyJobService.stopFallback(context)
             }
         }

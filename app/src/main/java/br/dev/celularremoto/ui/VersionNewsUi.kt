@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Foto em um passo" to "No aparelho monitorado, toque em Ativar Monitorado e preparar câmera; autorizações Android continuam locais.",
-        "Estado no controlador" to "A tela Fotografia remota consulta a prontidão com resposta autenticada e informa quando falta preparar a sessão.",
-        "Foto sem vídeo contínuo" to "A câmera é aberta somente durante cada pedido de JPEG, liberada em seguida e nunca rearmada silenciosamente após encerrar."
+        "Atualização remota acompanhada" to "Acompanhe download do monitorado por até 3 minutos com status cifrado, percentual e indicação de autorização local do instalador.",
+        "Recuperação e cancelamento" to "Cancele downloads pendentes localmente ou no monitorado autorizado; falhas permitem nova tentativa sem alterar o APK instalado.",
+        "Instalação protegida" to "O APK continua exigindo hash, pacote, versão e certificado válidos. Instalar só pelo toque local e confirmação oficial do Android."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -45,6 +45,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Foto remota em um passo (alpha.131)" to "Preparação local da sessão de fotografia e consulta autenticada de prontidão no controlador, sem câmera aberta continuamente.",
         "Bateria local independente (alpha.130)" to "Coleta contínua local opt-in com a tela apagada, sem abrir servidor nem duplicar a rotina quando Monitorado está ativo.",
         "Continuidade e recuperação (alpha.129)" to "Inícios repetidos não recriam agendas; a rede padrão e o registro de continuidade melhoram o diagnóstico.",
         "Conexão estável e WakeLock (alpha.128)" to "Diagnóstico de Doze e locks opcionais de CPU/Wi-Fi, desligados por padrão; liberação ao parar Monitorado.",

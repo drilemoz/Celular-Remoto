@@ -1,3 +1,12 @@
+# Celular Remoto v0.1.0-alpha.132 — atualização local/remota robusta (05/11/2026)
+
+- Base alpha.131, próxima versão alpha.133 / versionCode 133. Sincronizar Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, Novidades e testes em toda alteração.
+- `appUpdate` só pode operar dentro do canal pareado AES-GCM: status sempre consultável; check/download/cancel apenas com opt-in local `remote_requests=false` por padrão. Sem permissão/instalação automática, sem comando de instalar, sem ativação por alarme/boot.
+- Estado remoto transmite apenas versão, etapa, percentual e pré-requisito de instalador; sem URLs, tokens, caminhos, IP, dados pessoais ou chaves. Ao mudar de par, descartar respostas antigas. Polling opcional de status a cada 15 s limitado a 3 min enquanto a tela Atualizações estiver visível; sem serviço persistente.
+- SHA-256, `packageName`, `versionCode` superior e assinatura compatível com instalada são obrigatórios antes de disponibilizar `Instalar`. Confirmar no próprio Android. Nunca enfraquecer o verificador, tolerar APK com certificado diferente ou aceitar URLs de hosts arbitrários.
+- Verificação/download/reconciliação/cancelamento usam uma disciplina única de sincronização; evitar deadlocks, condições de corrida e limpeza prematura de downloads válidos. Preservar preferências de rede não tarifada, nível de bateria e Labs.
+- WIRE_COMPAT permanece `0.1.0-alpha.111`, 12 comandos, câmera, Bateria e único workflow inalterados. Verificações estáticas/JVM não substituem o build Gradle/Android e o teste físico em dois aparelhos.
+
 # Celular Remoto v0.1.0-alpha.131 — fotografia remota preparada em um passo (05/11/2026)
 
 - Base alpha.130; próxima versão alpha.132/versionCode 132. Sincronizar Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, Novidades e validação.

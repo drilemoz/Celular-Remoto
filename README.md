@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.131
+# Celular Remoto v0.1.0-alpha.132
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,17 @@
 
 **Foto remota (alpha.131):** no monitorado, abra **Ativar + Foto** ou **Fotografia remota** e toque uma vez em **Ativar Monitorado e preparar câmera**; permissões Android continuam locais. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.131 / versionCode 131** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.132 / versionCode 132** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Atualização local e remota reforçada (alpha.132)
+
+- **Ajustes → Atualizações** agora diferencia estado da transferência, percentual quando conhecido, bloqueio por rede/bateria e necessidade de autorizar o instalador no aparelho de destino.
+- No controlador pareado: **Verificar e baixar**, **Consultar remoto**, **Acompanhar remoto por 3 minutos** (consulta autenticada a cada 15 s apenas com a tela visível), **Cancelar remoto** durante uma transferência e **Tentar download remoto** em casos recuperáveis.
+- O monitorado continua exigindo opt-in **Aceitar pedidos remotos**, inicialmente desativado, e nunca aceita instalar APK ou conceder permissões por comando da rede. Somente o usuário no próprio monitorado confirma a instalação pelo Android.
+- No próprio aparelho, é possível **Atualizar estado**, **Cancelar download** e retomar tentativa após falha; a Release pode ser reconsultada sem apagar automaticamente um APK já verificado. Consultas e verificação do download são sincronizadas por um único bloqueio para evitar corridas.
+- SHA-256, identidade do pacote, código de versão superior e certificado de assinatura igual ao já instalado continuam obrigatórios. Não houve alteração no protocolo AES-GCM, na câmera, bateria ou nos 12 comandos.
+- O monitoramento de progresso remoto termina ao sair da tela ou após 3 minutos; não adiciona serviço/sessão remota permanente nem ativa WakeLock.
+- A compilação real do Android e os testes de atualização com dois aparelhos ainda estão pendentes.
 
 ## Fotografia remota em um único fluxo (alpha.131)
 

@@ -1894,3 +1894,18 @@ assert 'START_NOT_STICKY' in photo_svc and 'startForeground(' in photo_svc
 assert 'State.UNKNOWN' in remote_photo_policy and 'canTryPhoto' in remote_photo_policy
 assert 'WIRE_COMPAT = "0.1.0-alpha.111"' in appver
 print('PASSOU: alpha.131 fotografia preparada localmente em um passo, diagnóstico cifrado e câmera sob demanda')
+
+# Regressões alpha.132: canal cifrado e instalação local permanecem obrigatórios.
+updater132 = (root / "app/src/main/java/br/dev/celularremoto/updates/UpdateController.kt").read_text()
+remote132 = (root / "app/src/main/java/br/dev/celularremoto/ui/UpdatesSettingsUi.kt").read_text()
+client132 = (root / "app/src/main/java/br/dev/celularremoto/transport/RemoteClient.kt").read_text()
+assert 'fun cancelDownload(context: Context)' in updater132
+assert 'installFromUserTap(context: Context)' in updater132
+assert 'canRequestPackageInstalls()' in updater132
+assert 'hashFile(apk)' in updater132 and 'checkPackageSignature(context, apk, code)' in updater132
+assert 'synchronized(checkLock)' in updater132 and '@Synchronized fun download' not in updater132
+assert '"cancel"' in client132 and '"checkDownload"' in client132
+assert 'beginRemoteUpdatePolling()' in remote132 and 'requestRemoteAppUpdate("status", silent = true)' in remote132
+assert 'REMOTE_COOLDOWN_MS' in updater132 and 'UpdatePreferences.remoteRequests(context)' in updater132
+assert '"requiresLocalInstall", true' in updater132 and '"installOriginAllowed"' in updater132
+print('PASSOU: alpha.132 atualização autenticada, cancelamento, sincronização e instalação local')

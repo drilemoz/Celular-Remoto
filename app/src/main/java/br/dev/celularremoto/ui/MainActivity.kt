@@ -80,6 +80,9 @@ class MainActivity : Activity() {
     internal var batteryHistoryType = "ALL"
     internal var batteryHistoryPeriod = "ALL"
     internal var settingsSection = "home"
+    internal var updatePollingUntilMs = 0L
+    internal var updatePollingBusy = false
+    internal val remoteUpdateStatusPoller = Runnable { pollRemoteUpdateOnce() }
     private var settingsReturnMode = 2
     internal val cameraPermissionRequest = 4317
     internal val qrScanRequest = 4318
@@ -92,8 +95,7 @@ class MainActivity : Activity() {
     internal val smsSimPermissionRequest = 107
     internal val audioPermissionRequest = 108
     internal var active = false
-    // Tempo monotônico em RAM da última tentativa de retomar o serviço autorizado.
-    // Não sobreviver à Activity evita aplicar um timestamp antigo após recriação.
+    // Última tentativa monotônica de retomar serviço autorizado; somente em RAM.
     private var lastRecoveryAttemptMs = 0L
     // Mantém o conteúdo e a posição de rolagem intactos quando nenhum estado mudou.
     internal var displayedMonitorState: MonitorUiRefreshPolicy.State? = null
@@ -234,6 +236,7 @@ class MainActivity : Activity() {
         handler.removeCallbacks(poller)
         handler.removeCallbacks(connectionHealthPoller)
         handler.removeCallbacks(batteryPoller)
+        handler.removeCallbacks(remoteUpdateStatusPoller)
         batteryRequestGeneration++
         if (mode == 4) clearRemoteMessagesScreen()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -272,6 +275,10 @@ class MainActivity : Activity() {
         handler.postDelayed(connectionHealthPoller, 30_000L)
         handler.removeCallbacks(batteryPoller)
         if (mode == 5) handler.postDelayed(batteryPoller, 30_000L)
+        handler.removeCallbacks(remoteUpdateStatusPoller)
+        if (mode == 3 && settingsSection == "updates" &&
+            android.os.SystemClock.elapsedRealtime() < updatePollingUntilMs)
+            handler.postDelayed(remoteUpdateStatusPoller, 15_000L)
     }
     /** Recuperação conservadora somente com o app visível; nunca após parada explícita. */
     private fun recoverAuthorizedServiceIfStopped() {
@@ -305,6 +312,7 @@ class MainActivity : Activity() {
         handler.removeCallbacks(poller)
         handler.removeCallbacks(connectionHealthPoller)
         handler.removeCallbacks(batteryPoller)
+        handler.removeCallbacks(remoteUpdateStatusPoller)
         batteryRequestGeneration++
         handler.removeCallbacks(monitorUiInvalidation)
         // Uma resposta anterior não significa que ainda haja conexão ao voltar ao app.
@@ -376,6 +384,10 @@ class MainActivity : Activity() {
     }
     internal fun openSettingsSection(section: String) {
         settingsSection = section
+        handler.removeCallbacks(remoteUpdateStatusPoller)
+        if (section == "updates" && active &&
+            android.os.SystemClock.elapsedRealtime() < updatePollingUntilMs)
+            handler.postDelayed(remoteUpdateStatusPoller, 15_000L)
         render()
         (content.parent as? ScrollView)?.scrollTo(0, 0)
     }

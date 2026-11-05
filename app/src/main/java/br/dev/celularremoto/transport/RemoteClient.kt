@@ -131,7 +131,7 @@ object RemoteClient {
      */
     fun appUpdate(host: String, key: ByteArray, context: Context, method: String,
         action: String = "status"): JSONObject {
-        require(action in setOf("status", "check", "checkDownload", "download"))
+        require(action in setOf("status", "check", "checkDownload", "download", "cancel"))
         val reply = remoteScreenCommand(host, key, context, method, "appUpdate") {
             put("action", action)
         }

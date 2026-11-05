@@ -1,3 +1,12 @@
+## 0.1.0-alpha.132 (versionCode 132) | 05/11/2026
+
+- Reforçado atualizador remoto autenticado: estado estruturado, percentual de download, autorização da origem APK no monitorado e identificação de instalação exclusivamente local.
+- Controlador acompanha o progresso a cada 15 segundos por até três minutos com a tela Atualizações aberta, sem serviço adicional nem socket persistente; consultas param ao sair/pausar.
+- Cancelamento remoto de download e retentativa autenticada, sujeitos ao opt-in no monitorado; o servidor nunca concede permissões nem instala APK remotamente.
+- Atualização local oferece reconciliação do DownloadManager, cancelamento e tentativa após falha; uma Release mais recente pode substituir APK anterior após confirmação local.
+- Correção de concorrência entre `check`, `download` e verificação, evitando a inversão de locks. Falhas de consulta transitórias não apagam uma transferência válida. Regras de progresso e segurança cobertas por testes.
+- Preservados SHA-256, `packageName`, `versionCode` e certificado idêntico, proteção de bateria/rede, criptografia AES-GCM, `WIRE_COMPAT=alpha.111` e workflow único. Gradle e testes físicos pendentes.
+
 ## 0.1.0-alpha.131 (versionCode 131) | 05/11/2026
 
 - Fotografia sob demanda: em **Monitorado → Ativar + Foto** ou **Foto**, um gesto local inicia Monitorado e arma a câmera na mesma tela; permissões do Android só são solicitadas quando faltarem.

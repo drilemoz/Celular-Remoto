@@ -28,6 +28,37 @@ internal fun MainActivity.fillUpdatesSettings(layout: LinearLayout) {
     UpdateController.downloadProgress(this)?.let {
         layout.addView(dialogMetricRow("Download", it))
     }
+    val localCode = UpdatePreferences.getString(this, "state_code")
+    if (UpdateController.prepared(this)) {
+        layout.addView(dialogMetricRow("Origem de instalação",
+            if (android.os.Build.VERSION.SDK_INT < 26 || packageManager.canRequestPackageInstalls())
+                "Autorizada; Android ainda pedirá confirmação" else "Requer autorização local no Android"))
+    }
+    if (UpdatePreferences.getLong(this, "download_id") > 0L && !UpdateController.prepared(this)) {
+        settingsActionPair(layout, "Atualizar estado", {
+            thread(name = "CelularRemoto-update-reconcile") {
+                val outcome = UpdateController.reconcilePending(applicationContext)
+                runOnUiThread { if (!isFinishing && !isDestroyed) {
+                    if (mode == 3 && settingsSection == "updates") openSettingsSection("updates")
+                    message(outcome)
+                } }
+            }
+        }, "Cancelar download", {
+            showAppConfirm("Cancelar download deste aparelho?",
+                "Cancela somente a transferência atual; o aplicativo instalado não é alterado.",
+                R.drawable.ic_shield, "Cancelar download") {
+                thread(name = "CelularRemoto-update-cancel") {
+                    val outcome = UpdateController.cancelDownload(applicationContext)
+                    runOnUiThread { if (!isFinishing && !isDestroyed) {
+                        if (mode == 3 && settingsSection == "updates") openSettingsSection("updates")
+                        message(outcome.second)
+                    } }
+                }
+            }
+        })
+    }
+    if (localCode == "error" || localCode == "cancelled")
+        layout.addView(label("O APK instalado foi preservado. Confira a rede e tente baixar novamente.", 11.5f, muted = true))
     sectionGap(layout, 8)
     fun verifyNow() {
         message("Consultando as Releases do GitHub…")
@@ -40,6 +71,23 @@ internal fun MainActivity.fillUpdatesSettings(layout: LinearLayout) {
         }
     }
     if (UpdateController.prepared(this)) {
+        val downloadedCode = UpdatePreferences.getLong(this, "download_code")
+        val availableCode = UpdatePreferences.getString(this, "available_code").toLongOrNull() ?: 0L
+        if (availableCode > downloadedCode) {
+            layout.addView(actionButton("Baixar versão mais recente") {
+                showAppConfirm("Substituir APK preparado por versão mais recente?",
+                    "O arquivo anterior será substituído após iniciar o novo download; a versão instalada não muda.",
+                    R.drawable.ic_folder_download, "Baixar nova versão") {
+                    thread(name = "CelularRemoto-update-newer") {
+                        val outcome = UpdateController.download(applicationContext)
+                        runOnUiThread { if (!isFinishing && !isDestroyed) {
+                            if (mode == 3 && settingsSection == "updates") openSettingsSection("updates")
+                            message(outcome)
+                        } }
+                    }
+                }
+            })
+        }
         settingsActionPair(layout, "Verificar agora", { verifyNow() }, "Instalar APK", {
             showAppConfirm("Instalar atualização do Celular Remoto?",
                 "O Android pedirá sua confirmação. A instalação pode reiniciar o app e " +
@@ -118,50 +166,123 @@ internal fun MainActivity.fillUpdatesSettings(layout: LinearLayout) {
         val remoteState = if (selectedAtLastCheck) UpdatePreferences.getString(this, "last_remote_state") else ""
         val remoteProgress = if (selectedAtLastCheck) UpdatePreferences.getString(this, "last_remote_progress") else ""
         val remoteVersion = if (selectedAtLastCheck) UpdatePreferences.getString(this, "last_remote_version") else ""
+        val remoteChecked = if (selectedAtLastCheck) UpdatePreferences.getLong(this, "last_remote_checked") else 0L
+        if (remoteChecked > 0) layout.addView(dialogMetricRow("Última resposta do monitorado",
+            DateFormat.getDateTimeInstance().format(Date(remoteChecked))))
         if (remoteVersion.isNotBlank()) layout.addView(dialogMetricRow("Versão remota consultada", remoteVersion))
         if (remoteState.isNotBlank()) layout.addView(dialogMetricRow("Atualizador remoto", remoteState))
         if (remoteProgress.isNotBlank()) layout.addView(dialogMetricRow("Transferência remota", remoteProgress))
         sectionGap(layout, 6)
-        fun remoteRequest(action: String) {
-            val accessMethod = remoteConnection.method
-            // A chave é conferida novamente após a resposta para não misturar aparelhos.
-            val targetHost = host
-            val expectedKey = key.copyOf()
-            message("Enviando solicitação autenticada ao aparelho remoto…")
-            thread(name = "CelularRemoto-update-remote-request") {
-                val result = runCatching {
-                    RemoteClient.appUpdate(targetHost, expectedKey, applicationContext, accessMethod, action)
-                }
-                val unchanged = SettingsStore.getRemoteHost(applicationContext) == targetHost &&
-                    RecentDevices.key(applicationContext, targetHost)?.contentEquals(expectedKey) == true
-                if (unchanged && result.isSuccess) {
-                    val reply = result.getOrThrow()
-                    val data = reply.optJSONObject("data") ?: JSONObject()
-                    UpdatePreferences.putString(applicationContext, "last_remote_host", targetHost)
-                    UpdatePreferences.putString(applicationContext, "last_remote_version", data.optString("version"))
-                    UpdatePreferences.putString(applicationContext, "last_remote_state", data.optString("state").take(160))
-                    UpdatePreferences.putString(applicationContext, "last_remote_progress", data.optString("progress").take(80))
-                }
-                runOnUiThread {
-                    if (!isFinishing && !isDestroyed && unchanged) {
-                        if (mode == 3 && settingsSection == "updates") openSettingsSection("updates")
-                        val reply = result.getOrNull()
-                        message(if (reply != null) reply.optString("message", "Solicitação recebida")
-                            else (result.exceptionOrNull()?.message ?: "Falha ao consultar o aparelho remoto"))
-                    }
-                }
-            }
-        }
-        settingsActionPair(layout, "Consultar remoto", { remoteRequest("status") },
+        settingsActionPair(layout, "Consultar remoto", { requestRemoteAppUpdate("status") },
             "Verificar e baixar", {
                 showAppConfirm("Solicitar atualização no remoto?",
                     "O aparelho pareado verificará as Releases e tentará baixar um APK " +
-                        "respeitando suas opções de rede e bateria. A instalação permanece local.",
-                    R.drawable.ic_shield, "Solicitar") { remoteRequest("checkDownload") }
+                        "respeitando rede e bateria. A instalação permanece local.",
+                    R.drawable.ic_shield, "Solicitar") {
+                    requestRemoteAppUpdate("checkDownload")
+                }
             })
         sectionGap(layout, 5)
-        layout.addView(label("Acompanhe o download usando Consultar remoto. Requer alpha.112+ no destino.", 11f, muted = true))
+        val remoteCode = if (selectedAtLastCheck) UpdatePreferences.getString(this, "last_remote_state_code") else ""
+        val remotePercent = if (selectedAtLastCheck) UpdatePreferences.getString(this, "last_remote_percent").toIntOrNull() else null
+        if (remotePercent != null && remotePercent in 0..100 && remoteCode in setOf("downloading", "queued"))
+            layout.addView(dialogMetricRow("Progresso do monitorado", "$remotePercent%"))
+        val installedPermission = if (selectedAtLastCheck) UpdatePreferences.getString(this, "last_remote_install_permission") else ""
+        val remoteReady = remoteCode == "ready"
+        if (remoteReady) layout.addView(dialogMetricRow("Instalação no monitorado",
+            if (installedPermission == "true") "APK pronto; confirme no outro celular" else "Libere a origem no outro celular e confirme"))
+        if (remoteCode.isNotBlank()) layout.addView(dialogMetricRow("Etapa remota", remoteCode))
+        val remoteAllowed = if (selectedAtLastCheck) UpdatePreferences.getString(this, "last_remote_allowed") else ""
+        if (remoteAllowed == "false") layout.addView(label(
+            "O monitorado não autorizou pedidos de atualização. Ative a autorização nele para baixar remotamente.", 11.5f, muted = true))
+        sectionGap(layout, 6)
+        layout.addView(actionButton("Acompanhar remoto por 3 minutos") {
+            beginRemoteUpdatePolling()
+            requestRemoteAppUpdate("status")
+        })
+        val remotePending = if (selectedAtLastCheck)
+            UpdatePreferences.getString(this, "last_remote_pending") == "true" else false
+        if (remotePending) {
+            sectionGap(layout, 5)
+            settingsActionPair(layout, "Atualizar progresso", {
+                requestRemoteAppUpdate("status")
+            }, "Cancelar remoto", {
+                showAppConfirm("Cancelar download no aparelho monitorado?",
+                    "Cancela somente a transferência pendente. Não altera o APK instalado nem as permissões.",
+                    R.drawable.ic_shield, "Cancelar download") {
+                    requestRemoteAppUpdate("cancel")
+                }
+            })
+        } else if (remoteCode in setOf("available", "error", "cancelled", "waiting")) {
+            sectionGap(layout, 5)
+            layout.addView(actionButton("Tentar download remoto") { requestRemoteAppUpdate("download") })
+        }
+        sectionGap(layout, 5)
+        layout.addView(label("O acompanhamento consulta o aparelho a cada 15 s somente com esta tela aberta, por até 3 minutos. " +
+            "Com a tela apagada ou sem rede, as consultas param. A instalação nunca é remota.", 11f, muted = true))
     }
     sectionGap(layout, 12)
     layout.addView(label("A instalação exige confirmação local. São aceitas apenas Releases verificadas e assinadas. Consultas periódicas podem atrasar no Android.", 11.5f, muted = true))
+}
+
+/** Comando cifrado para um único par autenticado; retorno assíncrono com checagem de identidade. */
+internal fun MainActivity.requestRemoteAppUpdate(action: String, silent: Boolean = false) {
+    if (updatePollingBusy) return
+    val targetHost = SettingsStore.getRemoteHost(this)
+    val expectedKey = if (targetHost.isNotBlank()) RecentDevices.key(this, targetHost)?.copyOf() else null
+    if (expectedKey == null) { if (!silent) message("Selecione e pareie o aparelho remoto."); return }
+    val accessMethod = remoteConnection.method
+    updatePollingBusy = true
+    if (!silent) message("Solicitando $action ao aparelho pareado…")
+    thread(name = "CelularRemoto-update-remote") {
+        val result = runCatching {
+            RemoteClient.appUpdate(targetHost, expectedKey, applicationContext, accessMethod, action)
+        }
+        val unchanged = SettingsStore.getRemoteHost(applicationContext) == targetHost &&
+            RecentDevices.key(applicationContext, targetHost)?.contentEquals(expectedKey) == true
+        if (unchanged && result.isSuccess) {
+            val reply = result.getOrThrow()
+            val data = reply.optJSONObject("data") ?: JSONObject()
+            UpdatePreferences.putLong(applicationContext, "last_remote_checked", System.currentTimeMillis())
+            UpdatePreferences.putString(applicationContext, "last_remote_host", targetHost)
+            UpdatePreferences.putString(applicationContext, "last_remote_version", data.optString("version").take(50))
+            UpdatePreferences.putString(applicationContext, "last_remote_state", data.optString("state").take(160))
+            UpdatePreferences.putString(applicationContext, "last_remote_progress", data.optString("progress").take(80))
+            UpdatePreferences.putString(applicationContext, "last_remote_state_code", data.optString("stateCode").take(32))
+            UpdatePreferences.putString(applicationContext, "last_remote_percent", data.optInt("progressPercent", -1).toString())
+            UpdatePreferences.putString(applicationContext, "last_remote_install_permission", data.optBoolean("installOriginAllowed", false).toString())
+            UpdatePreferences.putString(applicationContext, "last_remote_allowed", data.optBoolean("remoteAllowed", false).toString())
+            UpdatePreferences.putString(applicationContext, "last_remote_pending", data.optBoolean("transferPending", false).toString())
+        }
+        runOnUiThread {
+            updatePollingBusy = false
+            if (!isFinishing && !isDestroyed && unchanged && active && mode == 3 && settingsSection == "updates") {
+                val scroll = content.parent as? android.widget.ScrollView
+                val y = scroll?.scrollY ?: 0
+                render()
+                scroll?.post { scroll.scrollTo(0, y) }
+                if (!silent) {
+                    val reply = result.getOrNull()
+                    message(if (reply != null) reply.optString("message", "Solicitação recebida")
+                        else (result.exceptionOrNull()?.message ?: "Falha ao consultar o aparelho remoto"))
+                    if (action == "checkDownload" && reply?.optBoolean("ok") == true) beginRemoteUpdatePolling()
+                }
+            }
+        }
+    }
+}
+
+/** Polling limitado à tela visível. Nunca cria serviço ou temporizador de fundo. */
+internal fun MainActivity.beginRemoteUpdatePolling() {
+    updatePollingUntilMs = android.os.SystemClock.elapsedRealtime() + 3 * 60_000L
+    handler.removeCallbacks(remoteUpdateStatusPoller)
+    if (active && mode == 3 && settingsSection == "updates")
+        handler.postDelayed(remoteUpdateStatusPoller, 15_000L)
+}
+
+internal fun MainActivity.pollRemoteUpdateOnce() {
+    if (!active || mode != 3 || settingsSection != "updates" ||
+        android.os.SystemClock.elapsedRealtime() >= updatePollingUntilMs) return
+    if (!updatePollingBusy) requestRemoteAppUpdate("status", silent = true)
+    handler.postDelayed(remoteUpdateStatusPoller, 15_000L)
 }

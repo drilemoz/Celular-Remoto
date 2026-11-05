@@ -1,3 +1,13 @@
+# Celular Remoto v0.1.0-alpha.132 — atualizações local e remota reforçadas
+
+- Controlador pareado consulta etapa, percentual e necessidade de autorizar a instalação no celular monitorado. Após solicitação, pode acompanhar a transferência por 3 minutos, somente com a tela aberta.
+- Cancelamento de download remoto protegido por opt-in local, sem operação de instalação; o instalador Android segue sendo aberto apenas com toque do usuário no próprio aparelho.
+- No aparelho local, o status é reconciliado com o DownloadManager e a transferência pode ser cancelada ou tentada novamente. Verificação e download compartilham sincronização para evitar deadlock.
+- Downloads continuam limitados a GitHub Releases com metadados válidos e somente são oferecidos para instalação após SHA-256, pacote, código e certificado compatíveis.
+- Uma única pipeline CI, compatibilidade de protocolo e dados locais intactos. CI Android e dispositivos reais ainda pendentes.
+
+## Histórico
+
 # Celular Remoto v0.1.0-alpha.131 — foto remota preparada em um passo
 
 - Toque no próprio monitorado em **Ativar + Foto** (ou Fotografia remota) para iniciar o servidor e preparar a câmera em um único fluxo; Android poderá pedir CAMERA e notificação, conforme permissões já concedidas.

@@ -1,4 +1,4 @@
-# Atualizador online do Celular Remoto (alpha.112)
+# Atualizador online do Celular Remoto (alpha.132)
 
 ## Como usar
 
@@ -34,3 +34,12 @@ Nenhum token GitHub é embutido e nenhuma keystore fica no aplicativo. O atualiz
 ## Controle por aparelho pareado (alpha.112)
 
 Configurações → Atualizações → Permitir pedidos remotos de atualização habilita apenas verificação/download, não instalação. O controlador pode consultar estado ou solicitar verificação e download no monitorado pelo canal autenticado; o aparelho de destino precisa ter internet. Pedidos são limitados para evitar abuso; o monitorado aplica restrições de rede não tarifada, bateria e Labs.
+
+## Reforços na alpha.132
+
+- O painel local mostra progresso de download, estado da origem do instalador, opções para atualizar o status e cancelar apenas uma transferência não verificada. Falhas não alteram o APK instalado; após nova consulta é possível recomeçar.
+- O controlador pareado mostra data da última consulta, versão remota, etapa, percentual quando disponível e se a autorização de instalação está pendente. O botão **Acompanhar remoto por 3 minutos** consulta a cada 15 s apenas com a tela visível.
+- `checkDownload` inicia verificação e download no monitorado, sujeito à autorização `remote_requests` configurada nele, bateria mínima e política de rede. `cancel` apenas remove download pendente; **não existe comando remoto de instalar**. Uma instância antiga pode não suportar o cancelamento.
+- A origem de APK é verificada antes de instalar; o usuário deve conceder permissão e confirmar instalação na interface oficial do Android. Atualização de um APK assinado com outra chave continua impossível diretamente.
+- As consultas remotas não expõem URL do APK, token, caminho do arquivo nem chave de pareamento. Um resumo antigo é rotulado como último estado consultado, não como conexão ativa.
+- Validações locais cobrem progresso e critérios de download; build Android real, liberação pelo instalador e testes cruzados entre versões continuam pendentes.
