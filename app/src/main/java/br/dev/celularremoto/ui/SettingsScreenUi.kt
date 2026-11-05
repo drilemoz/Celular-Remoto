@@ -42,6 +42,7 @@ internal fun MainActivity.renderSettingsModule() {
         "appearance" to "Aparência",
         "security" to "Segurança",
         "diagnostics" to "Diagnóstico",
+        "connection" to "Estabilidade da conexão",
         "health" to "Alertas e proteção",
         "location" to "Localização",
         "news" to "Novidades",
@@ -75,6 +76,7 @@ internal fun MainActivity.renderSettingsModule() {
             "security" -> fillSecuritySettings(page)
             "appearance" -> fillAppearanceSettings(page)
             "diagnostics" -> fillDiagnosticsSettings(page)
+            "connection" -> fillConnectionHealthSettings(page)
             "health" -> fillHealthSettings(page)
             "location" -> fillLocationSettings(page)
             "news" -> fillVersionNewsSettings(page)

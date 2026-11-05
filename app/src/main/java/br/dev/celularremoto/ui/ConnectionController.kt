@@ -7,6 +7,7 @@ internal fun MainActivity.disconnectCurrent() {
     val host = SettingsStore.getRemoteHost(this)
     remoteConnection.disconnect(host)
     SettingsStore.setRemoteHost(this, "")
+    br.dev.celularremoto.service.ConnectionHealthScheduler.refresh(this)
     remoteConnection.clear()
     mode = 2
     render()

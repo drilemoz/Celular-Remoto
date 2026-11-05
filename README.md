@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.116
+# Celular Remoto v0.1.0-alpha.117
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,16 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.116 / versionCode 116** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.117 / versionCode 117** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Diagnóstico de conexão (alpha.117)
+
+- Configurações → Estabilidade da conexão (e atalho no Controlar): estado atualizado por idade da resposta, latência, tentativas válidas, falhas consecutivas, lacunas e gráfico de sondagens.
+- Novo heartbeat cifrado sem coleta de dados do usuário; fallback compatível com pares anteriores; nenhuma conexão TCP permanente adicionada.
+- Monitoramento com o aplicativo visível e sondagens em segundo plano opcionais, via JobScheduler (~15 min, sem garantias de tempo real).
+- Reconexão automática limitada a endereços previamente salvos com a mesma chave; notifica após três falhas e na recuperação (se notificações autorizadas).
+- O percentual de disponibilidade refere-se somente a tentativas realizadas; períodos sem medição não são falhas nem disponibilidade comprovada.
+- Permanece protocolo WIRE_COMPAT alpha.111; validar no GitHub Actions e em dois Androids antes de considerar produção.
 
 ## Correção do build 9 (alpha.116)
 

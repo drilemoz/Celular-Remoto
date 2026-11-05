@@ -1607,7 +1607,7 @@ remote_preferences = (root / 'app/src/main/java/br/dev/celularremoto/updates/Upd
 remote_ui = (ui_root / 'UpdatesSettingsUi.kt').read_text()
 assert 'const val WIRE_COMPAT = "0.1.0-alpha.111"' in remote_version
 assert 'AppVersion.WIRE_COMPAT' in client and 'AppVersion.WIRE_COMPAT' in server
-assert '"appUpdate")) return' in server and 'UpdateController.remoteAction(context, action)' in server
+assert '"appUpdate", "heartbeat")) return' in server and 'UpdateController.remoteAction(context, action)' in server
 assert 'fun appUpdate(' in client and '"checkDownload"' in client
 assert 'fun remoteAction(context: Context, action: String)' in update
 assert 'UpdatePreferences.remoteRequests(context)' in update and 'REMOTE_COOLDOWN_MS' in update
@@ -1661,3 +1661,17 @@ assert 'assertNotEquals(AppVersion.NAME, AppVersion.WIRE_COMPAT)' in appversion_
 assert 'assertEquals("0.1.0-alpha.112", AppVersion.NAME)' not in appversion_test, 'Não fixar versão de APK antiga no teste'
 assert 'const val WIRE_COMPAT = "0.1.0-alpha.111"' in remote_version, 'Compatibilidade de protocolo alterada indevidamente'
 print('PASSOU: alpha.116 testagem de AppVersion vinculada ao BuildConfig e protocolo preservado')
+
+# Alpha.117 — verificação autenticada e medição honesta, sem serviço/socket persistente extra.
+connection_ui = (ui_root / "ConnectionHealthUi.kt").read_text()
+connection_math = (root / "app/src/main/java/br/dev/celularremoto/core/ConnectionHealthMath.kt").read_text()
+connection_client = (root / "app/src/main/java/br/dev/celularremoto/transport/RemoteClient.kt").read_text()
+connection_store = (root / "app/src/main/java/br/dev/celularremoto/core/ConnectionHealthStore.kt").read_text()
+assert 'regular.optString("op") == "heartbeat"' in server and 'WireProtocol.encode(permanentKey, reply)' in server
+assert 'fun heartbeat(' in connection_client and 'WireProtocol.decode(key' in connection_client
+assert 'fun summarize(' in connection_math and 'MISSING_SAMPLE_AFTER_MS' in connection_math
+assert 'MAX_SAMPLES = 2048' in connection_store and 'setBackgroundEnabled' in connection_store
+assert 'fillConnectionHealthSettings' in connection_ui and 'forceRecovery = true' in connection_ui
+assert 'ConnectionHealthJobService' in manifest and 'ConnectionHealthScheduler.refresh(this)' in main_ui
+assert (root / "app/src/test/java/br/dev/celularremoto/core/ConnectionHealthMathTest.kt").exists()
+print('PASSOU: alpha.117 sonda AES-GCM, lacunas, limites, JobScheduler opt-in e interface')

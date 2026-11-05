@@ -28,6 +28,7 @@ private val settingGroups = listOf(
         SettingsDestination(R.drawable.ic_shield, "Segurança e pareamento", "Chaves, dispositivos e revogação", "security"),
         SettingsDestination(R.drawable.ic_shield, "Bloqueio remoto", "Permissão e confirmação para bloquear", "lock"),
         SettingsDestination(R.drawable.ic_activity, "Diagnóstico", "Status do servidor e permissões", "diagnostics"),
+        SettingsDestination(R.drawable.ic_activity, "Estabilidade da conexão", "Latência, quedas, reconexão e histórico", "connection"),
         SettingsDestination(R.drawable.ic_shield, "Modo avançado ADB", "Conexão ADB local e autorizada", "adb"),
     )),
     SettingsGroup("RECUPERAÇÃO E LOCALIZAÇÃO", listOf(

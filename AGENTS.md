@@ -1,3 +1,13 @@
+# Celular Remoto — 0.1.0-alpha.117 — Diagnóstico de conexão
+
+- Marcador `WIRE_COMPAT` permanece alpha.111, `versionName/versionCode` passam para alpha.117/117.
+- Heartbeat de estado deve ser cifrado, não consultar dados do aparelho, não gerar janelas invasivas e não alterar autenticação existente.
+- Diferenciar disponibilidade de tentativas realizadas de uptime real; tratar lacunas sem sondagem como desconhecidas.
+- JobScheduler em segundo plano é opcional, mínimo 15 min, sem prometer tempo real. Sem serviço persistente adicional nem varredura geral de LAN.
+- Reconexão só em host salvo com credencial idêntica, nunca replicar credenciais a novos IPs.
+- Alertas após três falhas autenticadas e recuperação com permissão de notificação. Não armazenar chaves em métricas.
+- Próxima versão sequencial alpha.118/versionCode 118. Sempre executar CI e testes físicos; testes estáticos não são APK aprovado.
+
 # Celular Remoto — 0.1.0-alpha.116 — Correção build 9
 
 - O build 9 da alpha.115 compilou código e testes Kotlin, mas falhou em 1/210 testes (`AppVersionTest.apkVersionAndWireVersionAreIndependent`) por expectativa antiga de alpha.112.

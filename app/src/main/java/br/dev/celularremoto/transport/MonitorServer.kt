@@ -134,7 +134,7 @@ class MonitorServer(private val context: Context) {
                 val regular = runCatching { WireProtocol.decode(permanentKey, encrypted) }.getOrNull()
                 if (regular != null) {
                     if (regular.optInt("v") != WireProtocol.VERSION ||
-                        regular.optString("op") !in setOf("snapshot", "disconnect", "notificationReply", "smsReply", "screenFrame", "screenCapture", "remoteTouch", "audioChunk", "requestScreen", "videoFrame", "wakeScreen", "dataList", "dataChunk", "dataChunks", "dataHash", "dataRead", "dataStream", "dataManage", "dataUploadStart", "dataUploadChunk", "dataUploadFinish", "dataUploadAbort", "dataUploadStatus", "appsList", "appsIcons", "appLaunch", "deviceControl", "cameraFrame", "cameraSwitch", "photoTake", "thermalDiagnostics", "locationSnapshot", "batteryLab", "appUpdate")) return
+                        regular.optString("op") !in setOf("snapshot", "disconnect", "notificationReply", "smsReply", "screenFrame", "screenCapture", "remoteTouch", "audioChunk", "requestScreen", "videoFrame", "wakeScreen", "dataList", "dataChunk", "dataChunks", "dataHash", "dataRead", "dataStream", "dataManage", "dataUploadStart", "dataUploadChunk", "dataUploadFinish", "dataUploadAbort", "dataUploadStatus", "appsList", "appsIcons", "appLaunch", "deviceControl", "cameraFrame", "cameraSwitch", "photoTake", "thermalDiagnostics", "locationSnapshot", "batteryLab", "appUpdate", "heartbeat")) return
                     if (abs(now - regular.optLong("ts")) > 5 * 60 * 1000L) return
                     synchronized(seenNonces) {
                         // Retenção compatível com ±5 minutos de validade do envelope.
@@ -157,6 +157,17 @@ class MonitorServer(private val context: Context) {
                             .put("op", "versionMismatch")
                             .put("appVersion", AppVersion.WIRE_COMPAT)
                         WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, mismatch))
+                        return
+                    }
+                    if (regular.optString("op") == "heartbeat") {
+                        // Resposta mínima autenticada: não lê SMS, GPS, bateria ou arquivos.
+                        // Não produz uma janela de "acesso remoto" a cada sonda de saúde.
+                        val reply = JSONObject().put("v", WireProtocol.VERSION)
+                            .put("op", "heartbeat")
+                            .put("appVersion", AppVersion.WIRE_COMPAT)
+                            .put("actualVersion", AppVersion.NAME)
+                            .put("serverMs", now)
+                        WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, reply))
                         return
                     }
                     if (regular.optString("op") == "dataStream") {

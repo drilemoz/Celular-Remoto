@@ -61,6 +61,7 @@ internal fun MainActivity.renderController() {
     currentConnectButton = actionButton("Conectar") {
         when (effectiveConnectionState()) {
             "connected", "loading" -> disconnectCurrent()
+            "waiting" -> refreshRemote(silent = false)
             else -> showConnectionChooser()
         }
     }.apply { textSize = 12.5f; background = shape(surface, 14, true) }
@@ -75,6 +76,11 @@ internal fun MainActivity.renderController() {
     val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
     actions.addView(actionButton("⟳  Atualizar") { refreshRemote(silent = false) }.apply {
         textSize = 13.5f
+        background = shape(surface, 15)
+    }, LinearLayout.LayoutParams(0, dp(48), 1f))
+    actions.addView(View(this), LinearLayout.LayoutParams(dp(8), 1))
+    actions.addView(actionButton("◉  Diagnóstico") { openConnectionDiagnostics() }.apply {
+        textSize = 12.5f
         background = shape(surface, 15)
     }, LinearLayout.LayoutParams(0, dp(48), 1f))
     actions.addView(View(this), LinearLayout.LayoutParams(dp(8), 1))
@@ -111,11 +117,18 @@ internal fun MainActivity.updateConnectionLabels() {
     val host = SettingsStore.getRemoteHost(this)
     val hasKey = host.isNotBlank() && RecentDevices.key(this, host) != null
     val actualState = effectiveConnectionState()
-    val text = when (actualState) {
-        "connected" -> "● Respondeu"
+    val diagnostic = br.dev.celularremoto.core.ConnectionHealthStore.status(this, host)
+    val probeRecovered = actualState == "offline" && diagnostic.lastSuccessMs > remoteConnection.lastAttemptMs &&
+        System.currentTimeMillis() - diagnostic.lastSuccessMs <= 45_000L
+    val text = when {
+        probeRecovered -> "◌ Sonda respondeu; atualizando painel"
+        else -> when (actualState) {
+        "connected" -> "● Resposta recente"
         "offline" -> "● Sem resposta"
+        "waiting" -> "◌ Aguardando nova verificação"
         "loading" -> "◌ Atualizando…"
         else -> "○ Desconectado"
+        }
     }
     currentStatus?.text = text
     currentStatus?.setTextColor(if (actualState == "connected") highlight else
@@ -125,6 +138,7 @@ internal fun MainActivity.updateConnectionLabels() {
     currentConnectButton?.text = when (actualState) {
         "connected", "loading" -> "Desconectar"
         "offline" -> "Opções"
+        "waiting" -> "Verificar"
         else -> "Conectar"
     }
     currentUpdated?.text = when {

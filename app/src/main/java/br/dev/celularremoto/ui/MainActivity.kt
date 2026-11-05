@@ -3,6 +3,7 @@ import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
 import android.os.SystemClock
+import br.dev.celularremoto.service.ConnectionHealthScheduler
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -124,19 +125,14 @@ class MainActivity : Activity() {
     internal var currentConnectButton: Button? = null
     private var systemBackCallback: android.window.OnBackInvokedCallback? = null
     private data class OptionItem(val title: String, val subtitle: String = "", val action: () -> Unit)
-    private val poller = object : Runnable {
-        override fun run() {
-            if (active && mode == 1) {
-                refreshRemote(silent = true)
-                handler.postDelayed(this, 15_000L)
-            }
-        }
-    }
+    private val connectionHealthPoller = makeConnectionHealthPoller()
+    private val poller = makeControllerPoller()
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(if (darkTheme()) android.R.style.Theme_Material_NoActionBar else android.R.style.Theme_Material_Light_NoActionBar)
         super.onCreate(savedInstanceState)
         RecentDevices.migrateLegacy(this)
         br.dev.celularremoto.service.RemoteHealthScheduler.refresh(this)
+        ConnectionHealthScheduler.refresh(this)
         br.dev.celularremoto.updates.UpdateController.initialize(this)
         val firstPermissionWelcome = savedInstanceState == null && PermissionCenter.needsWelcome(this)
         mode = if (intent.getBooleanExtra(EXTRA_OPEN_MONITOR, false)) 0
@@ -144,6 +140,10 @@ class MainActivity : Activity() {
         settingsSection = savedInstanceState?.getString("settings_section", "home") ?: "home"
         permissionCenterQueue.addAll(savedInstanceState?.getStringArrayList("pending_permission_groups")
             ?.map { it.split('|') } ?: emptyList())
+        if (intent.getBooleanExtra("open_connection_diagnostics", false)) {
+            mode = 3
+            settingsSection = "connection"
+        }
         if (firstPermissionWelcome) {
             mode = 3
             settingsSection = "permissions"
@@ -224,6 +224,7 @@ class MainActivity : Activity() {
         handler.removeCallbacks(monitorUiInvalidation)
         handler.removeCallbacks(monitorStatusPoll)
         handler.removeCallbacks(poller)
+        handler.removeCallbacks(connectionHealthPoller)
         handler.removeCallbacks(batteryPoller)
         batteryRequestGeneration++
         if (mode == 4) clearRemoteMessagesScreen()
@@ -260,6 +261,8 @@ class MainActivity : Activity() {
         if (mode == 0) handler.postDelayed(monitorStatusPoll, 5_000L)
         handler.removeCallbacks(poller)
         handler.postDelayed(poller, 15_000L)
+        handler.removeCallbacks(connectionHealthPoller)
+        handler.postDelayed(connectionHealthPoller, 30_000L)
         handler.removeCallbacks(batteryPoller)
         if (mode == 5) handler.postDelayed(batteryPoller, 30_000L)
     }
@@ -289,6 +292,7 @@ class MainActivity : Activity() {
         AuthenticatedAccess.unsubscribe(incomingListener)
         handler.removeCallbacks(monitorStatusPoll)
         handler.removeCallbacks(poller)
+        handler.removeCallbacks(connectionHealthPoller)
         handler.removeCallbacks(batteryPoller)
         batteryRequestGeneration++
         handler.removeCallbacks(monitorUiInvalidation)

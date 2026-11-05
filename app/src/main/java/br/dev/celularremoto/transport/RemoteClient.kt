@@ -45,6 +45,38 @@ object RemoteClient {
         }
     }
 
+    /** Sonda leve cifrada para alpha.117+. Em versões antigas, usa snapshot autenticado.
+     * Não mantém um socket persistente e não solicita conteúdo sensível de forma rotineira.
+     */
+    fun heartbeat(host: String, key: ByteArray, context: Context, method: String = "Diagnóstico"): JSONObject {
+        require(host.isNotBlank() && host.length <= 253 &&
+            '/' !in host && ':' !in host && ' ' !in host) { "Host inválido." }
+        val request = JSONObject().put("v", WireProtocol.VERSION)
+            .put("op", "heartbeat").put("appVersion", AppVersion.WIRE_COMPAT)
+            .put("ts", System.currentTimeMillis())
+            .put("clientId", SettingsStore.controllerId(context))
+            .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
+            .put("accessMethod", method)
+        val response = try {
+            Socket().use { socket ->
+                socket.connect(InetSocketAddress(host, WireProtocol.PORT), 3000)
+                socket.soTimeout = 4000
+                WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(key, request))
+                WireProtocol.decode(key, WireProtocol.receive(socket.getInputStream(), 8 * 1024))
+            }
+        } catch (e: java.io.EOFException) {
+            // Servidores alpha.111-116 rejeitam operações desconhecidas fechando o socket.
+            // O fallback é igualmente AES-GCM e não assume que o heartbeat teve sucesso.
+            return snapshot(host, key, context, method)
+        }
+        if (response.optString("op") == "versionMismatch")
+            error(AppVersion.incompatibility(response.optString("appVersion")))
+        check(response.optString("op") == "heartbeat" &&
+            response.optInt("v") == WireProtocol.VERSION &&
+            AppVersion.compatible(response.optString("appVersion"))) { "Heartbeat autenticado inválido." }
+        return response
+    }
+
     /** Somente GPS: retorno pequeno e imediato do último fix autorizado do monitorado.
      * Não aciona GPS, não contorna permissão e não retorna localização inventada.
      */

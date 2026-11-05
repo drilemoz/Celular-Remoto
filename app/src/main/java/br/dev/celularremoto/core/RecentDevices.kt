@@ -78,6 +78,7 @@ object RecentDevices {
         write(ctx, combined)
         removed.forEach { SecretVault.delete(ctx, SecretVault.profileKeyName(it.host)) }
         SettingsStore.setRemoteHost(ctx, normalized)
+        br.dev.celularremoto.service.ConnectionHealthScheduler.refresh(ctx)
     }
 
     @Synchronized fun markSuccess(ctx: Context, host: String, name: String, atMs: Long) {
@@ -105,5 +106,6 @@ object RecentDevices {
             // O slot legado da alpha.9 não pode reintroduzir esta credencial.
             SecretVault.delete(ctx, SecretVault.CONTROLLER_KEY)
         }
+        br.dev.celularremoto.service.ConnectionHealthScheduler.refresh(ctx)
     }
 }

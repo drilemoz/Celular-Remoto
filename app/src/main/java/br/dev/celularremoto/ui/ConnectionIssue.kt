@@ -31,7 +31,7 @@ internal data class ConnectionIssue(
                     .find(versionText)?.groupValues?.getOrNull(1)?.trimEnd('.')
                     ?.takeUnless { it == "não" || it == "não informada" }
                 return ConnectionIssue(Code.VERSION, "Versões incompatíveis",
-                    "Os dois celulares precisam executar a mesma versão do Celular Remoto. A conexão foi bloqueada.",
+                    "Os protocolos dos dois celulares são incompatíveis. A conexão foi bloqueada.",
                     listOf("Atualize o aplicativo nos dois aparelhos.", "Confira a versão mostrada no início do app."),
                     technical, remote)
             }
@@ -47,7 +47,7 @@ internal data class ConnectionIssue(
                     listOf("Confira o IP ou nome da VPN.", "Verifique se a rede está conectada."), technical)
                 chain.any { it is EOFException } -> ConnectionIssue(Code.CLOSED,
                     "Conexão encerrada pelo aparelho", "O outro lado fechou a conexão antes de enviar uma resposta completa.",
-                    listOf("Verifique se ambos usam a mesma versão (não foi possível confirmá-la).",
+                    listOf("Confira se ambos usam protocolos compatíveis (versões diferentes podem funcionar).",
                         "Confira se a chave de pareamento continua válida.", "Confirme que o modo Monitorado está ativo."), technical)
                 chain.any { it is AEADBadTagException || it is SecurityException } ||
                     detail.contains("autentica", ignoreCase = true) || detail.contains("chave", ignoreCase = true) ->

@@ -51,9 +51,9 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 ## Distribuição e assinatura
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.116` e `versionCode=116`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.117` e `versionCode=117`.
 
-- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.116.apk`.
+- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.117.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.
 - Com quatro Secrets, Gradle gera APK Release assinado e AAB. Sem Secrets, o arquivo é Debug de teste e não preserva necessariamente a assinatura entre execuções.
 - Releases são prévias, não substituem a futura revisão da Google Play e nem os ensaios reais.
@@ -366,3 +366,10 @@ Versão do APK separada de `appVersion` no fio; marcador de protocolo 111 permit
 `BatteryHistoryMath` contém regras puras, testáveis em JVM, para cobertura, cálculo de taxa e avisos de comparabilidade entre testes. `BatteryScreenUi` aplica os filtros apenas sobre dados já recebidos de `BatteryLabStore.report()` / `BatterySessionStore.report()`, tanto no controlador quanto localmente. Não foi criado comando remoto nem alterado o protocolo AES-GCM.
 
 Os relatórios incluem até 24 resumos Labs e 24 resumos de sessões automáticas; pontos ficam limitados a três registros recentes por categoria, com no máximo 40 pontos por registro, para não exceder o limite de resposta do cliente. Há limites maiores no armazenamento privado, que permanece em JSON atômico, sem migração destrutiva. O gráfico mostra somente amostras reais e não conecta lacunas >90 segundos.
+
+### Diagnóstico de disponibilidade (alpha.117)
+
+- `heartbeat` é operação pequena, autenticada via AES-GCM e sem telemetria; clientes antigos usam `snapshot` cifrado como fallback de compatibilidade.
+- Estado de rede é temporal, não socket persistente; histórico local preserva tentativas, rtt, falhas e lacunas; nunca inferir tempo online a partir de ausência de sondagem.
+- Sondagens em UI ~30 s com backoff progressivo, sem duplicar polling regular do Controlar. Background via JobScheduler opcional de 15 min, sujeito a Doze.
+- Reconexão só experimenta endereços salvos com exatamente a mesma chave, sem sondagem da sub-rede; mantidos controle de usuário e pareamento.

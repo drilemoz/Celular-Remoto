@@ -1,3 +1,10 @@
+## Alpha.117 — Diagnóstico de conexão (04/11/2026)
+
+- [x] Novos módulos de diagnóstico, protocolos e UI incluídos com versionamento 117.
+- [ ] Confirmar compilação Android Gradle :app:testDebugUnitTest :app:assembleDebug :app:lintDebug.
+- [ ] Verificar em dois aparelhos os intervalos em primeiro plano, Doze, alertas após 3 falhas, notificação de recuperação e redescoberta somente por host salvo com mesma chave.
+- [ ] Testar compatibilidade com versões 111–116 no fallback autenticado e rejeição de pacotes adulterados.
+
 ## Alpha.116 — Correção do teste de versão (04/11/2026)
 
 - [x] Falha do build 9 identificada: 210 testes executados, 1 falhou em `AppVersionTest.kt:8` por expectativa obsoleta de alpha.112.

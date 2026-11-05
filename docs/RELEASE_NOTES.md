@@ -1,3 +1,11 @@
+# Celular Remoto — 0.1.0-alpha.117
+
+**Diagnóstico de conexão:** heartbeat autenticado leve, histórico de latência e falhas, barras de medições, tempo da última resposta e alerta após três verificações sem resposta, com aviso de recuperação. Em Configurações → Estabilidade da conexão ou no botão Diagnóstico do Controlar. Reconexão somente em endereços já pareados com credencial idêntica.
+
+**Consumo:** sondagens enquanto visível, backoff progressivo e JobScheduler de 15 min opt-in em segundo plano (não é conexão permanente nem garantia de verificação pontual). Lacunas não entram no percentual como falhas; no modo Controlar reaproveita consultas existentes. Nenhum novo privilégio perigoso. Mesmo protocolo alpha.111, versão 117, workflow único.
+
+**Validação:** testes isolados e análises locais; build Android completo, avisos de Android 13+ e testes físicos de quedas/reconexão pendentes.
+
 # Celular Remoto — 0.1.0-alpha.116
 
 **Correção do workflow 9:** o código e os testes Kotlin compilaram, mas um teste executado falhou por comparar a versão atual do APK com o valor antigo `0.1.0-alpha.112`. Agora `AppVersionTest` usa o `BuildConfig` real do Gradle e mantém o marcador de protocolo independente. Nenhuma modificação no comportamento de produção além do incremento sequencial para alpha.116.

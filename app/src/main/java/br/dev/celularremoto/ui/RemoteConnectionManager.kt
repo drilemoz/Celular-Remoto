@@ -6,6 +6,8 @@ import android.os.Looper
 import android.os.SystemClock
 import java.security.MessageDigest
 import br.dev.celularremoto.core.RecentDevices
+import br.dev.celularremoto.core.ConnectionHealthMonitor
+import br.dev.celularremoto.core.ConnectionHealthMath
 import br.dev.celularremoto.transport.RemoteClient
 import org.json.JSONObject
 import kotlin.concurrent.thread
@@ -42,8 +44,12 @@ internal class RemoteConnectionManager(context: Context) {
     private fun keyStillMatches(host: String, expected: ByteArray): Boolean =
         RecentDevices.key(appContext, host)?.let { MessageDigest.isEqual(it, expected) } == true
 
-    fun effectiveState(host: String): String =
-        if (host.isBlank() || RecentDevices.key(appContext, host) == null) "idle" else state
+    fun effectiveState(host: String): String = when {
+        host.isBlank() || RecentDevices.key(appContext, host) == null -> "idle"
+        state == "connected" && (cachedHost != host ||
+            System.currentTimeMillis() - lastSuccessMs > ConnectionHealthMath.STALE_AFTER_MS) -> "waiting"
+        else -> state
+    }
 
     /** Selecting a device invalidates all pending responses from the previous selection. */
     fun select(method: String) {
@@ -193,6 +199,7 @@ internal class RemoteConnectionManager(context: Context) {
                 }
                 response.onSuccess { snapshot ->
                     lastSuccessMs = System.currentTimeMillis()
+                    ConnectionHealthMonitor.record(appContext, host, true, lastRoundTripMs)
                     cached = snapshot
                     br.dev.celularremoto.core.ControllerHealthAlerts.onSnapshot(appContext, host, snapshot)
                     cachedHost = host
@@ -202,6 +209,7 @@ internal class RemoteConnectionManager(context: Context) {
                     RecentDevices.markSuccess(appContext, host, deviceName, lastSuccessMs)
                     onUpdate(true, snapshot)
                 }.onFailure { error ->
+                    ConnectionHealthMonitor.record(appContext, host, false, lastRoundTripMs, error)
                     state = "offline"
                     issue = ConnectionIssue.from(error)
                     message = issue?.title

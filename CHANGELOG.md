@@ -1,3 +1,11 @@
+## 0.1.0-alpha.117 (versionCode 117) | 04/11/2026
+
+- Diagnóstico autenticado de disponibilidade, latência e recuperação, com novo heartbeat leve e fallback entre versões compatíveis.
+- Histórico limitado por aparelho, percentual das tentativas observadas, lacunas e estados de resposta recente/aguardando/sem resposta.
+- Monitoramento econômico no app, agendamento de 15 minutos opcional em segundo plano, aviso de quedas confirmadas e recuperação; não exige socket contínuo.
+- Reconexão por endereços conhecidos usando a mesma credencial; nenhuma varredura automática da LAN.
+- Preserva único workflow, pareamento AES-GCM, atualizador, serviço Monitorado e dados de bateria. Build Android/2 celulares ainda pendente.
+
 ## 0.1.0-alpha.116 (versionCode 116) | 04/11/2026
 
 - Corrigido `AppVersionTest.apkVersionAndWireVersionAreIndependent`, único teste falho no workflow 9 (209/210 aprovados); a expectativa obsoleta `alpha.112` foi substituída pela versão real `BuildConfig.VERSION_NAME` e conferência de `BuildConfig.VERSION_CODE`.
