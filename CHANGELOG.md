@@ -1,3 +1,11 @@
+## 0.1.0-alpha.127 (versionCode 127) | 05/11/2026
+
+- Nova tela local de **Preparação do monitorado**, com diagnóstico dos pré-requisitos, estados reais e atalhos para autorizações oficiais.
+- Autorização opcional de verificação/download de atualizações por controlador pareado; checagem e abertura local da permissão do instalador Android, sem instalação remota ou silenciosa.
+- Snapshot autenticado inclui somente estados genéricos de prontidão; o controlador mostra resumo e detalhes de configurações pendentes, sem revelar IP, SMS, arquivos, localizações ou credenciais.
+- Preservados criptografia, compatibilidade alpha.111+, 12 comandos, notificações, coleta de bateria, permissões, serviço único e um workflow.
+- Verificações estruturais e testes locais de política; Gradle/Android completo e testes reais pendentes.
+
 ## 0.1.0-alpha.126 (versionCode 126) | 05/11/2026
 
 - Unifica publicação e diagnóstico de avisos de saúde, metas locais/remotas, estabilidade de conexão e atualização pronta, verificando permissão do Android, estado global e canais individualmente.

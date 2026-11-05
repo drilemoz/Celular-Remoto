@@ -1,3 +1,11 @@
+# Celular Remoto v0.1.0-alpha.127 — preparação para controle remoto (05/11/2026)
+
+- Base alpha.126; próxima versão obrigatória alpha.128/versionCode 128. Sincronizar Gradle, AppVersion, README, CHANGELOG, documentação, testes e tela Novidades.
+- `RemotePreparation.snapshot()` envia somente `schema=1`, contagens e estados genéricos de funções dentro de `snapshot` autenticado AES-GCM. Nunca expor sem chave, criar um endpoint público, compartilhar IPs, coordenadas, nomes de apps, SMS ou credenciais.
+- `RemotePreparationPolicy` distingue `ready`, `setup`, `session`, `off`; nenhum desses valores concede permissão. A UI local não solicita grant ao abrir; a autorização de atualizações remotas permanece OFF por padrão e instalação exige toque local no Android.
+- Sem novos serviços, sockets, permissões, captura automática ou alteração do marcador `WIRE_COMPAT=alpha.111`. Versões antigas ignoram o campo novo.
+- Verificar CI Android, fonte ampliada/320–393 dp, resposta cifrada e autorizações em dois dispositivos. Sintaxe não substitui build completo.
+
 # Celular Remoto v0.1.0-alpha.126 — diagnóstico de alertas (05/11/2026)
 
 - Base alpha.125. Próxima versão obrigatória alpha.127/versionCode 127; sempre sincronizar Gradle, AppVersion, documentação, validações e tela Novidades.

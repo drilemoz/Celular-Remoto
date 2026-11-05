@@ -30,6 +30,7 @@ internal fun MainActivity.showSettingsDialog() = openSettingsModule()
 internal fun MainActivity.renderSettingsModule() {
     val labelBySection = mapOf(
         "permissions" to "Permissões do Android",
+        "preparation" to "Preparação do monitorado",
         "updates" to "Atualizações",
         "notifications" to "Notificações",
         "apps" to "Aplicativos instalados",
@@ -65,6 +66,7 @@ internal fun MainActivity.renderSettingsModule() {
         val page = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         when (section) {
             "permissions" -> renderPermissionCenter(page)
+            "preparation" -> renderRemotePreparation(page)
             "updates" -> fillUpdatesSettings(page)
             "notifications" -> fillNotificationSettings(page)
             "apps" -> fillAppsSettings(page)

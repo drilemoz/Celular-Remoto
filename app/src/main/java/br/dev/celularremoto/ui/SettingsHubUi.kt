@@ -24,6 +24,7 @@ private data class SettingsGroup(val title: String, val entries: List<SettingsDe
 
 private val settingGroups = listOf(
     SettingsGroup("SEGURANÇA E PERMISSÕES", listOf(
+        SettingsDestination(R.drawable.ic_shield, "Preparar aparelho monitorado", "Autorizações, atualização e prontidão dos comandos", "preparation"),
         SettingsDestination(R.drawable.ic_shield, "Central de permissões", "Solicite todos os acessos e confira pendências", "permissions"),
         SettingsDestination(R.drawable.ic_shield, "Segurança e pareamento", "Chaves, dispositivos e revogação", "security"),
         SettingsDestination(R.drawable.ic_shield, "Bloqueio remoto", "Permissão e confirmação para bloquear", "lock"),
@@ -171,7 +172,7 @@ internal fun MainActivity.renderSettingsHome() {
                 }
             })
             results.removeAllViews()
-            val quick = setOf("permissions", "connection", "updates", "appearance", "health")
+            val quick = setOf("preparation", "permissions", "connection", "updates", "appearance", "health")
             val matches = settingGroups.flatMap { group ->
                 group.entries.filter { item -> when {
                     normalized.isNotBlank() -> settingSearchIndex[group.title]?.get(item)?.contains(normalized) == true

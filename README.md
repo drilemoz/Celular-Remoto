@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.126
+# Celular Remoto v0.1.0-alpha.127
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,14 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.126 / versionCode 126** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.127 / versionCode 127** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Preparação do monitorado e prontidão remota (alpha.127)
+
+- **Monitorado** e **Ajustes → Preparar aparelho monitorado** mostram um diagnóstico único de pré-requisitos de serviço, notificações, atualização, origem de instalação, captura, localização, comandos físicos, SMS e arquivos. Cada item é apresentado como Pronto, Configurar, Por sessão ou Desativado; recursos opcionais não são considerados defeitos.
+- O controlador recebe o bloco opcional `readiness` **somente dentro do snapshot autenticado AES-GCM**, vê contagens de prontidão e pode abrir a lista de estados sem acesso a dados sensíveis. Versões anteriores ignoram o campo; a compatibilidade `WIRE_COMPAT` permanece `alpha.111`.
+- A autorização de verificação/download remoto permanece opt-in e desativada por padrão. A origem de instalação pode ser aberta na configuração oficial do Android **somente após toque local**; instalar continua exigindo intervenção local. A tela nunca ativa permissões, câmera, acessibilidade, tela, localização ou SMS por conta própria.
+- Nenhum serviço, socket, permissão manifest ou workflow adicional. Teste Android completo e validação com dois aparelhos continuam pendentes.
 
 ## Diagnóstico e entrega de alertas (alpha.126)
 

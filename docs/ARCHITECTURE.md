@@ -1,4 +1,6 @@
-# Estado atual — alpha.126
+# Estado atual — alpha.127
+
+O bloco `readiness` agora é devolvido **somente no snapshot já autenticado** do servidor: esquema 1, estados genéricos por recurso, sem credenciais ou dados do usuário. A preparação local é UI de diagnóstico e não concede grants nem inicia sessões. `appUpdate` continua limitado a status, check e download; instalação requer toque local.
 
 `AlertDelivery` e `AlertDeliveryPolicy` centralizam tentativa de publicação dos avisos locais, remotos, de estabilidade e de atualização pronta: pré-condições de permissão, bloqueio global e canal, registro anônimo limitado (48 entradas) e retry conservador de eventos não publicados. Alteração não modifica o serviço de monitoramento, nem usa novo socket. Controlar passa a interpretar eventos remotos de metas, e Configurações → Alertas e proteção permite diagnosticar e testar canais. A confirmação de publicação pelo NotificationManager não equivale a entrega visual ou leitura. Build real ainda pendente.
 
@@ -60,9 +62,9 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 ## Distribuição e assinatura
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.126` e `versionCode=126`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.127` e `versionCode=127`.
 
-- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.126.apk`.
+- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.127.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.
 - Com quatro Secrets, Gradle gera APK Release assinado e AAB. Sem Secrets, o arquivo é Debug de teste e não preserva necessariamente a assinatura entre execuções.
 - Releases são prévias, não substituem a futura revisão da Google Play e nem os ensaios reais.

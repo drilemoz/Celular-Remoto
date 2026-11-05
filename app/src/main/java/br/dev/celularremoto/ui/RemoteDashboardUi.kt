@@ -67,6 +67,16 @@ internal fun MainActivity.displayResult(root: JSONObject, fromCache: Boolean = f
         "Resposta autenticada: ${formatDate(remoteConnection.lastSuccessMs)}"
         else "Dados armazenados. Última resposta: ${if (remoteConnection.lastSuccessMs > 0) formatDate(remoteConnection.lastSuccessMs) else "desconhecida"}",
         11f, muted = true).apply { setPadding(dp(3), 0, 0, 0) })
+    // Prontidão publicada somente no snapshot autenticado, nunca resultado de sondagem sem chave.
+    root.optJSONObject("readiness")?.takeIf { it.optInt("schema") == 1 }?.let { readiness ->
+        sectionGap(container, 8)
+        val ready = readiness.optInt("readyCount")
+        val total = readiness.optInt("total")
+        val setup = readiness.optInt("setupCount")
+        container.addView(dialogCardRow("Preparação do monitorado",
+            "$ready/$total estados prontos · $setup precisam de configuração · outros opcionais",
+            "›") { showRemotePreparationSummary(readiness, fromCache) })
+    }
     root.optJSONObject("healthAlerts")?.let { health ->
         if (health.optString("level") in setOf("WARNING", "CRITICAL")) {
             sectionGap(container, 10)

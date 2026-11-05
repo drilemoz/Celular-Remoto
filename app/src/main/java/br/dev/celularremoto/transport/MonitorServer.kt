@@ -644,6 +644,9 @@ class MonitorServer(private val context: Context) {
                         put("healthAlerts", br.dev.celularremoto.core.HealthAlertMonitor.snapshot(context))
                         put("batteryGoalAlerts", br.dev.celularremoto.core.BatteryGoalAlerts.snapshot(context))
                         put("deviceInfo", DeviceInfoReader.snapshot(context))
+                        // Diagnóstico opcional não pode derrubar uma consulta autenticada válida.
+                        runCatching { br.dev.celularremoto.core.RemotePreparation.snapshot(context) }
+                            .getOrNull()?.let { put("readiness", it) }
                         put("telephony", TelephonyReader.snapshot(context))
                         put("events", if (SettingsStore.isMonitorEnabled(context))
                             EventJournal.latestJson(SettingsStore.notificationAllowlist(context),

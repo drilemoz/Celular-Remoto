@@ -1,3 +1,14 @@
+# Celular Remoto v0.1.0-alpha.127 — preparação e prontidão remota
+
+- Acesse **Monitorado → Preparar aparelho** ou **Ajustes → Preparar aparelho monitorado** para revisar quais funções estão prontas, precisam de configuração, estão desativadas ou exigem consentimento a cada sessão.
+- O painel **Controlar** mostra um resumo obtido do snapshot autenticado e permite visualizar as orientações fornecidas pelo monitorado.
+- Opção local para aceitar solicitação remota de consulta/download, desativada inicialmente; instalação sempre iniciada pelo próprio aparelho após autorização do Android.
+- Acesso ao instalador de apps desta origem é guiado por configuração oficial; não há ativação automática ou contorno de permissões.
+- Não são transmitidas coordenadas, listas de apps, SMS, tokens ou chaves nesse diagnóstico. A versão do protocolo permanece alpha.111.
+- **Validação:** verificações locais; build completo GitHub Actions e dois dispositivos pendentes.
+
+## Histórico: alpha.126
+
 # Celular Remoto v0.1.0-alpha.126 — diagnóstico e entrega de alertas
 
 - Centraliza verificação de notificações de saúde, metas, conexão e atualização pronta, com estados de permissão, aplicativo e canais individuais.

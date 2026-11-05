@@ -1812,3 +1812,17 @@ assert 'put("posted", false)' in goals and 'AlertDeliveryPolicy.acknowledged' in
 assert (root / 'app/src/test/java/br/dev/celularremoto/core/AlertDeliveryPolicyTest.kt').exists()
 assert (root / 'docs/VALIDATION_ALPHA126.md').exists()
 print('PASSOU: alpha.126 notificações por canal e confirmação somente após publicação')
+
+# Alpha.127 — diagnóstico de prontidão local e remoto sem contornar permissões.
+prep = (root / 'app/src/main/java/br/dev/celularremoto/core/RemotePreparation.kt').read_text()
+ui127 = (root / 'app/src/main/java/br/dev/celularremoto/ui/RemotePreparationUi.kt').read_text()
+server127 = (root / 'app/src/main/java/br/dev/celularremoto/transport/MonitorServer.kt').read_text()
+remote127 = (root / 'app/src/main/java/br/dev/celularremoto/ui/RemoteDashboardUi.kt').read_text()
+assert 'br.dev.celularremoto.core.RemotePreparation.snapshot(context)' in server127 and 'put("readiness", it)' in server127
+assert 'root.optJSONObject("readiness")' in remote127
+assert 'ACTION_MANAGE_UNKNOWN_APP_SOURCES' in ui127 and 'showAppConfirm' in ui127
+assert 'remote_requests", false' in (root / 'app/src/main/java/br/dev/celularremoto/updates/UpdatePreferences.kt').read_text()
+assert 'installFromUserTap' not in ui127 and 'RemoteClient' not in prep
+assert (root / 'docs/VALIDATION_ALPHA127.md').exists()
+assert (root / 'app/src/test/java/br/dev/celularremoto/core/RemotePreparationPolicyTest.kt').exists()
+print('PASSOU: alpha.127 preparo local e estados cifrados, sem concessão/instalação remota')

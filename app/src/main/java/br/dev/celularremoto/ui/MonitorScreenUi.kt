@@ -100,6 +100,12 @@ internal fun MainActivity.renderMonitor() {
         openSettingsModule(); openSettingsSection("diagnostics")
     })
     content.addView(diagCard)
+    gap(7)
+    content.addView(settingsSlimRow(br.dev.celularremoto.R.drawable.ic_shield,
+        "Preparar aparelho para controle remoto",
+        "Autorizações e prontidão: atualizações, captura, comandos e permissões", "Ver") {
+        openSettingsModule(); openSettingsSection("preparation")
+    })
     if (enabled && running) {
         gap(11)
         content.addView(compactSectionTitle("Captura e compartilhamento", "Ativação local"))

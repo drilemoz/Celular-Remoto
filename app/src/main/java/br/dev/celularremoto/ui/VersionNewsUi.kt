@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Alertas locais e remotos" to "O controlador processa saúde e metas do monitorado nas respostas autenticadas, inclusive na tela Controlar.",
-        "Diagnóstico de notificações" to "Em Ajustes → Alertas e proteção, confira permissões, canais e tentativas recentes de publicação.",
-        "Avisos sem perda silenciosa" to "Eventos recentes bloqueados podem ser tentados novamente; teste manual e confirmação do Android permanecem locais."
+        "Preparação do aparelho" to "Nova tela em Monitorado/Ajustes para verificar autorizações e prontidão dos comandos sem ativar recursos automaticamente.",
+        "Estado visto pelo controlador" to "O snapshot autenticado informa quais funções estão prontas, desativadas ou exigem nova autorização ou sessão local.",
+        "Atualização remota segura" to "Revise a opção de pedido remoto e a autorização do instalador no Android. Baixar não instala e nunca dispensa confirmação local."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -45,6 +45,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Diagnóstico de alertas (alpha.126)" to "Permissões e canais verificados antes de publicar; registros e notificação de teste em Alertas e proteção.",
         "Notificação local e remota (alpha.125)" to "Percentual, corrente, temperatura, previsão e último contato remoto na notificação do Monitorado, com atualizações limitadas.",
         "Todos os comandos visíveis (alpha.124)" to "Doze comandos sempre disponíveis no Controlar, sem botão de ocultar, com cache visual seguro.",
         "AMOLED e legibilidade (alpha.123)" to "Tema Preto AMOLED, tamanhos de fonte maiores, grades adaptativas e navegação responsiva.",
