@@ -1740,3 +1740,10 @@ assert 'showManagedDialog' in dialog121 and 'onPrimary?.invoke()' in dialog121
 assert 'val page = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }' in settings121
 assert (root / 'docs/VALIDATION_ALPHA121.md').exists()
 print('PASSOU: alpha.121 interface compacta; permissões, atualizações e confirmações locais preservadas')
+
+# Alpha.122 — regressão do build 15: LinearLayout possui minimumHeight, não minHeight.
+battery_compact122 = (ui_root / 'BatteryCompactUi.kt').read_text(encoding='utf8')
+battery_row122 = battery_compact122.split('internal fun MainActivity.batterySessionListRow(', 1)[1].split('internal fun MainActivity.batteryKeyValue(', 1)[0]
+assert 'minimumHeight = dp(57)' in battery_row122, 'Linha do histórico sem altura mínima Android válida'
+assert not re.search(r'(?<!\w)minHeight\s*=', battery_row122), 'LinearLayout com minHeight inválido — workflow 15'
+print('PASSOU: alpha.122 propriedade minimumHeight do LinearLayout na lista de sessões')

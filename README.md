@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.121
+# Celular Remoto v0.1.0-alpha.122
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,13 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.121 / versionCode 121** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.122 / versionCode 122** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Correção de compilação (alpha.122)
+
+- **Build 15:** `:app:compileDebugKotlin` falhou em `BatteryCompactUi.kt:114` (`Unresolved reference 'minHeight'`). A linha `LinearLayout` da lista de sessões agora utiliza `minimumHeight = dp(57)`, preservando tamanho e interação.
+- Verificador de distribuição inclui regressão estática da propriedade. Nenhuma regra de segurança, rede, atualização, bateria ou coleta foi modificada.
+- Build Android e testes de aparência nos aparelhos continuam pendentes; somente um novo GitHub Actions pode comprovar a correção integral.
 
 ## Ajustes, permissões e atualizações compactos (alpha.121)
 

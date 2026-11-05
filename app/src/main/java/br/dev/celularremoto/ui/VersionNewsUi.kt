@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Ajustes mais compactos" to "Telas internas sem painel externo repetido, navegação simples e status legíveis em telas estreitas.",
-        "Central de permissões" to "Acessos comuns, SMS, especiais e por sessão em quatro categorias; estados reais e solicitações locais preservados.",
-        "Atualizações e diálogos" to "Verificação e download agrupados, opções em linhas compactas e janelas de seleção com menos cartões. Instalação continua manual."
+        "Correção do build 15" to "Corrigida a propriedade de altura mínima da lista compacta de sessões da Bateria que impedia a compilação Kotlin.",
+        "Layout preservado" to "Linhas do histórico mantêm a altura mínima de 57 dp, os controles e os detalhes anteriores.",
+        "Sem alteração de conexão" to "Pareamento, medições, alertas, permissões, atualizações e protocolos remotos continuam como na versão anterior."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -45,6 +45,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Configurações compactas (alpha.121)" to "Categorias e permissões reorganizadas, atualizador e diálogos com menos cartões, preservando autorizações locais e instalação por toque.",
         "Bateria compacta (alpha.120)" to "Indicador de percentual, métricas adaptativas e histórico em lista, mantendo diagnósticos e cálculos existentes.",
         "Controlar e Monitorado compactos" to "A alpha.119 trouxe telemetria compacta, painel único de Tela/Câmera/Foto e controles secundários mais densos sem remover confirmações locais.",
         "Design compacto inicial" to "A alpha.118 modernizou Início, navegação, categorias de Ajustes e a organização geral das telas em grades adaptativas.",

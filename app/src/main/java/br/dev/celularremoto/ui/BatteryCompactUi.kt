@@ -111,7 +111,7 @@ internal fun MainActivity.batterySessionListRow(
     val row = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
-        minHeight = dp(57)
+        minimumHeight = dp(57)
         setPadding(dp(3), dp(6), dp(3), dp(6))
         isClickable = true
         isFocusable = true

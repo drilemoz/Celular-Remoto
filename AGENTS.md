@@ -1,3 +1,10 @@
+# Regras da alpha.122 — correção de compilação do build 15 (05/11/2026)
+
+- Base alpha.121; versão obrigatória `0.1.0-alpha.122`, `versionCode 122`; próxima versão alpha.123/123, mantendo Gradle, AppVersion, documentação, testes e Novidades sincronizados.
+- `BatteryCompactUi.kt`: o histórico usa `LinearLayout.minimumHeight` (57 dp). **Não** trocar por `minHeight` (propriedade de `TextView`, não válida para `LinearLayout`). Verificar isso em `tools/check_distribution.py`.
+- Não alterar telemetria, algoritmos de bateria, sessões, histórico, arquivos e comandos remotos; pareamento AES-GCM, `WIRE_COMPAT` alpha.111, permissão local, assinatura e workflow único permanecem.
+- Testes estáticos não são build Android completo; validar no GitHub Actions, UI em telas pequenas e telefones reais.
+
 # Regras da alpha.121 — Configurações e diálogos compactos (04/11/2026)
 
 - Base alpha.120; versão obrigatória `0.1.0-alpha.121`, `versionCode 121`. Próxima versão: alpha.122/122; sincronizar Gradle, AppVersion, docs, README, CHANGELOG, Novidades, testes e notas de release.

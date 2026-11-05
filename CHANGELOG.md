@@ -1,3 +1,10 @@
+## 0.1.0-alpha.122 (versionCode 122) | 05/11/2026
+
+- Corrige `:app:compileDebugKotlin` do workflow 15, `BatteryCompactUi.kt:114`: propriedade inexistente `minHeight` num `LinearLayout` substituída por `minimumHeight`.
+- Preserva o alvo de 57 dp de altura da linha compacta de sessão; nenhuma mudança nos cálculos, no protocolo, nas permissões ou nos comandos.
+- Adiciona verificação regressiva em `tools/check_distribution.py` e registro de validação em `docs/VALIDATION_ALPHA122.md`.
+- Gradle, AppVersion, README, CHANGELOG, notas de release, arquitetura, Novidades e AGENTS sincronizados; workflow único mantido. Compilação Android ainda precisa ser validada no GitHub Actions.
+
 ## 0.1.0-alpha.121 (versionCode 121) | 04/11/2026
 
 - Redesenho das telas internas de Configurações: cabeçalho navegável e componentes sem cards aninhados; leitura de status mais responsiva em dispositivos estreitos e fontes ampliadas.

@@ -1,3 +1,11 @@
+# Celular Remoto — 0.1.0-alpha.122
+
+**Correção do workflow 15:** corrigida falha de compilação Kotlin na interface compacta de histórico da Bateria, substituindo `minHeight` por `minimumHeight` em um `LinearLayout`. A altura mínima de 57 dp foi preservada.
+
+**Sem alterações de comportamento remoto:** conexão autenticada, atualização online, testes solares, corrente, previsões, permissões e interface restante foram mantidos. Compilação Android e testes físicos da alpha.122 continuam pendentes.
+
+## Histórico da alpha.121
+
 # Celular Remoto — 0.1.0-alpha.121
 
 **Interface e permissões:** páginas internas de Configurações compactadas sem cartão externo; Central de Permissões agora por categorias Comuns, SMS, Especiais e Sessões, com estado real e botões explícitos. Permissões continuam opcionais conforme o uso e nenhuma função remota é ativada por grant.

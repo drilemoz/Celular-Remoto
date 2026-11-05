@@ -1,3 +1,7 @@
+# Estado atual — alpha.122
+
+A correção do workflow 15 altera somente `BatteryCompactUi.kt`: `minimumHeight = dp(57)` na linha compacta de sessão, que é um `LinearLayout`. Mantidos serviço monitorado, canal AES-GCM, `WIRE_COMPAT=0.1.0-alpha.111`, armazenamento, notificações e atualizador. Build Android da alpha.122 ainda pendente.
+
 **Porta atual: TCP 37842. Sessões automáticas e alertas compartilham MonitorService; antigo aplicativo não migra dados.**
 
 # Termometria alpha.91
@@ -51,9 +55,9 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 ## Distribuição e assinatura
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.121` e `versionCode=121`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.122` e `versionCode=122`.
 
-- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.121.apk`.
+- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.122.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.
 - Com quatro Secrets, Gradle gera APK Release assinado e AAB. Sem Secrets, o arquivo é Debug de teste e não preserva necessariamente a assinatura entre execuções.
 - Releases são prévias, não substituem a futura revisão da Google Play e nem os ensaios reais.
