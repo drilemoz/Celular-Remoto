@@ -35,6 +35,8 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <!-- Coleta contínua local de bateria, somente opt-in e com notificação própria do modo. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -127,8 +129,12 @@
         <service
             android:name=".service.MonitorService"
             android:exported="false"
-            android:foregroundServiceType="connectedDevice"
-            android:stopWithTask="false" />
+            android:foregroundServiceType="connectedDevice|specialUse"
+            
+            android:stopWithTask="false">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Continuous on-device battery measurements explicitly enabled by the user, without remote network service" />
+        </service>
 
         <!-- Sessão de fotografia armada SOMENTE com Activity visível e permissão CAMERA.
              Não reiniciar por boot nem ativar câmera silenciosamente por comando remoto. -->

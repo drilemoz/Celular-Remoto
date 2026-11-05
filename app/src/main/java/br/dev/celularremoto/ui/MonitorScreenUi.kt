@@ -75,7 +75,7 @@ internal fun MainActivity.renderMonitor() {
         addCompact("Interromper", br.dev.celularremoto.R.drawable.ic_power) {
             SettingsStore.setMonitorEnabled(this, false)
             ScreenShareService.stop(this)
-            stopService(Intent(this, MonitorService::class.java))
+            MonitorService.refreshModes(this)
             render()
         }
     } else {
@@ -221,7 +221,7 @@ private fun MainActivity.showIncomingAccessActions(peer: AuthenticatedAccess.Pee
             ) {
                 SettingsStore.setMonitorEnabled(this, false)
                 ScreenShareService.stop(this)
-            stopService(Intent(this, MonitorService::class.java))
+            MonitorService.refreshModes(this)
                 render()
             }
         }.create()

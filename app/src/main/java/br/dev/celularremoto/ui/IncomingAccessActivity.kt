@@ -150,7 +150,7 @@ class IncomingAccessActivity : Activity() {
             .setNegativeButton("Cancelar", null)
             .setPositiveButton("Parar monitoramento") { _, _ ->
                 SettingsStore.setMonitorEnabled(this, false)
-                stopService(Intent(this, MonitorService::class.java))
+                MonitorService.refreshModes(this)
                 returnToMonitor()
             }.show()
     }

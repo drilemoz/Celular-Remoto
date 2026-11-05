@@ -84,9 +84,25 @@ internal fun MainActivity.renderBatteryScreen() {
     content.addView(info)
     if (batteryRemote && batteryError != null)
         content.addView(statePill(batteryError.orEmpty(), "warning"))
-    if (!batteryRemote && !MonitorService.isServiceActive)
-        content.addView(batteryInlineAction(R.drawable.ic_power, "Ativar Monitorado",
-            "Necessário para coletar com a tela apagada") { requestStart() })
+    if (!batteryRemote) {
+        val localEnabled = SettingsStore.localBatteryMonitoring(this)
+        content.addView(batteryInlineAction(R.drawable.ic_battery,
+            if (localEnabled) "Pausar coleta contínua local" else "Ativar coleta contínua local",
+            when {
+                localEnabled && MonitorService.isBatteryMonitoringActive -> "Amostragem ativa · mesmo coletor usado pelo Monitorado"
+                localEnabled -> "Autorizada · aguardando retomada do Android"
+                MonitorService.isServiceActive -> "Monitorado já coleta; opção local é independente"
+                else -> "Tela apagada · sem compartilhar dados na rede"
+            }) {
+            val enable = !SettingsStore.localBatteryMonitoring(this)
+            SettingsStore.setLocalBatteryMonitoring(this, enable)
+            runCatching { MonitorService.refreshModes(this) }.onFailure {
+                SettingsStore.setLocalBatteryMonitoring(this, !enable)
+                message("Não foi possível ajustar a coleta contínua: ${it.message}")
+            }
+            render()
+        })
+    }
 
     val battery = data?.optJSONObject("battery")
     if (battery != null) {
@@ -154,8 +170,8 @@ internal fun MainActivity.renderBatteryScreen() {
     content.addView(sections)
     gap(11)
     val running = data?.optJSONObject("active")
-    if (running != null && !batteryRemote && !MonitorService.isServiceActive)
-        content.addView(statePill("Coleta pausada: Monitorado inativo", "warning"))
+    if (running != null && !batteryRemote && !MonitorService.isBatteryMonitoringActive)
+        content.addView(statePill("Coleta contínua pausada: ative Monitorado ou coleta local", "warning"))
     val history = data?.optJSONArray("history") ?: JSONArray()
     when (batterySection) {
         "testes" -> renderBatteryTests(running)

@@ -46,6 +46,7 @@ internal fun MainActivity.renderSettingsModule() {
         "diagnostics" to "Diagnóstico",
         "connection" to "Estabilidade da conexão",
         "health" to "Alertas e proteção",
+        "battery_local" to "Bateria local contínua",
         "location" to "Localização",
         "news" to "Novidades",
         "about" to "Sobre"
@@ -83,6 +84,7 @@ internal fun MainActivity.renderSettingsModule() {
             "diagnostics" -> fillDiagnosticsSettings(page)
             "connection" -> fillConnectionHealthSettings(page)
             "health" -> fillHealthSettings(page)
+            "battery_local" -> fillLocalBatterySettings(page)
             "location" -> fillLocationSettings(page)
             "news" -> fillVersionNewsSettings(page)
             "about" -> fillAboutSettings(page)

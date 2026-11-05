@@ -10,12 +10,13 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action !in setOf(Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED)) return
         // O verificador do controlador é independente da opção de reiniciar o servidor local.
         ConnectionHealthScheduler.refresh(context)
-        if (!SettingsStore.autoStartEnabled(context) || !SettingsStore.isMonitorEnabled(context)) return
+        if (!SettingsStore.autoStartEnabled(context) ||
+            (!SettingsStore.isMonitorEnabled(context) && !SettingsStore.localBatteryMonitoring(context))) return
         try {
             RecoveryScheduler.refresh(context)
             MonitorService.start(context)
             // Android may reject a background FGS; never bypass permission requirements.
-            LocationRecoveryStarter.tryStart(context)
+            if (SettingsStore.isMonitorEnabled(context)) LocationRecoveryStarter.tryStart(context)
         } catch (_: Exception) {
             // Restrições de fabricante/SO: iniciar manualmente se necessário.
         }

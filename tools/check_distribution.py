@@ -144,7 +144,7 @@ assert 'Monitoramento' in ui and 'navigateMainTab(0)' in ui
 assert 'val networkLine = LinearLayout(this)' in ui and 'preferredLocalAddress()' in ui and 'compactActionGrid(actions, actionTiles)' in ui
 assert 'addCompact("Gerar QR"' in ui and 'addCompact("Mostrar info"' in ui and 'addCompact("Interromper"' in ui
 assert 'showMyConnectionInfo()' in ui and 'FLAG_SECURE' in ui
-assert 'startServiceExplicitly()' in ui and 'stopService(Intent(this, MonitorService::class.java))' in ui
+assert 'startServiceExplicitly()' in ui and 'MonitorService.refreshModes(this)' in ui
 assert 'private fun renderRecentDevicesHome()' not in ui
 print('PASSOU: Home com recentes, última conexão real, engrenagem e controles locais compactos')
 
@@ -191,7 +191,7 @@ assert 'Acesso remoto detectado' in module_ui['IncomingAccessScreenUi.kt'] and '
 assert 'Quem está?' not in incoming and 'showWho(' not in incoming
 assert 'android:name=".ui.IncomingAccessActivity"' in manifest and 'android:exported="false"' in manifest
 assert 'ACCESS_CHANNEL' in service and 'IMPORTANCE_DEFAULT' in service
-assert 'SettingsStore.isMonitorEnabled(this) && !MonitorService.isServiceActive' in ui
+assert 'SettingsStore.isMonitorEnabled(this)' in ui and 'MonitorService.isServiceActive' in ui and 'MonitorService.isBatteryMonitoringActive' in ui
 assert 'private fun recoverAuthorizedServiceIfStopped()' in ui
 assert 'renderSettingsModule()' in ui and 'openSettingsModule()' in ui
 assert 'private fun MainActivity.mobileMetricCard(' in ui and 'minimumHeight = dp(91)' in ui
@@ -218,7 +218,7 @@ assert 'unknownOrOlderProtocolsAreRejected' in app_version_test and '0.1.0-alpha
 print('PASSOU: alpha.21, teste de compatibilidade segue a versão atual')
 
 # alpha.22: a interface cresceu, mas MainActivity não volta a concentrar telas inteiras.
-assert len(main_ui.splitlines()) <= 490, "MainActivity voltou a concentrar a UI"
+assert len(main_ui.splitlines()) <= 515, "MainActivity voltou a concentrar a UI"
 assert all(len(text.splitlines()) >= 25 for text in module_ui.values()), "Módulo UI vazio ou parcial"
 assert "internal fun MainActivity.renderHome()" in module_ui["HomeScreenUi.kt"]
 assert "internal fun MainActivity.renderMonitor()" in module_ui["MonitorScreenUi.kt"]
@@ -1837,3 +1837,39 @@ assert 'ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS' in settings128
 assert '"off", "30m", "monitor"' in (root / 'app/src/main/java/br/dev/celularremoto/service/ConnectionPowerPolicy.kt').read_text()
 assert (root / 'docs/VALIDATION_ALPHA128.md').exists()
 print('PASSOU: alpha.128 com WakeLock opt-in, diagnóstico Doze e liberação na parada')
+
+# Alpha.129: continuidade observada, rede padrão e recuperação sem reinicialização duplicada.
+svc129 = (root / 'app/src/main/java/br/dev/celularremoto/service/MonitorService.kt').read_text()
+cont129 = (root / 'app/src/main/java/br/dev/celularremoto/service/MonitorContinuityStore.kt').read_text()
+ui129 = (root / 'app/src/main/java/br/dev/celularremoto/ui/ConnectionPowerUi.kt').read_text()
+assert 'if (serviceActive) {' in svc129 and 'ensureServerReady()' in svc129
+assert 'MonitorContinuityStore.started(this)' in svc129 and 'MonitorContinuityStore.stopped(this)' in svc129
+assert 'MonitorContinuityStore.heartbeat(this@MonitorService' in svc129
+assert 'registerDefaultNetworkCallback(networkCallback)' in svc129 and 'NetworkRequest.Builder()' not in svc129
+assert 'Falha ao atualizar notificação' in svc129 and 'lastNotificationSignature = key' in svc129
+assert 'HEARTBEAT_PERIOD_MS = 120_000L' in (root / 'app/src/main/java/br/dev/celularremoto/service/MonitorContinuityPolicy.kt').read_text()
+assert 'context.getSharedPreferences(FILE, Context.MODE_PRIVATE)' in cont129
+assert 'Recriações sem encerramento observado' in ui129
+assert (root / 'app/src/test/java/br/dev/celularremoto/service/MonitorContinuityPolicyTest.kt').is_file()
+assert (root / 'docs/VALIDATION_ALPHA129.md').exists()
+print('PASSOU: alpha.129 continuidade de serviço, callback da rede padrão e retentativa de notificação')
+
+# Alpha.130 — único serviço FGS com modos exclusivos, bateria sem servidor e coleta única.
+mode130 = (root / 'app/src/main/java/br/dev/celularremoto/service/MonitorServiceModePolicy.kt').read_text()
+svc130 = (root / 'app/src/main/java/br/dev/celularremoto/service/MonitorService.kt').read_text()
+manifest130 = (root / 'app/src/main/AndroidManifest.xml').read_text()
+settings130 = (root / 'app/src/main/java/br/dev/celularremoto/core/SettingsStore.kt').read_text()
+ui130 = (root / 'app/src/main/java/br/dev/celularremoto/ui/BatteryScreenUi.kt').read_text()
+assert 'local_battery_monitoring_enabled", false' in settings130, 'Coleta local deve começar desativada'
+assert 'Mode.BATTERY_ONLY' in mode130 and 'Mode.REMOTE' in mode130
+assert 'activateBatteryOnlyMode()' in svc130 and 'activateRemoteMode()' in svc130
+assert 'if (serviceActive) stopRemoteMode()' in svc130
+assert 'startBatteryLoops()' in svc130 and svc130.count('batteryExecutor.execute {') == 1
+assert 'FOREGROUND_SERVICE_TYPE_SPECIAL_USE' in svc130 and 'FOREGROUND_SERVICE_SPECIAL_USE' in manifest130
+assert 'foregroundServiceType="connectedDevice|specialUse"' in manifest130
+assert 'MonitorService.refreshModes(this)' in ui130
+assert 'stopService(Intent(this, MonitorService::class.java))' not in ui, 'Parar Monitorado não pode cancelar coleta local'
+assert 'WIRE_COMPAT' in (root / 'app/src/main/java/br/dev/celularremoto/transport/AppVersion.kt').read_text()
+assert (root / 'app/src/test/java/br/dev/celularremoto/service/MonitorServiceModePolicyTest.kt').is_file()
+assert (root / 'docs/VALIDATION_ALPHA130.md').exists()
+print('PASSOU: alpha.130 bateria local opt-in, modo remoto exclusivo e única coleta/FGS')

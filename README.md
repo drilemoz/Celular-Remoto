@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.128
+# Celular Remoto v0.1.0-alpha.130
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,21 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.128 / versionCode 128** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.130 / versionCode 130** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Bateria contínua sem controle remoto (alpha.130)
+
+- Aba **Bateria → Ativar coleta contínua local**, ou Ajustes → Bateria local contínua: ativa acompanhamento com tela apagada independentemente de Monitorado; desligado por padrão.
+- Um único serviço foreground alterna o tipo Android (specialUse para medição local; connectedDevice para monitoramento remoto). O modo local **não abre porta TCP** nem inicializa câmera, tela ou demais comandos remotos.
+- Coleta local e Monitorado compartilham a mesma agenda de 30 s, com apenas uma notificação ativa; as preferências são independentes, inclusive ao parar uma delas. Histórico não é apagado.
+- Android/Doze pode limitar a coleta; não ativar WakeLock automaticamente. O tipo FGS specialUse pode exigir revisão do caso de uso para distribuição Google Play. Build Android e testes físicos ainda pendentes.
+
+## Continuidade e recuperação do serviço (alpha.129)
+
+- **Ajustes → Conexão estável e WakeLock:** novo resumo de início, última execução, encerramento observado e recriações sem encerramento registrado. A escrita do heartbeat é limitada a uma vez a cada 2 minutos.
+- O serviço ativo não reinicializa os agendamentos a cada segundo comando de início. O listener TCP ainda é reparado se necessário; eventos de rede refletem só a rede padrão do Android, não toda interface auxiliar.
+- Erros ao atualizar a notificação não encerram o serviço; uma nova tentativa ocorre no ciclo seguinte. Sem mais acessos à rede, permissões, WakeLocks, sessões ou notificações permanentes.
+- Uma recriação sem encerramento registrado pode ser causada por encerramento do processo ou energia; não indica necessariamente Doze, falha Wi-Fi ou encerramento pela Xiaomi. Requer ensaio em aparelhos reais e CI Android.
 
 ## Conexão estável e WakeLock (alpha.128)
 

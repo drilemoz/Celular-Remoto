@@ -10,6 +10,12 @@ object SettingsStore {
 
     fun seenNewsVersion(context: Context) = prefs(context).getString("seen_news_version", "").orEmpty()
     fun markNewsSeen(context: Context, version: String) = prefs(context).edit().putString("seen_news_version", version).apply()
+    /** Acompanhamento local separado do servidor remoto; OFF por padrão. */
+    fun localBatteryMonitoring(context: Context): Boolean =
+        prefs(context).getBoolean("local_battery_monitoring_enabled", false)
+    fun setLocalBatteryMonitoring(context: Context, enabled: Boolean) =
+        prefs(context).edit().putBoolean("local_battery_monitoring_enabled", enabled).apply()
+
     fun localHealthAlerts(context: Context) = prefs(context).getBoolean("health_alerts_local", true)
     fun setLocalHealthAlerts(context: Context, enabled: Boolean) = prefs(context).edit().putBoolean("health_alerts_local", enabled).apply()
     fun thermalProtection(context: Context) = prefs(context).getBoolean("thermal_protection", false)

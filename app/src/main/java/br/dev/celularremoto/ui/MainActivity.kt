@@ -113,6 +113,7 @@ class MainActivity : Activity() {
     internal var resultBox: LinearLayout? = null
     companion object {
         const val EXTRA_OPEN_MONITOR = "br.dev.celularremoto.OPEN_MONITOR"
+        const val EXTRA_OPEN_BATTERY = "br.dev.celularremoto.OPEN_BATTERY"
         const val EXTRA_OPEN_UPDATES = "br.dev.celularremoto.OPEN_UPDATES"
     }
     // Alpha.53: acesso autenticado permanece visível no cartão Monitorado e na
@@ -135,7 +136,8 @@ class MainActivity : Activity() {
         ConnectionHealthScheduler.refresh(this)
         br.dev.celularremoto.updates.UpdateController.initialize(this)
         val firstPermissionWelcome = savedInstanceState == null && PermissionCenter.needsWelcome(this)
-        mode = if (intent.getBooleanExtra(EXTRA_OPEN_MONITOR, false)) 0
+        mode = if (intent.getBooleanExtra(EXTRA_OPEN_BATTERY, false)) 5
+            else if (intent.getBooleanExtra(EXTRA_OPEN_MONITOR, false)) 0
             else savedInstanceState?.getInt("active_mode", 2)?.takeIf { it in 0..5 } ?: 2
         settingsSection = savedInstanceState?.getString("settings_section", "home") ?: "home"
         permissionCenterQueue.addAll(savedInstanceState?.getStringArrayList("pending_permission_groups")
@@ -211,10 +213,17 @@ class MainActivity : Activity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        if (intent.getBooleanExtra(EXTRA_OPEN_UPDATES, false)) {
-            mode = 3
-            settingsSection = "updates"
-            render()
+        when {
+            intent.getBooleanExtra(EXTRA_OPEN_BATTERY, false) -> {
+                mode = 5
+                batteryRemote = false
+                render()
+            }
+            intent.getBooleanExtra(EXTRA_OPEN_UPDATES, false) -> {
+                mode = 3
+                settingsSection = "updates"
+                render()
+            }
         }
     }
     override fun onDestroy() {
@@ -266,13 +275,17 @@ class MainActivity : Activity() {
     }
     /** Recuperação conservadora somente com o app visível; nunca após parada explícita. */
     private fun recoverAuthorizedServiceIfStopped() {
-        if (!SettingsStore.isMonitorEnabled(this) || MonitorService.isServiceActive) return
+        if ((!SettingsStore.isMonitorEnabled(this) && !SettingsStore.localBatteryMonitoring(this)) ||
+            (SettingsStore.isMonitorEnabled(this) && MonitorService.isServiceActive) ||
+            (!SettingsStore.isMonitorEnabled(this) && MonitorService.isBatteryMonitoringActive)) return
         val now = SystemClock.elapsedRealtime()
         if (lastRecoveryAttemptMs != 0L && now - lastRecoveryAttemptMs < 60_000L) return
         lastRecoveryAttemptMs = now
         handler.postDelayed({
             if (active && !isFinishing && !isDestroyed &&
-                SettingsStore.isMonitorEnabled(this) && !MonitorService.isServiceActive) {
+                (SettingsStore.isMonitorEnabled(this) || SettingsStore.localBatteryMonitoring(this)) &&
+                (if (SettingsStore.isMonitorEnabled(this)) !MonitorService.isServiceActive
+                    else !MonitorService.isBatteryMonitoringActive)) {
                 runCatching { MonitorService.start(this) }.onFailure {
                     SettingsStore.recordRecoveryEvent(this, "Retomada negada pelo sistema")
                 }

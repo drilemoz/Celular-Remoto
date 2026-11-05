@@ -1,3 +1,20 @@
+## 0.1.0-alpha.130 (versionCode 130) | 05/11/2026
+
+- Monitoramento contínuo de bateria com a tela apagada e sem necessidade de habilitar servidor Monitorado, mediante opt-in local separado.
+- A mesma instância do serviço alterna entre modo remoto e modo bateria, com uma coleta a cada 30 s e uma única notificação foreground; sem nova conexão TCP ou polling remoto.
+- Atalho em Bateria e seção de Configurações para ativar/desativar coleta local, consultar andamento e histórico.
+- Parar Monitorado preserva coleta local autorizada; parar bateria local preserva o Monitorado. Notificação local possui botão Parar bateria.
+- `specialUse` explícito no manifesto para a coleta contínua sem rede; uso sujeito às regras de publicação do Android/Google Play. O padrão permanece desligado e sem WakeLock adicional.
+- Testes estáticos e unitários isolados não substituem CI Android ou ensaio físico.
+
+## 0.1.0-alpha.129 (versionCode 129) | 05/11/2026
+
+- Serviço Monitorado agora ignora inicialização repetida, mantendo temporizadores, rastreamento de lacunas e trabalho de bateria já ativos. Continua recuperando o listener quando necessário.
+- Melhor isolamento de falhas ao publicar a notificação principal, permitindo retentativa posterior sem derrubar o serviço.
+- Callback da rede padrão do Android substitui callbacks de todas as redes; menor risco de registrar eventos enganadores de conectividade.
+- Configurações → Conexão estável registra começo, último heartbeat (limitado a 2 min), encerramento e recriações sem encerramento observado, sem alegar causa nem medir conexão remota.
+- Não foram adicionadas permissões, conexões, serviços ou automatizações de câmera/tela; locks seguem desativados por padrão. Build Android CI e testes físicos pendentes.
+
 ## 0.1.0-alpha.128 (versionCode 128) | 05/11/2026
 
 - Tela Configurações → Conexão estável e WakeLock: Doze, economia de bateria, status da rede, restrição de segundo plano, monitoramento e locks ativos.

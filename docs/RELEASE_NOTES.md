@@ -1,3 +1,24 @@
+# Celular Remoto v0.1.0-alpha.130 — coleta local independente
+
+- Novo modo **Bateria local contínua**, ativado manualmente pela aba Bateria ou em Ajustes: coleta bateria, temperatura, corrente, metas e sessões automáticas com a tela apagada sem abrir servidor remoto.
+- Não há serviço duplicado: `MonitorService` compartilha um executor serial, agenda de amostras e ID de notificação entre os dois modos.
+- As duas autorizações são independentes. O botão Parar bateria não desliga Monitorado e parar Monitorado não encerra a coleta local se ela estiver autorizada.
+- Tipo Android specialUse declarado com uso informado; pode ser sujeito a análise para publicação Google Play. Não garante funcionamento se o Android interromper ou restringir serviços.
+- Segurança, AES-GCM, consentimentos, atualização local do APK, WIRE_COMPAT e único workflow mantidos. CI Gradle/Android completo e testes em dois aparelhos pendentes.
+
+## Histórico
+
+# Celular Remoto v0.1.0-alpha.129 — continuidade e recuperação do monitorado
+
+- Inícios redundantes do serviço não reiniciam supervisor, coletor de bateria ou rastreamento de tempo.
+- Tratamento defensivo da falha do Android ao atualizar a notificação foreground, com nova tentativa posterior.
+- Diagnóstico de início, heartbeat, encerramento e recriação sem encerramento observado, com baixo volume de escrita e sem dados pessoais.
+- Eventos de rede agora usam a conexão padrão do Android, evitando confusão com interfaces auxiliares.
+- WakeLock de CPU e Wi-Fi seguem opcionais e desligados por padrão; rede ainda pode suspender no Doze.
+- CI Android completo e medições com a tela apagada pendentes.
+
+## Histórico
+
 # Celular Remoto v0.1.0-alpha.128 — conexão estável e WakeLock
 
 - Nova página Ajustes → Conexão estável e WakeLock com diagnóstico de Doze, otimizações, economia de energia, rede, bloqueios de CPU e Wi-Fi.

@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Conexão estável" to "Nova tela em Ajustes para ver Doze, restrições de bateria, rede e lacunas no supervisor.",
-        "WakeLock opcional" to "CPU desligada por padrão; escolha teste de 30 min ou manter durante Monitorado, com liberação ao parar.",
-        "Wi-Fi e recuperação" to "Wi-Fi Lock opcional, histórico de lacunas e atalhos para ajustes oficiais do Android/Xiaomi. Não há garantia de rede no Doze."
+        "Bateria independente" to "Ative a coleta contínua local sem iniciar compartilhamento remoto, na aba Bateria ou em Ajustes → Bateria local contínua.",
+        "Um coletor, dois modos" to "Quando Monitorado e Bateria estão autorizados, ambos usam a mesma agenda; nenhuma segunda conexão ou notificação permanente.",
+        "Retomada sem perder histórico" to "Ao parar Monitorado, a coleta local pode continuar. Desligar a coleta local não interrompe o servidor autorizado."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -45,6 +45,8 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Continuidade e recuperação (alpha.129)" to "Inícios repetidos não recriam agendas; a rede padrão e o registro de continuidade melhoram o diagnóstico.",
+        "Conexão estável e WakeLock (alpha.128)" to "Diagnóstico de Doze e locks opcionais de CPU/Wi-Fi, desligados por padrão; liberação ao parar Monitorado.",
         "Preparação remota (alpha.127)" to "Diagnóstico de prontidão local/remota e autorizações individuais; acesso autenticado e permissões locais preservados.",
         "Diagnóstico de alertas (alpha.126)" to "Permissões e canais verificados antes de publicar; registros e notificação de teste em Alertas e proteção.",
         "Notificação local e remota (alpha.125)" to "Percentual, corrente, temperatura, previsão e último contato remoto na notificação do Monitorado, com atualizações limitadas.",

@@ -1,3 +1,20 @@
+# Celular Remoto v0.1.0-alpha.130 — bateria independente (05/11/2026)
+
+- Base alpha.129; próxima versão obrigatória alpha.131/versionCode 131. Sincronizar Gradle, AppVersion, README, CHANGELOG, validações e Novidades.
+- Um único MonitorService expõe dois modos de trabalho distintos: REMOTE (servidor TCP/FGS connectedDevice) e BATTERY_ONLY (sem porta, FGS specialUse). Se ambos forem autorizados, o modo remoto compartilha a **mesma** agenda de 30 s de bateria. Nunca criar segunda amostragem ou segunda notificação contínua.
+- Coleta local contínua começa DESLIGADA e deve ser habilitada no próprio aparelho. Interromper Monitorado não cancela coleta local; desativar coleta local não revoga Monitorado. O ícone de notificação local possui Parar bateria independente.
+- FGS specialUse declarado para medição local contínua explicitamente iniciada; caso de uso sujeito à revisão Google Play. Android pode interromper serviços e atrasar coletas; não prometer tempo real. Sem novos WakeLocks por padrão.
+- Manter segurança AES-GCM, WIRE_COMPAT alpha.111, autenticação, consentimentos por sessão, acesso a arquivos e um único workflow inalterados. Validar CI Android e dois aparelhos antes de release estável.
+
+# Celular Remoto v0.1.0-alpha.129 — continuidade e robustez (05/11/2026)
+
+- Base alpha.128; próxima versão obrigatória alpha.130/versionCode 130. Sincronizar Gradle, AppVersion, documentos, testes e Novidades.
+- `MonitorContinuityStore` mantém somente carimbos locais, último início/parada, heartbeat limitado a 2 min e contagem de recriações sem encerramento observado. Isso NÃO comprova Doze, perda do Wi-Fi nem ação da Xiaomi. Nenhum dado remoto, IP, token ou leitura pessoal.
+- Serviços já ativos não devem reiniciar rotinas por chamadas repetidas de start; socket TCP só é recuperado se necessário. Notificação com falha não deve derrubar serviço.
+- `registerDefaultNetworkCallback` monitora somente a rede padrão informada pelo Android; manter supervisor e reavaliação do listener. Não adicionar sockets ou sondagens, nem prometer rede sob Doze.
+- WakeLocks continuam totalmente opt-in, inclusive Wi-Fi. Capturas e confirmações locais, AES-GCM, WIRE_COMPAT alpha.111 e workflow único intactos.
+- Compilação Android completa e testes físicos em dois aparelhos são obrigatórios antes de classificar a versão como estável.
+
 # Celular Remoto v0.1.0-alpha.128 — conexão estável (05/11/2026)
 
 - Base alpha.127; próxima versão obrigatória alpha.129/versionCode 129, sincronizando todos os metadados.

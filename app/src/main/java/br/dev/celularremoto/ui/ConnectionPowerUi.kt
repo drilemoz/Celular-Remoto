@@ -12,6 +12,8 @@ import android.provider.Settings
 import android.widget.LinearLayout
 import br.dev.celularremoto.R
 import br.dev.celularremoto.core.SettingsStore
+import br.dev.celularremoto.service.MonitorContinuityStore
+import br.dev.celularremoto.service.MonitorContinuityPolicy
 import br.dev.celularremoto.service.ConnectionPowerController
 import br.dev.celularremoto.service.MonitorService
 
@@ -98,6 +100,27 @@ internal fun MainActivity.fillConnectionPowerSettings(layout: LinearLayout) {
     val gap = SettingsStore.lastSupervisorGapMs(this)
     layout.addView(dialogMetricRow("Última lacuna observada", if (gap > 0L) "${gap / 1000} s" else "Nenhuma registrada"))
     layout.addView(dialogMetricRow("Último evento de rede", SettingsStore.connectionNetworkEvent(this)))
+    sectionGap(layout, 10)
+    layout.addView(iconSectionHeader(R.drawable.ic_activity, "Continuidade do serviço",
+        "Histórico local; não mede conectividade remota em tempo real"))
+    sectionGap(layout, 7)
+    val continuity = MonitorContinuityStore.snapshot(this)
+    val nowMs = System.currentTimeMillis()
+    fun whenObserved(value: Long): String {
+        val minutes = MonitorContinuityPolicy.ageMinutes(value, nowMs)
+        return when {
+            minutes == null -> "Sem registro confiável"
+            minutes == 0L -> "Há menos de 1 min"
+            else -> "Há ${minutes} min"
+        }
+    }
+    layout.addView(dialogMetricRow("Início da sessão", whenObserved(continuity.startMs)))
+    layout.addView(dialogMetricRow("Última execução registrada", whenObserved(continuity.lastHeartbeatMs)))
+    layout.addView(dialogMetricRow("Último encerramento observado", whenObserved(continuity.lastStopMs)))
+    layout.addView(dialogMetricRow("Recriações sem encerramento observado", continuity.unclosedRestarts.toString()))
+    layout.addView(dialogMetricRow("Última recriação", if (continuity.lastStartUnclosed)
+        "Sem encerramento anterior registrado" else "Início normal ou encerramento registrado"))
+    layout.addView(label("Uma recriação sem encerramento registrado pode ocorrer após encerramento do processo, falha ou perda de energia. Não comprova Doze ou ação da Xiaomi.", 12f, muted = true))
     layout.addView(iconMenuRow(R.drawable.ic_refresh, "Atualizar diagnóstico",
         "Reconsultar estado Doze, restrições, locks e rede") { render() })
     sectionGap(layout, 12)

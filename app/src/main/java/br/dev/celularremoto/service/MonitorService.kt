@@ -33,7 +33,6 @@ import android.os.Looper
 import android.os.SystemClock
 import android.net.ConnectivityManager
 import android.net.Network
-import android.net.NetworkRequest
 import android.util.Log
 
 class MonitorService : Service() {
@@ -42,6 +41,8 @@ class MonitorService : Service() {
         const val ACCESS_CHANNEL = "celular_remoto_acessos"
         const val ACCESS_NOTIFICATION_ID = 43
         const val ACTION_STOP = "br.dev.celularremoto.STOP"
+        const val ACTION_STOP_BATTERY = "br.dev.celularremoto.STOP_BATTERY"
+        private const val ACTION_SYNC_MODE = "br.dev.celularremoto.SYNC_MODE"
         private const val ACTION_REFRESH_POWER = "br.dev.celularremoto.REFRESH_POWER"
         /** Só notifica serviço existente; não o inicia se estiver desligado. */
         fun requestPowerRefresh(context: Context) {
@@ -55,6 +56,18 @@ class MonitorService : Service() {
         /** Não confundir listener TCP fora do ar com serviço Android encerrado. */
         @Volatile var isServiceActive = false
             private set
+        /** Coleta contínua ativa: pode ser local sem abrir qualquer porta de rede. */
+        @Volatile var isBatteryMonitoringActive = false
+            private set
+
+        /** Reconfigura o serviço existente após ação local, preservando a coleta única. */
+        fun refreshModes(context: Context) {
+            if (isServiceActive || isBatteryMonitoringActive) {
+                context.startService(Intent(context, MonitorService::class.java).setAction(ACTION_SYNC_MODE))
+            } else if (SettingsStore.isMonitorEnabled(context) || SettingsStore.localBatteryMonitoring(context)) {
+                start(context)
+            }
+        }
 
         fun start(context: Context) {
             val intent = Intent(context, MonitorService::class.java)
@@ -67,6 +80,7 @@ class MonitorService : Service() {
     private val connectionPower by lazy { ConnectionPowerController(applicationContext) }
     private var lastServerTickElapsed = 0L
     private var stoppedExplicitly = false
+    private var batteryOnlyActive = false
     @Volatile private var serviceActive = false
     private var consecutiveFailures = 0
     private var nextRecoveryMs = 0L
@@ -74,13 +88,13 @@ class MonitorService : Service() {
     private val networkManager by lazy { getSystemService(ConnectivityManager::class.java) }
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
-            SettingsStore.recordConnectionNetworkEvent(this@MonitorService, "Rede disponível ao Android")
+            SettingsStore.recordConnectionNetworkEvent(this@MonitorService, "Rede padrão disponível ao Android")
             mainHandler.post {
                 if (serviceActive && SettingsStore.isMonitorEnabled(this@MonitorService)) ensureServerReady()
             }
         }
         override fun onLost(network: Network) {
-            SettingsStore.recordConnectionNetworkEvent(this@MonitorService, "Android informou perda de rede")
+            SettingsStore.recordConnectionNetworkEvent(this@MonitorService, "Rede padrão mudou ou ficou indisponível")
             mainHandler.post { if (serviceActive) refreshMainNotification() }
         }
     }
@@ -93,6 +107,7 @@ class MonitorService : Service() {
                 Log.i("CelularRemotoPower", "Lacuna no supervisor: ${gap}ms; causa não confirmada")
             }
             lastServerTickElapsed = nowElapsed
+            MonitorContinuityStore.heartbeat(this@MonitorService, nowElapsed)
             connectionPower.sync(active = true)
             ensureServerReady()
             refreshMainNotification()
@@ -101,7 +116,7 @@ class MonitorService : Service() {
     }
     private val healthWatchdog = object : Runnable {
         override fun run() {
-            if (!serviceActive || !SettingsStore.isMonitorEnabled(this@MonitorService)) return
+            if (!isBatteryMonitoringActive) return
             runCatching { br.dev.celularremoto.core.HealthAlertMonitor.check(this@MonitorService) }
                 .onFailure { Log.w("CelularRemotoHealth", "Leitura de saúde indisponível", it) }
             refreshMainNotification()
@@ -147,7 +162,7 @@ class MonitorService : Service() {
 
     private val batteryLabPulse = object : Runnable {
         override fun run() {
-            if (!serviceActive || !SettingsStore.isMonitorEnabled(this@MonitorService)) return
+            if (!isBatteryMonitoringActive) return
             batteryExecutor.execute {
                 runCatching {
                     br.dev.celularremoto.core.BatteryLabStore.tick(this@MonitorService)
@@ -191,6 +206,10 @@ class MonitorService : Service() {
         manager.createNotificationChannel(NotificationChannel(
             ACCESS_CHANNEL, "Acesso remoto detectado", NotificationManager.IMPORTANCE_DEFAULT
         ))
+    }
+
+    /** Preparação de arquivos apenas no modo remoto; bateria local não mexe em compartilhamentos. */
+    private fun prepareRemoteDownloads() {
         if (br.dev.celularremoto.core.FixedDownloadsFolder.supported()) {
             kotlin.concurrent.thread(name = "CelularRemoto-prepare-downloads") {
                 runCatching {
@@ -202,59 +221,173 @@ class MonitorService : Service() {
                     .onFailure { Log.w("CelularRemotoFiles", "Pasta padrão indisponível", it) }
             }
         }
-        br.dev.celularremoto.core.RemotePhysicalControls.start(applicationContext)
-        br.dev.celularremoto.core.DeviceStateReader.start(applicationContext)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_REFRESH_POWER && serviceActive && SettingsStore.isMonitorEnabled(this)) {
+        if (intent?.action == ACTION_REFRESH_POWER && serviceActive) {
             connectionPower.sync(active = true)
             return START_STICKY
         }
-        if (intent?.action == ACTION_STOP || !SettingsStore.isMonitorEnabled(this)) {
-            stoppedExplicitly = true
-            serviceActive = false
-            isServiceActive = false
-            connectionPower.release()
-            SettingsStore.setMonitorEnabled(this, false)
-            stopSelf()
-            return START_NOT_STICKY
+        // Parar cada função não desliga a outra. Nunca revogar monitoramento de bateria
+        // ao interromper o compartilhamento remoto, nem vice-versa.
+        when (intent?.action) {
+            ACTION_STOP -> SettingsStore.setMonitorEnabled(this, false)
+            ACTION_STOP_BATTERY -> SettingsStore.setLocalBatteryMonitoring(this, false)
         }
-        val notification = buildMainNotification(MonitorNotificationPolicy.State(
+        return when (MonitorServiceModePolicy.resolve(
+            SettingsStore.isMonitorEnabled(this), SettingsStore.localBatteryMonitoring(this))) {
+            MonitorServiceModePolicy.Mode.REMOTE -> {
+                activateRemoteMode()
+                START_STICKY
+            }
+            MonitorServiceModePolicy.Mode.BATTERY_ONLY -> {
+                activateBatteryOnlyMode()
+                START_STICKY
+            }
+            MonitorServiceModePolicy.Mode.OFF -> {
+                stoppedExplicitly = true
+                serviceActive = false
+                batteryOnlyActive = false
+                isServiceActive = false
+                isBatteryMonitoringActive = false
+                connectionPower.release()
+                stopSelf()
+                START_NOT_STICKY
+            }
+        }
+    }
+
+    private fun startBatteryLoops() {
+        isBatteryMonitoringActive = true
+        mainHandler.removeCallbacks(healthWatchdog)
+        mainHandler.post(healthWatchdog)
+        mainHandler.removeCallbacks(batteryLabPulse)
+        mainHandler.post(batteryLabPulse)
+    }
+
+    private fun activateRemoteMode() {
+        if (serviceActive) {
+            ensureServerReady()
+            refreshMainNotification()
+            return
+        }
+        // Um mesmo serviço Foreground hospeda os modos; troca o tipo Android sem criar
+        // outra notificação ou segunda rotina de coleta.
+        val note = buildMainNotification(MonitorNotificationPolicy.State(
             serviceActive = true, serverReady = false, recentAccessCount = 0,
             locationActive = false, screenActive = false, cameraActive = false,
             alertsEnabled = SettingsStore.localHealthAlerts(this) && notificationsAllowed()
         ), "")
         if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(mainNotificationId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
-        } else startForeground(mainNotificationId, notification)
+            startForeground(mainNotificationId, note, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+        } else startForeground(mainNotificationId, note)
         foregroundStarted = true
         lastNotificationSignature = null
         serviceActive = true
+        batteryOnlyActive = false
         isServiceActive = true
         stoppedExplicitly = false
+        br.dev.celularremoto.core.RemotePhysicalControls.start(applicationContext)
+        br.dev.celularremoto.core.DeviceStateReader.start(applicationContext)
+        prepareRemoteDownloads()
+        MonitorContinuityStore.started(this)
         lastServerTickElapsed = SystemClock.elapsedRealtime()
         connectionPower.sync(active = true)
         RecoveryScheduler.refresh(this)
         SettingsStore.recordRecoveryEvent(this, "Serviço iniciado ou restaurado")
         getSystemService(NotificationManager::class.java)?.cancel(98)
         registerConnectivityWatch()
-        // Serviço ativo não significa porta disponível; o supervisor valida ambos.
         ensureServerReady()
-        // Persistent recovery location is allowed only with owner opt-in + Android background grant.
         LocationRecoveryStarter.tryStart(this)
         refreshMainNotification()
         mainHandler.removeCallbacks(serverWatchdog)
-        mainHandler.postDelayed(serverWatchdog, 15_000L)
-        mainHandler.removeCallbacks(healthWatchdog)
-        mainHandler.post(healthWatchdog)
-        mainHandler.removeCallbacks(batteryLabPulse)
-        mainHandler.post(batteryLabPulse)
+        mainHandler.postDelayed(serverWatchdog, ConnectionPowerPolicy.WATCHDOG_INTERVAL_MS)
         AuthenticatedAccess.unsubscribe(accessListener)
         AuthenticatedAccess.subscribe(accessListener)
         mainHandler.removeCallbacks(alertCleanup)
         mainHandler.postDelayed(alertCleanup, 10_000L)
-        return START_STICKY
+        startBatteryLoops()
+    }
+
+    private fun stopRemoteMode() {
+        if (!serviceActive) return
+        serviceActive = false
+        isServiceActive = false
+        connectionPower.release()
+        mainHandler.removeCallbacks(serverWatchdog)
+        mainHandler.removeCallbacks(alertCleanup)
+        lastServerTickElapsed = 0L
+        if (networkCallbackRegistered) {
+            runCatching { networkManager.unregisterNetworkCallback(networkCallback) }
+            networkCallbackRegistered = false
+        }
+        AuthenticatedAccess.unsubscribe(accessListener)
+        getSystemService(NotificationManager::class.java)?.cancel(ACCESS_NOTIFICATION_ID)
+        accessAlerts.clear()
+        LocationShareService.stop(this)
+        PhotoReadyService.stop(this)
+        br.dev.celularremoto.capture.ScreenShareService.stop(this)
+        br.dev.celularremoto.capture.CameraFrameStore.stop()
+        br.dev.celularremoto.core.DeviceStateReader.stop()
+        br.dev.celularremoto.core.RemotePhysicalControls.shutdown()
+        EventJournal.clear()
+        PairingSession.revoke()
+        AuthenticatedAccess.clear()
+        server?.stop()
+        server = null
+        isRunning = false
+        MonitorContinuityStore.stopped(this)
+        SettingsStore.recordServerHealth(this, "parado", 0)
+        lastControllerSeenMs = 0L
+    }
+
+    private fun activateBatteryOnlyMode() {
+        if (serviceActive) stopRemoteMode()
+        if (batteryOnlyActive) {
+            refreshMainNotification()
+            return
+        }
+        // Não abrir porta TCP, preparar captura, iniciar localização ou reter Wi-Fi/CPU.
+        val note = buildBatteryOnlyNotification()
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(mainNotificationId, note, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else startForeground(mainNotificationId, note)
+        foregroundStarted = true
+        lastNotificationSignature = null
+        batteryOnlyActive = true
+        stoppedExplicitly = false
+        startBatteryLoops()
+        refreshMainNotification()
+    }
+
+    private fun buildBatteryOnlyNotification(): Notification {
+        val battery = MonitorNotificationContent.valid(batteryNotification, System.currentTimeMillis())
+        val line = MonitorNotificationContent.batteryLine(battery)
+        val open = PendingIntent.getActivity(this, 130,
+            Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_OPEN_BATTERY, true),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val stop = PendingIntent.getService(this, 131,
+            Intent(this, MonitorService::class.java).setAction(ACTION_STOP_BATTERY),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val text = line.ifBlank { "Aguardando primeira medição" }
+        val public = Notification.Builder(this, CHANNEL)
+            .setSmallIcon(br.dev.celularremoto.R.drawable.ic_stat_shield)
+            .setContentTitle("Acompanhamento local de bateria")
+            .setContentText("Coleta local em andamento")
+            .build()
+        return Notification.Builder(this, CHANNEL)
+            .setSmallIcon(br.dev.celularremoto.R.drawable.ic_stat_shield)
+            .setContentTitle("Bateria local · ${battery?.percent?.let { "$it%" } ?: "—"}")
+            .setContentText(text)
+            .setStyle(Notification.BigTextStyle().bigText("Somente este aparelho\n$text\nSem servidor remoto ativo"))
+            .setContentIntent(open)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .setVisibility(Notification.VISIBILITY_PRIVATE)
+            .setPublicVersion(public)
+            .addAction(Notification.Action.Builder(null, "Parar bateria", stop).build())
+            .build()
     }
 
     private fun notificationsAllowed(): Boolean = Build.VERSION.SDK_INT < 33 ||
@@ -298,7 +431,17 @@ class MonitorService : Service() {
     }
 
     private fun refreshMainNotification() {
-        if (!serviceActive || !foregroundStarted || !SettingsStore.isMonitorEnabled(this)) return
+        if (!foregroundStarted || !isBatteryMonitoringActive) return
+        if (batteryOnlyActive && !serviceActive) {
+            val current = MonitorNotificationContent.valid(batteryNotification, System.currentTimeMillis())
+            val key = "LOCAL|$current"
+            if (key != lastNotificationSignature) runCatching {
+                getSystemService(NotificationManager::class.java)?.notify(mainNotificationId, buildBatteryOnlyNotification())
+                lastNotificationSignature = key
+            }.onFailure { Log.w("CelularBattery", "Notificação local indisponível", it) }
+            return
+        }
+        if (!serviceActive || !SettingsStore.isMonitorEnabled(this)) return
         val peers = AuthenticatedAccess.recent()
         val recent = peers.firstOrNull()
         if (recent != null && recent.lastSeenMs >= lastControllerSeenMs) {
@@ -325,9 +468,12 @@ class MonitorService : Service() {
         val remoteLine = MonitorNotificationContent.remoteLine(peer?.name, peer?.lastSuccessMs ?: 0L, now)
         val key = listOf(state, accessLine, battery, remoteLine).joinToString("|")
         if (key == lastNotificationSignature) return
-        lastNotificationSignature = key
-        getSystemService(NotificationManager::class.java)
-            ?.notify(mainNotificationId, buildMainNotification(state, accessLine, battery, remoteLine))
+        // Falhas no gerenciador não devem derrubar o serviço; tentar novamente no próximo ciclo.
+        runCatching {
+            getSystemService(NotificationManager::class.java)
+                ?.notify(mainNotificationId, buildMainNotification(state, accessLine, battery, remoteLine))
+            lastNotificationSignature = key
+        }.onFailure { Log.w("CelularRemotoService", "Falha ao atualizar notificação", it) }
     }
 
     /** Reinicia somente o listener TCP; não tenta abrir Activities nem revogar consentimento. */
@@ -368,7 +514,8 @@ class MonitorService : Service() {
     private fun registerConnectivityWatch() {
         if (networkCallbackRegistered) return
         try {
-            networkManager.registerNetworkCallback(NetworkRequest.Builder().build(), networkCallback)
+            // Somente a rede padrão do Android: não contabilizar redes auxiliares como recuperação.
+            networkManager.registerDefaultNetworkCallback(networkCallback)
             networkCallbackRegistered = true
         } catch (error: Exception) {
             Log.w("CelularRemotoService", "Sem callback de rede; supervisor periódico continua", error)
@@ -378,7 +525,8 @@ class MonitorService : Service() {
     override fun onTaskRemoved(rootIntent: Intent?) {
         // Remover a tarefa visual não equivale ao usuário tocar em Parar.
         // START_STICKY mantém a possibilidade de recriação pelo sistema.
-        SettingsStore.recordRecoveryEvent(this, "Janela do app removida; serviço deve continuar")
+        if (SettingsStore.isMonitorEnabled(this))
+            SettingsStore.recordRecoveryEvent(this, "Janela do app removida; serviço deve continuar")
         super.onTaskRemoved(rootIntent)
     }
 
@@ -419,8 +567,11 @@ class MonitorService : Service() {
         lastBatteryNotificationReadMs = 0L
         lastControllerSeenMs = 0L
         serviceActive = false
+        batteryOnlyActive = false
         isServiceActive = false
+        isBatteryMonitoringActive = false
         connectionPower.release()
+        MonitorContinuityStore.stopped(this)
         lastServerTickElapsed = 0L
         if (!stoppedExplicitly && SettingsStore.isMonitorEnabled(this)) {
             SettingsStore.recordRecoveryEvent(this, "Serviço Android encerrado; aguardando retomada")
