@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.119
+# Celular Remoto v0.1.0-alpha.120
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,15 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.119 / versionCode 119** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.120 / versionCode 120** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Bateria compacta e analítica (alpha.120)
+
+- **Resumo:** percentual em destaque com barra de progresso e fonte identificada; corrente líquida, temperatura e potência em três indicadores (duas colunas em telas estreitas ou fontes ampliadas). Potência da bateria **não é** potência do painel solar.
+- **Sessões:** previsão com destaque, metas de 80%/90% e horário apenas quando houver dados; cobertura, corrente média e evolução real em um painel denso. Últimas recargas e testes aparecem em listas com separadores e acesso aos relatórios completos.
+- **Histórico:** filtros por tipo/período preservados e sessões apresentadas em uma lista única, sem um grande card por evento; gráficos por amostras reais continuam nos detalhes, com lacunas respeitadas.
+- **Testes:** Solar, Elétrico, Consumo e Carga Automática preservados, com mesmas confirmações e controles local/remoto. Nenhuma nova coleta ou permissão, alteração de protocolo ou fonte de cálculos.
+- Layout a validar no Android em 320/360/393 dp, fontes ampliadas e modo claro/escuro. Verificação sintática não comprova execução do APK.
 
 ## Telas de controle compactadas (alpha.119)
 

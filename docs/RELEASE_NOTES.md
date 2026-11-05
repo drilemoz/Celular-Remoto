@@ -1,3 +1,9 @@
+# Celular Remoto — 0.1.0-alpha.120
+
+**Bateria redesenhada:** indicador principal de nível e barra, grade adaptativa de corrente/temperatura/potência, histórico em listas, sessões com previsões e cobertura de leituras organizadas em painéis compactos. Gráficos continuam derivados de amostras reais, com lacunas identificadas, e relatórios detalhados acessíveis por toque. Os quatro testes e o controle remoto foram preservados. O protocolo e a assinatura não mudaram. A compilação Android e a validação física ainda são necessárias.
+
+## Histórico de notas da alpha.119
+
 # Celular Remoto — 0.1.0-alpha.119
 
 **Controlar e Monitorado mais compactos:** três indicadores no lugar de cartões grandes para telemetria, rede e temperatura; comandos remotos mantidos em grade; novo painel com três atalhos para Tela, Câmera e Foto no aparelho monitorado. A primeira ação de câmera/tela continua dependente de autorização local, e a fotografia precisa ser preparada no próprio aparelho.

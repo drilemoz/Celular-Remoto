@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Controlar mais direto" to "Bateria, temperatura e rede aparecem num painel mais compacto, sem perder a origem ou os detalhes da última consulta autenticada.",
-        "Monitorado com atalhos" to "Tela, câmera e foto agora ficam no mesmo painel, com estados resumidos e autorização local preservada para cada recurso.",
-        "Ações e diálogos" to "Os 12 comandos remotos continuam disponíveis; acesso autenticado, conexão e controles de som/lanterna ocupam menos espaço."
+        "Bateria mais clara" to "Percentual e estado de carga em destaque, com medições elétricas em grade de três ou duas colunas conforme a tela.",
+        "Resumo e previsões" to "Sessões automáticas apresentam previsão, cobertura e evolução com dados reais; intervalos não observados não são inventados.",
+        "Histórico compacto" to "Filtros, comparação e relatórios preservados. As sessões agora aparecem em uma lista com separadores, sem cartões grandes repetidos."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -43,6 +43,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Controlar e Monitorado compactos" to "A alpha.119 trouxe telemetria compacta, painel único de Tela/Câmera/Foto e controles secundários mais densos sem remover confirmações locais.",
         "Design compacto inicial" to "A alpha.118 modernizou Início, navegação, categorias de Ajustes e a organização geral das telas em grades adaptativas.",
         "Estabilidade da conexão" to "Em Controlar ou Configurações, acompanhe latência, tentativas autenticadas, períodos sem medição, falhas e recuperação por aparelho.",
         "Heartbeat e reconexão" to "Nova sonda leve e cifrada, tentativas com espera progressiva e busca apenas em endereços salvos com a mesma chave. Segundo plano pode ser ativado nas configurações.",

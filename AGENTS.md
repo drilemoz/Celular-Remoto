@@ -1,3 +1,11 @@
+# Regras da alpha.120 — Bateria compacta e analítica (04/11/2026)
+
+- Base alpha.119; versão `0.1.0-alpha.120`, `versionCode 120`; próxima alteração alpha.121/121. Gradle, AppVersion, README, CHANGELOG, notas, documentação e Novidades sincronizados.
+- `BatteryCompactUi.kt` só contém componentes de interface. Nunca inferir produção solar, ajustar sinal/unidade de bateria sem evidência, ocultar origem de medições ou criar previsões sem dados.
+- A aba Bateria deve respeitar fonte ampliada e 320/360/393 dp; usar 2 colunas em telas estreitas e 3 onde couber, com conteúdo acessível e controles mínimos de 43+ dp nos seletores, 48+ nas ações.
+- Preservar compatibilidade `WIRE_COMPAT=alpha.111`, AES-GCM, pareamento, limites de histórico remoto, relatórios completos, testes e controle local/remote, assinatura, atualizador e workflow único.
+- Executar CI Android real e testes físicos antes de declarar APK funcional; a validação de parser não substitui compilação.
+
 # Regras da alpha.119 — Controlar e Monitorado compactos (04/11/2026)
 
 - Base alpha.118. Versão obrigatória **0.1.0-alpha.119** e `versionCode 119`. Próxima alteração será alpha.120/120, com Gradle, `AppVersion`, README, CHANGELOG, RELEASE_NOTES, docs e Novidades sincronizados.

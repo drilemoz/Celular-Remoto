@@ -1708,3 +1708,18 @@ assert 'compactSectionTitle("Acessos autenticados"' in monitor119 and 'Authentic
 assert all(x in connection119 for x in ['actionButton("Atualizar")', 'actionButton("Diagnóstico")', 'actionButton("Detalhes")'])
 assert 'remoteConnection.deviceControl(host, action, seconds)' in physical119
 print('PASSOU: alpha.119 controles/telemetria compactos; consentimentos e callbacks preservados')
+
+# Alpha.120 — Bateria: hierarquia compacta sem reduzir a segurança e sem mudar os cálculos.
+battery120 = (ui_root / "BatteryScreenUi.kt").read_text()
+compact120 = (ui_root / "BatteryCompactUi.kt").read_text()
+assert "batteryHero(level, state, source)" in battery120
+assert "batteryMetricGrid(content, listOf(" in battery120
+assert "batterySessionListRow(historyList," in battery120 and "showBatteryCompareDialog(completedLabs)" in battery120
+assert "renderBatteryTests(running)" in battery120 and "showBatteryCurrentDiagnostic(battery)" in battery120
+assert "forecast80Minutes" in battery120 and "forecast90Minutes" in battery120
+assert 'optJSONArray("points")' in battery120 and 'BatteryLabChart(this, points, "percent"' in battery120
+assert "BatteryDashboardPolicy.metricColumns(" in compact120
+assert "widthDp < 360 || fontScale > 1.20f" in (ui_root / "BatteryDashboardPolicy.kt").read_text()
+assert "minimumHeight = dp(49)" in compact120 and "contentDescription =" in compact120
+assert (root / "docs/VALIDATION_ALPHA120.md").exists()
+print("PASSOU: alpha.120 Bateria compacta; leitura, comparacao, alertas, coleta e protocolos preservados")

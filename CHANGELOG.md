@@ -1,3 +1,12 @@
+## 0.1.0-alpha.120 (versionCode 120) | 04/11/2026
+
+- Redesenho da aba Bateria: percentual, estado e barra de progresso em um painel principal; corrente líquida, temperatura e potência em indicadores compactos adaptativos.
+- Controles de atualização, diagnóstico elétrico e metas em linhas acessíveis; estado do aparelho remoto continua baseado na última resposta autenticada, nunca numa conexão TCP permanente.
+- Resumo de sessões automáticas com previsão destacada, metas, taxa observada, cobertura e gráfico real recente quando disponível; evita qualquer horário inventado.
+- Histórico convertido em lista compacta com divisores e filtros anteriores, mantendo relatórios, comparação de testes, gráfico por sessão e limites de payload remoto.
+- Quatro testes mantidos em grade; resultados continuam medidos no aparelho selecionado, sem acrescentar serviço nem permissão.
+- Documentação, Novidades e versionCode sincronizados. Build Android CI e teste visual em 320/360/393 dp permanecem pendentes.
+
 ## 0.1.0-alpha.119 (versionCode 119) | 04/11/2026
 
 - Painel **Controlar** com telemetria compacta e acessível em grade de 2/3/4 colunas: bateria, temperatura e rede; detalhes completos ao tocar, dados recentes e cache identificados separadamente.
