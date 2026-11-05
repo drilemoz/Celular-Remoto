@@ -20,15 +20,18 @@ internal fun MainActivity.showRemotePhysicalDialog(sound: Boolean) {
     content.addView(label(if (sound)
         "Alerta temporário. Respeita o volume e o Não Perturbe do monitorado."
         else "Flash traseiro, quando o Android permitir. Estado confirmado pela câmera.", 12f, muted = true))
-    sectionGap(content, 8)
+    sectionGap(content, 5)
     val statusView = label("Consultando estado real…", 13f, strong = true)
     val messageView = label("", 12f, muted = true)
-    content.addView(panel(11).apply {
-        background = shape(fieldColor, 14)
-        addView(statusView)
-        addView(messageView)
-    })
-    sectionGap(content, 10)
+    val statusLine = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        background = shape(fieldColor, 13)
+        setPadding(dp(10), dp(6), dp(10), dp(6))
+        addView(statusView.apply { setPadding(0, 0, 0, 0) })
+        addView(messageView.apply { setPadding(0, dp(2), 0, 0); maxLines = 3 })
+    }
+    content.addView(statusLine)
+    sectionGap(content, 8)
 
     var duration = 10
     val durationButtons = mutableListOf<Button>()
@@ -50,7 +53,7 @@ internal fun MainActivity.showRemotePhysicalDialog(sound: Boolean) {
             })
         }
         content.addView(durations)
-        sectionGap(content, 12)
+        sectionGap(content, 8)
     }
     val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     val turnOn = actionButton(if (sound) "Iniciar som" else "Ligar flash", emphasis = true) { }

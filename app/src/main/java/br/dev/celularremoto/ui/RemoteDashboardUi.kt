@@ -39,28 +39,28 @@ internal fun MainActivity.displayResult(root: JSONObject, fromCache: Boolean = f
     val liveReading = !fromCache && remoteConnection.state == "connected"
     mobileDashboardHeader(container, "Informações do aparelho",
         if (liveReading) "Consulta recente" else "Última leitura")
-    val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-    row.addView(mobileMetricCard(if (charging) R.drawable.ic_battery_charging else R.drawable.ic_battery,
-        "Bateria", if (charging) "$level ⚡" else level,
-        listOfNotNull(state, source).joinToString(" · ")) { showRemoteThermalDialog(battery, fromCache) },
-        LinearLayout.LayoutParams(0, -2, 1f))
-    row.addView(View(this), LinearLayout.LayoutParams(dp(9), 1))
-    row.addView(mobileMetricCard(R.drawable.ic_thermometer, "Temperatura", temperature,
-        BatteryTemperaturePolicy.label(tempZone), tempZone) { showRemoteThermalDialog(battery, fromCache) },
-        LinearLayout.LayoutParams(0, -2, 1f))
-    container.addView(row)
-    sectionGap(container, 9)
     val networkType = network?.optString("type")?.ifBlank { "Indisponível" } ?: "Indisponível"
     val ssid = network?.optString("wifiSsid")?.takeIf { it.isNotBlank() && it != "null" }
     val signal = network?.optInt("wifiRssiDbm", 0)?.takeIf { it in -110..-10 }?.let { "$it dBm" }
     val wifiLabel = if (ssid != null) listOfNotNull(ssid, signal).joinToString(" · ")
-        else if (network?.optBoolean("wifiPermission") == false) "SSID: permissão pendente no monitorado"
-        else "SSID indisponível"
-    container.addView(mobileNetworkRow(networkType, wifiLabel) {
-        showAppNotice("Rede do monitorado", if (ssid == null && network?.optBoolean("wifiPermission") == false)
-            "No celular monitorado: Configurações → Diagnóstico → Nome e sinal do Wi-Fi. Autorize Localização precisa e ative a localização. A permissão não pode ser concedida remotamente."
-            else "Tipo: $networkType\n${ssid ?: "SSID indisponível"}\n${signal ?: "RSSI indisponível"}")
-    })
+        else if (network?.optBoolean("wifiPermission") == false) "Permissão pendente"
+        else "Sinal indisponível"
+    val metrics = listOf(
+        compactTelemetryTile(if (charging) R.drawable.ic_battery_charging else R.drawable.ic_battery,
+            "Bateria", level, listOfNotNull(state, source).joinToString(" · ")) {
+            showRemoteThermalDialog(battery, fromCache)
+        },
+        compactTelemetryTile(R.drawable.ic_thermometer, "Temperatura", temperature,
+            BatteryTemperaturePolicy.label(tempZone), warning = tempZone == BatteryTemperaturePolicy.Zone.HOT) {
+            showRemoteThermalDialog(battery, fromCache)
+        },
+        compactTelemetryTile(R.drawable.ic_wifi, "Rede", networkType, wifiLabel) {
+            showAppNotice("Rede do monitorado", if (ssid == null && network?.optBoolean("wifiPermission") == false)
+                "No celular monitorado: Configurações → Diagnóstico → Nome e sinal do Wi-Fi. Autorize Localização precisa e ative a localização. A permissão não pode ser concedida remotamente."
+                else "Tipo: $networkType\n${ssid ?: "SSID indisponível"}\n${signal ?: "RSSI indisponível"}")
+        }
+    )
+    compactActionGrid(container, metrics)
     sectionGap(container, 9)
     container.addView(label(if (liveReading)
         "Resposta autenticada: ${formatDate(remoteConnection.lastSuccessMs)}"
@@ -95,19 +95,17 @@ internal fun MainActivity.displayEmptyRemoteDashboard() {
     val container = resultBox ?: return
     container.removeAllViews()
     mobileDashboardHeader(container, "Informações do aparelho", "Sem leitura")
-    val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-    row.addView(mobileMetricCard(R.drawable.ic_battery, "Bateria", "--%", "Carga indisponível") {
-        showAppNotice("Bateria", "Conecte e atualize o aparelho para consultar a bateria.")
-    }, LinearLayout.LayoutParams(0, -2, 1f))
-    row.addView(View(this), LinearLayout.LayoutParams(dp(9), 1))
-    row.addView(mobileMetricCard(R.drawable.ic_thermometer, "Temperatura", "-- °C", "Sem leitura") {
-        showAppNotice("Temperatura", "Conecte e atualize o aparelho para consultar a temperatura.")
-    }, LinearLayout.LayoutParams(0, -2, 1f))
-    container.addView(row)
-    sectionGap(container, 9)
-    container.addView(mobileNetworkRow("Rede do aparelho", "Tipo, SSID e sinal quando disponíveis") {
-        showAppNotice("Rede", "Nenhuma leitura de rede recebida deste aparelho.")
-    })
+    compactActionGrid(container, listOf(
+        compactTelemetryTile(R.drawable.ic_battery, "Bateria", "--%", "Sem leitura") {
+            showAppNotice("Bateria", "Conecte e atualize o aparelho para consultar a bateria.")
+        },
+        compactTelemetryTile(R.drawable.ic_thermometer, "Temperatura", "-- °C", "Sem leitura") {
+            showAppNotice("Temperatura", "Nenhuma medição térmica recebida deste aparelho.")
+        },
+        compactTelemetryTile(R.drawable.ic_wifi, "Rede", "--", "Sem leitura") {
+            showAppNotice("Rede", "Nenhuma leitura de rede recebida deste aparelho.")
+        }
+    ))
     sectionGap(container, 10)
     container.addView(label("Os dados serão exibidos depois de uma consulta autenticada.", 11.5f, muted = true))
     sectionGap(container, 18)
@@ -247,18 +245,18 @@ private fun MainActivity.renderRemoteActions(container: LinearLayout, snapshot: 
     guarded(cards)
     val shortcuts = listOf(cards[4], cards[0], cards[6], cards[11]) // Tela, Arquivos, Câmeras, Localização
     val others = cards.filterNot { it in shortcuts }
-    mobileDashboardHeader(container, "Acesso rápido", "4 funções")
+    mobileDashboardHeader(container, "Acesso rápido", "4 atalhos")
     mobileActionGrid(container, shortcuts)
-    sectionGap(container, 11)
-    mobileDashboardHeader(container, "Outras funções", "8 funções")
-    val toggle = actionButton(if (expandedRemoteFunctions) "⌃  Ocultar funções" else "⌄  Mostrar todas as funções") {
+    sectionGap(container, 8)
+    mobileDashboardHeader(container, "Outras funções", "8 comandos")
+    val toggle = actionButton(if (expandedRemoteFunctions) "Ocultar 8 comandos" else "Mostrar mais 8 comandos") {
         expandedRemoteFunctions = !expandedRemoteFunctions
         // Redesenhar somente a seção remota; não refazer polling ou reconectar.
         if (snapshot == null) displayEmptyRemoteDashboard() else displayResult(snapshot,
             fromCache = cachedReading)
     }.apply {
         textSize = 13.5f
-        background = shape(surface, 18, true)
+        background = shape(surface, 13, true)
         minimumHeight = dp(48)
     }
     if (expandedRemoteFunctions) {
@@ -278,12 +276,12 @@ private fun MainActivity.showRemoteMaintenance() {
     val name = currentDeviceTitle?.text?.toString().orEmpty().ifBlank { "Aparelho remoto" }
     val (wrapper, layout) = visualDialogContainer()
     layout.addView(visualHeader(R.drawable.ic_settings, "Energia e Manutenção", "Controles do aparelho remoto"))
-    sectionGap(layout, 14)
+    sectionGap(layout, 9)
 
     val device = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         background = shape(fieldColor, 18)
-        setPadding(dp(14), dp(12), dp(14), dp(12))
+        setPadding(dp(11), dp(8), dp(11), dp(8))
     }
     val deviceLine = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     val deviceText = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -293,7 +291,7 @@ private fun MainActivity.showRemoteMaintenance() {
     deviceLine.addView(visualTag("Chave salva", SettingsBadgeKind.ACTIVE))
     device.addView(deviceLine)
     layout.addView(device)
-    sectionGap(layout, 12)
+    sectionGap(layout, 9)
 
     layout.addView(label("AÇÕES DISPONÍVEIS", 10.5f, strong = true, muted = true).apply {
         letterSpacing = .10f; setPadding(0,0,0,dp(7))
@@ -303,13 +301,13 @@ private fun MainActivity.showRemoteMaintenance() {
         activeUiDialog?.dismiss()
         showRemoteLockDialog()
     })
-    sectionGap(layout, 7)
+    sectionGap(layout, 5)
     layout.addView(visualActionRow(R.drawable.ic_remote_wake, "Acender tela",
         "Sem desbloquear o Android", "Ver tela") {
         activeUiDialog?.dismiss()
         showAppNotice("Acender tela", "A opção está em Ver tela. Precisa de autorização local no aparelho monitorado e não remove PIN nem desbloqueia o Android.")
     })
-    sectionGap(layout, 7)
+    sectionGap(layout, 5)
     layout.addView(visualActionRow(R.drawable.ic_power, "Reiniciar normalmente",
         "ADB pareado · confirmação obrigatória", "ADB", dangerous = true) {
         activeUiDialog?.dismiss()
@@ -317,17 +315,17 @@ private fun MainActivity.showRemoteMaintenance() {
             putExtra(AdbActivity.EXTRA_MAINTENANCE_HOST, selectedHost)
         })
     })
-    sectionGap(layout, 13)
+    sectionGap(layout, 9)
 
     val notice = visualInfoPanel(R.drawable.ic_info, "Antes de reiniciar",
         "Se o aparelho não voltar a iniciar, pode ficar inacessível sem o botão Power. A Depuração sem fios pode não voltar sozinha.")
     layout.addView(notice)
     layout.addView(label("Nenhum comando é executado ao abrir este painel. Reiniciar requer confirmação no ADB.",
         11f, muted = true).apply { setPadding(0,dp(9),0,0) })
-    sectionGap(layout, 12)
+    sectionGap(layout, 9)
     layout.addView(actionButton("Fechar") { activeUiDialog?.dismiss() }.apply {
-        minHeight = dp(46)
-    }, LinearLayout.LayoutParams(-1, dp(46)))
+        minHeight = dp(48)
+    }, LinearLayout.LayoutParams(-1, dp(48)))
 
     val dialog = themedPopup(this).setView(wrapper).create()
     showManagedDialog(dialog)

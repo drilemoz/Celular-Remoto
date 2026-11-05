@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.118
+# Celular Remoto v0.1.0-alpha.119
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,14 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.118 / versionCode 118** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.119 / versionCode 119** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Telas de controle compactadas (alpha.119)
+
+- **Controlar:** bateria, temperatura e conexão aparecem em três indicadores compactos (em telas estreitas, duas colunas), mantendo os detalhes via toque e a identificação de leitura recente ou armazenada. Os doze comandos permanecem disponíveis em grade; nenhum comando é disparado automaticamente.
+- **Monitorado:** serviços e IP apresentados de forma mais condensada; compartilhamento de tela, câmera e foto reunidos em três atalhos com estados visíveis, sem perder as confirmações e a autorização local de cada modo.
+- **Diálogos:** controles de som/lanterna e detalhes de manutenção com espaçamentos reduzidos; ações remotas perigosas continuam exigindo confirmação explícita e, quando necessário, ADB autorizado.
+- O redesenho não altera credenciais, AES-GCM, protocolo, dados, permissões, serviço Monitorado ou atualizações assinadas. **APK e usabilidade real requerem CI e teste em dois aparelhos.**
 
 ## Interface compacta (alpha.118)
 

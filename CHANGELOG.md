@@ -1,3 +1,12 @@
+## 0.1.0-alpha.119 (versionCode 119) | 04/11/2026
+
+- Painel **Controlar** com telemetria compacta e acessível em grade de 2/3/4 colunas: bateria, temperatura e rede; detalhes completos ao tocar, dados recentes e cache identificados separadamente.
+- No **Monitorado**, informações da rede e do serviço condensadas; tela, câmera e fotografia por três atalhos num painel único com o estado de cada captura.
+- Mantidas as confirmações locais para iniciar MediaProjection e câmera e o preparo local de fotografias; parar a transmissão continua disponível diretamente.
+- Acesso autenticado apresentado em bloco compacto, sem sugerir conexão TCP permanente. Ajustes de densidade no cabeçalho do controlador e nos diálogos de som/lanterna.
+- Acrescentadas verificações estruturais do novo layout para preservar as 12 ações remotas e as autorizações. Sem mudanças na segurança, protocolo, bateria, armazenamento, atualizador ou workflow único.
+- Compilação Gradle Android, uso em 320/360/393 dp, fontes ampliadas e testes físicos entre dois celulares ainda pendentes.
+
 ## 0.1.0-alpha.118 (versionCode 118) | 04/11/2026
 
 - **Redesenho visual inicial:** novo kit de atalhos compactos com grade adaptativa por largura e escala da fonte, cores contrastantes e cabeçalho/rodapé menores.

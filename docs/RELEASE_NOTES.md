@@ -1,3 +1,13 @@
+# Celular Remoto — 0.1.0-alpha.119
+
+**Controlar e Monitorado mais compactos:** três indicadores no lugar de cartões grandes para telemetria, rede e temperatura; comandos remotos mantidos em grade; novo painel com três atalhos para Tela, Câmera e Foto no aparelho monitorado. A primeira ação de câmera/tela continua dependente de autorização local, e a fotografia precisa ser preparada no próprio aparelho.
+
+**Melhorias de navegação:** status de acesso autenticado em bloco compacto, cabeçalho de conexão mais denso e diálogos de som/lanterna com informações agrupadas. Sem nova coleta de dados, permissões, serviços, Secrets ou workflows.
+
+**Validação:** verificações estáticas não substituem build Android e testes reais de interface. Revisar 320/360/393 dp, escala de fontes e modo escuro, fluxo remoto e consentimentos no Android.
+
+---
+
 # Celular Remoto — 0.1.0-alpha.118
 
 **Redesenho visual compacto (primeira etapa):** telas Início, Controlar, Monitorado, Bateria e início de Configurações modernizadas com novos componentes, menores espaços vazios, estados legíveis e atalhos em 2 ou 3 colunas conforme tela/fonte. A barra fixa é menor e a tela Novidades exibe somente as três mudanças principais, com histórico acessível em Ajustes.

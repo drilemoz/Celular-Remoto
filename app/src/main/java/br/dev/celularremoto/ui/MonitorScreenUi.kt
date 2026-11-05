@@ -17,20 +17,18 @@ import br.dev.celularremoto.transport.AuthenticatedAccess
 
 /** Tela monitorada: ações agrupadas à direita do cartão, sem botões longos. */
 internal fun MainActivity.renderMonitor() {
-    content.addView(label("Compartilhamento local", 17f, strong = true).apply {
-        setPadding(0, 0, 0, 0)
-    })
-    gap(12)
+    content.addView(compactSectionTitle("Monitoramento local"))
+    gap(8)
     val enabled = SettingsStore.isMonitorEnabled(this)
     val running = MonitorService.isRunning
-    val card = panel(12).apply { background = shape(surface, 18, true) }
+    val card = panel(10).apply { background = shape(surface, 16, true) }
     val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     val iconHolder = LinearLayout(this).apply {
         gravity = Gravity.CENTER
         background = shape(fieldColor, 17)
         addView(vectorIcon(br.dev.celularremoto.R.drawable.ic_phone, 25, highlight))
     }
-    header.addView(iconHolder, LinearLayout.LayoutParams(dp(46), dp(46)))
+    header.addView(iconHolder, LinearLayout.LayoutParams(dp(42), dp(42)))
     header.addView(View(this), LinearLayout.LayoutParams(dp(12), 1))
     val headerText = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     headerText.addView(label("Este aparelho", 17f, strong = true).apply { setPadding(0, 0, 0, 0) })
@@ -46,21 +44,25 @@ internal fun MainActivity.renderMonitor() {
     })
     header.addView(headerText, LinearLayout.LayoutParams(0, -2, 1f))
     card.addView(header)
-    sectionGap(card, 11)
+    sectionGap(card, 7)
     card.addView(statePill(
         if (enabled && running) "Disponível na rede" else if (enabled) "Aguardando serviço" else "Acesso remoto parado",
         if (enabled && running) "active" else if (enabled) "warning" else "neutral"
     ))
-    sectionGap(card, 13)
-
-    val columns = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-    val details = iconMetric("IP da rede", preferredLocalAddress() ?: "Indisponível", br.dev.celularremoto.R.drawable.ic_wifi)
-    columns.addView(details, LinearLayout.LayoutParams(0, -2, 1f))
-    columns.addView(View(this), LinearLayout.LayoutParams(dp(9), 1))
-    val access = iconMetric("Acesso", "Chave autorizada", br.dev.celularremoto.R.drawable.ic_shield)
-    columns.addView(access, LinearLayout.LayoutParams(0, -2, 1f))
-    card.addView(columns)
-    sectionGap(card, 10)
+    sectionGap(card, 8)
+    val networkLine = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+    networkLine.addView(vectorIcon(br.dev.celularremoto.R.drawable.ic_wifi, 18, highlight))
+    networkLine.addView(label(preferredLocalAddress() ?: "IP indisponível", 12f, strong = true).apply {
+        maxLines = 1
+        ellipsize = android.text.TextUtils.TruncateAt.END
+        setPadding(dp(7), 0, dp(4), 0)
+    }, LinearLayout.LayoutParams(0, -2, 1f))
+    networkLine.addView(vectorIcon(br.dev.celularremoto.R.drawable.ic_shield, 17, dim))
+    networkLine.addView(label("Acesso autorizado", 11f, muted = true).apply {
+        setPadding(dp(5), 0, 0, 0)
+    })
+    card.addView(networkLine)
+    sectionGap(card, 9)
 
     val actions = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     val actionTiles = mutableListOf<LinearLayout>()
@@ -89,7 +91,7 @@ internal fun MainActivity.renderMonitor() {
     val localState = br.dev.celularremoto.core.DeviceStateReader.snapshot(this)
     val hasUsage = localState.optBoolean("usagePermission")
     val hasWifi = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
-    val diagCard = panel(10)
+    val diagCard = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     diagCard.addView(iconMenuRow(br.dev.celularremoto.R.drawable.ic_activity,
         "Estado e permissões do aparelho",
         "Tela: ${localState.optString("screenState")} · Uso: ${if (hasUsage) "ok" else "pendente"} · Localização: ${if (hasWifi) "ok" else "pendente"}",
@@ -99,56 +101,55 @@ internal fun MainActivity.renderMonitor() {
     })
     content.addView(diagCard)
     if (enabled && running) {
-        gap(9)
-        content.addView(iconSectionHeader(br.dev.celularremoto.R.drawable.ic_monitor,
-            "Captura e compartilhamento", "Ative somente o recurso necessário"))
-        gap(10)
-        content.addView(monitorFeatureCard(
-            br.dev.celularremoto.R.drawable.ic_monitor, "Compartilhamento de tela",
-            if (ScreenFrameStore.sharing) "Tela autorizada, com indicação visível no monitorado." else
-                "Exige autorização do Android para cada nova sessão.",
-            if (ScreenFrameStore.sharing) "Em transmissão" else "Desativado",
-            if (ScreenFrameStore.sharing) "active" else "neutral",
-            if (ScreenFrameStore.sharing) "Parar" else "Compartilhar", emphasized = !ScreenFrameStore.sharing
-        ) {
-            if (ScreenFrameStore.sharing) {
-                ScreenShareService.stop(this)
-                handler.postDelayed({ if (active && mode == 0) render() }, 300L)
-            } else {
-                showAppConfirm("Compartilhar a tela?",
-                    "O aparelho controlador pareado poderá ver o que aparecer nesta tela, inclusive informações privadas. " +
-                    "O Android solicitará sua autorização para a sessão. Sem gravação. Toque e áudio só funcionam se habilitados separadamente em Configurações. A sessão permanece ativa durante desconexões até você parar ou o Android encerrar.", confirmText = "Autorizar captura") {
-                    val manager = getSystemService(MediaProjectionManager::class.java)
-                    startActivityForResult(manager.createScreenCaptureIntent(), screenCaptureRequest)
-                }
-            }
-        })
-        gap(9)
+        gap(11)
+        content.addView(compactSectionTitle("Captura e compartilhamento", "Ativação local"))
+        gap(7)
         val cameraRunning = br.dev.celularremoto.capture.CameraFrameStore.isActive()
-        content.addView(monitorFeatureCard(
-            br.dev.celularremoto.R.drawable.ic_remote_camera, "Câmera ao vivo",
-            if (cameraRunning) "Prévia visível; a transmissão para ao sair da câmera." else
-                "Abre a câmera localmente, com permissão do Android.",
-            if (cameraRunning) "Ativa" else "Desativada", if (cameraRunning) "active" else "neutral",
-            "Abrir câmera"
-        ) {
-            showAppConfirm("Compartilhar câmera ao vivo?",
-                "A câmera ficará aberta somente enquanto a tela de câmera estiver visível neste telefone. Um controlador pareado poderá ver quadros JPEG da câmera frontal ou traseira. Não há áudio ou gravação no monitorado. Voltar ou bloquear a tela interrompe a captura.",
-                confirmText = "Abrir câmera") {
-                startActivity(Intent(this, CameraShareActivity::class.java))
-            }
-        })
-        gap(9)
         val photoArmed = br.dev.celularremoto.service.PhotoReadyService.armed
-        content.addView(monitorFeatureCard(
-            br.dev.celularremoto.R.drawable.ic_remote_camera, "Fotografia sob demanda",
-            if (photoArmed) "Pronta para solicitações pontuais autorizadas; notificação visível." else
-                "Prepare uma vez no aparelho para permitir fotografias remotas.",
-            if (photoArmed) "Preparada" else "Desarmada", if (photoArmed) "active" else "warning",
-            if (photoArmed) "Gerenciar" else "Preparar foto"
-        ) {
-            startActivity(Intent(this, RemotePhotoSetupActivity::class.java))
-        })
+        val captures = listOf(
+            compactActionTile(br.dev.celularremoto.R.drawable.ic_monitor,
+                "Tela", if (ScreenFrameStore.sharing) "Em transmissão" else "Exige autorização por sessão",
+                selected = ScreenFrameStore.sharing) {
+                if (ScreenFrameStore.sharing) {
+                    ScreenShareService.stop(this)
+                    handler.postDelayed({ if (active && mode == 0) render() }, 300L)
+                } else {
+                    showAppConfirm("Compartilhar a tela?",
+                        "O aparelho controlador pareado poderá ver o que aparecer nesta tela, inclusive informações privadas. " +
+                        "O Android solicitará sua autorização para a sessão. Sem gravação. Toque e áudio só funcionam se habilitados separadamente em Configurações. A sessão permanece ativa durante desconexões até você parar ou o Android encerrar.",
+                        confirmText = "Autorizar captura") {
+                        val manager = getSystemService(MediaProjectionManager::class.java)
+                        startActivityForResult(manager.createScreenCaptureIntent(), screenCaptureRequest)
+                    }
+                }
+            },
+            compactActionTile(br.dev.celularremoto.R.drawable.ic_remote_camera,
+                "Câmera", if (cameraRunning) "Ativa" else "Prévia iniciada localmente",
+                selected = cameraRunning) {
+                showAppConfirm("Compartilhar câmera ao vivo?",
+                    "A câmera ficará aberta somente enquanto a tela de câmera estiver visível neste telefone. Um controlador pareado poderá ver quadros JPEG da câmera frontal ou traseira. Não há áudio ou gravação no monitorado. Voltar ou bloquear a tela interrompe a captura.",
+                    confirmText = "Abrir câmera") {
+                    startActivity(Intent(this, CameraShareActivity::class.java))
+                }
+            },
+            compactActionTile(br.dev.celularremoto.R.drawable.ic_remote_camera,
+                "Foto", if (photoArmed) "Fotografia preparada" else "Armar com consentimento local",
+                selected = photoArmed) {
+                startActivity(Intent(this, RemotePhotoSetupActivity::class.java))
+            }
+        )
+        val capturePanel = panel(9).apply { background = shape(surface, 16, true) }
+        compactActionGrid(capturePanel, captures)
+        sectionGap(capturePanel, 7)
+        capturePanel.addView(label(
+            "Tela: ${if (ScreenFrameStore.sharing) "compartilhando" else "parada"} · " +
+            "Câmera: ${if (cameraRunning) "ativa" else "parada"} · " +
+            "Foto: ${if (photoArmed) "preparada" else "desarmada"}",
+            11f, muted = true).apply { maxLines = 3; setPadding(dp(2), 0, dp(2), 0) })
+        content.addView(capturePanel)
+        gap(5)
+        content.addView(label("Tela e câmera exigem autorização local; o controlador não pode ativá-las sozinho.",
+            10.5f, muted = true))
     }
     gap(12)
     if (enabled && running) renderIncomingAccess()
@@ -160,17 +161,13 @@ internal fun MainActivity.renderMonitor() {
 /** Event-driven on authenticated requests, plus timeout refresh for disconnected clients. */
 private fun MainActivity.renderIncomingAccess() {
     val peers = AuthenticatedAccess.recent()
-    val card = panel(13)
-    card.addView(iconSectionHeader(br.dev.celularremoto.R.drawable.ic_shield,
-        "Acessos autenticados", "Atividade recente, não conexão permanente"))
-    sectionGap(card, 10)
+    val card = panel(10).apply { background = shape(surface, 16, true) }
+    card.addView(compactSectionTitle("Acessos autenticados",
+        if (peers.isEmpty()) "Aguardando consultas" else "${peers.size} recente(s)"))
+    sectionGap(card, 6)
     if (peers.isEmpty()) {
-        card.addView(statePill("Aguardando consultas"))
-        card.addView(label("Nenhum acesso autenticado nos últimos 45 segundos.", 11f, muted = true))
+        card.addView(label("Nenhum acesso autenticado nos últimos 45 s. Não há socket permanente.", 11f, muted = true))
     } else {
-        card.addView(statePill(
-            if (peers.size == 1) "1 aparelho recente" else "${peers.size} aparelhos recentes", "active"
-        ))
         peers.forEach { peer ->
             sectionGap(card, 6)
             val line = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }

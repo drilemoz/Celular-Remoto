@@ -141,7 +141,7 @@ assert 'Conectar novo aparelho' in ui and 'Meus aparelhos' in ui
 assert 'Última resposta:' in ui and 'item.lastSuccessMs > 0L' in ui
 assert 'showHomeSavedDeviceOptions(item)' in ui and 'returnToChooser = false' in ui
 assert 'Monitoramento' in ui and 'navigateMainTab(0)' in ui
-assert 'val columns = LinearLayout(this)' in ui and 'iconMetric("IP da rede"' in ui
+assert 'val networkLine = LinearLayout(this)' in ui and 'preferredLocalAddress()' in ui and 'compactActionGrid(actions, actionTiles)' in ui
 assert 'addCompact("Gerar QR"' in ui and 'addCompact("Mostrar info"' in ui and 'addCompact("Interromper"' in ui
 assert 'showMyConnectionInfo()' in ui and 'FLAG_SECURE' in ui
 assert 'startServiceExplicitly()' in ui and 'stopService(Intent(this, MonitorService::class.java))' in ui
@@ -313,7 +313,7 @@ for function in ['iconTile(', 'iconMenuRow(', 'iconSectionHeader(', 'iconMetric(
 assert 'panel(8)' in home and 'R.drawable.ic_phone' in home and 'showHomeSavedDeviceOptions(item)' in home and 'connectSavedDevice(item)' in home
 assert 'Conectar novo aparelho' in home and 'showConnectionChooser()' in home
 assert 'addCompact("Gerar QR"' in monitor and 'addCompact("Mostrar info"' in monitor and 'addCompact("Interromper"' in monitor
-assert 'iconMetric("IP da rede"' in monitor and 'SettingsStore.setMonitorEnabled(this, false)' in monitor
+assert 'preferredLocalAddress()' in monitor and 'SettingsStore.setMonitorEnabled(this, false)' in monitor
 assert 'renderSettingsModule()' in settings_ui and 'iconMenuRow(R.drawable.ic_sim' in settings_ui
 assert 'iconMetric("Porta TCP"' in settings_ui and 'fillAppearanceSettings(' in settings_ui
 assert 'iconTile(R.drawable.ic_qr, "QR Code"' in pairing_ui and 'iconTile(R.drawable.ic_phone, "Manual"' in pairing_ui
@@ -832,7 +832,7 @@ for token in ['fun percentage(', 'fun state(', 'fun powerSource(', 'fun showChar
     assert token in telemetry59, 'alpha.59: sem telemetria ' + token
 for token in ['ACTION_BATTERY_CHANGED', 'BatteryManager.EXTRA_STATUS', 'BatteryManager.EXTRA_PLUGGED', 'BatteryTelemetry.percentage', 'BatteryTelemetry.state', 'BatteryTelemetry.powerSource', '"chargingIndicator"', '"charging"', '"full"']:
     assert token in battery59, 'alpha.59: snapshot sem ' + token
-assert 'val state = battery.optString("state")' in ui59 and 'battery.optBoolean("chargingIndicator"' in ui59 and '⚡' in ui59
+assert 'val state = battery.optString("state")' in ui59 and 'battery.optBoolean("chargingIndicator"' in ui59 and 'compactTelemetryTile(if (charging)' in ui59
 assert 'R.drawable.ic_battery_charging' in ui59
 plain_icon = (root / 'app/src/main/res/drawable/ic_battery.xml').read_text()
 charging_icon = (root / 'app/src/main/res/drawable/ic_battery_charging.xml').read_text()
@@ -1437,12 +1437,12 @@ assert 'internal fun MainActivity.statePill(' in components101
 assert 'internal fun MainActivity.monitorFeatureCard(' in components101
 assert 'Aguardando primeira resposta' in home101 and 'Última resposta ·' in home101
 assert 'Última resposta ·' in home101
-assert 'monitorFeatureCard(' in monitor101 and monitor101.count('monitorFeatureCard(') == 3
+assert monitor101.count('compactActionTile(br.dev.celularremoto.R.drawable.') >= 3 and 'compactActionGrid(capturePanel, captures)' in monitor101
 assert 'ScreenShareService.stop(this)' in monitor101
 assert 'manager.createScreenCaptureIntent()' in monitor101
 assert 'showAppConfirm("Compartilhar câmera ao vivo?"' in monitor101
 assert 'RemotePhotoSetupActivity::class.java' in monitor101
-assert 'Atividade recente, não conexão permanente' in monitor101
+assert 'Não há socket permanente.' in monitor101
 assert 'badge = if (hasUsage && hasWifi)' in monitor101
 print('PASSOU: alpha.101 Home/Monitorado com estados claros, consentimento e parada preservados.')
 
@@ -1691,3 +1691,20 @@ assert "compactActionGrid(parent, tiles)" in remote118 and remote118.count('acti
 assert "compactActionGrid(actions, actionTiles)" in monitor118 and "ScreenShareService.stop(this)" in monitor118 and 'showAppConfirm("Compartilhar câmera ao vivo?"' in monitor118, "Consentimentos locais do Monitorado alterados"
 assert "renderVersionHistory" in news118 and "Histórico completo" in news118 and "markNewsSeen" in news118, "Novidades compactas sem historico/acusacao"
 print('PASSOU: alpha.118 design responsivo, navegação, busca, 12 acoes e segurança preservadas')
+
+# Alpha.119: controller telemetry and local capture are compact without changing consent.
+telemetry119 = (ui_root / 'CompactDashboardUi.kt').read_text(encoding='utf8')
+monitor119 = (ui_root / 'MonitorScreenUi.kt').read_text(encoding='utf8')
+controller119 = (ui_root / 'RemoteDashboardUi.kt').read_text(encoding='utf8')
+connection119 = (ui_root / 'ConnectionScreenUi.kt').read_text(encoding='utf8')
+physical119 = (ui_root / 'RemotePhysicalControlsUi.kt').read_text(encoding='utf8')
+assert 'minimumHeight = dp(84)' in telemetry119 and 'contentDescription = "$title: $value. $detail"' in telemetry119
+assert controller119.count('compactTelemetryTile(') >= 6 and 'compactActionGrid(container, metrics)' in controller119
+assert 'Dados armazenados.' in controller119 and '12' in controller119
+assert 'compactActionGrid(capturePanel, captures)' in monitor119 and 'Foto: ${if (photoArmed)' in monitor119
+assert 'manager.createScreenCaptureIntent()' in monitor119 and 'showAppConfirm("Compartilhar câmera ao vivo?"' in monitor119
+assert 'RemotePhotoSetupActivity::class.java' in monitor119 and 'ScreenShareService.stop(this)' in monitor119
+assert 'compactSectionTitle("Acessos autenticados"' in monitor119 and 'AuthenticatedAccess.recent()' in monitor119
+assert all(x in connection119 for x in ['actionButton("Atualizar")', 'actionButton("Diagnóstico")', 'actionButton("Detalhes")'])
+assert 'remoteConnection.deviceControl(host, action, seconds)' in physical119
+print('PASSOU: alpha.119 controles/telemetria compactos; consentimentos e callbacks preservados')

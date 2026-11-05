@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Interface mais compacta" to "Nova hierarquia visual, cores de contraste melhorado e espaços menores. Os dados e as autorizações continuam como antes.",
-        "Início e comandos" to "Aparelhos em linhas compactas e atalhos em grade adaptativa de até 3 colunas no celular. Nenhuma ação remota é iniciada automaticamente.",
-        "Configurações mais claras" to "Seis categorias e pesquisa. O histórico de mudanças está separado desta janela para evitar rolagem extensa."
+        "Controlar mais direto" to "Bateria, temperatura e rede aparecem num painel mais compacto, sem perder a origem ou os detalhes da última consulta autenticada.",
+        "Monitorado com atalhos" to "Tela, câmera e foto agora ficam no mesmo painel, com estados resumidos e autorização local preservada para cada recurso.",
+        "Ações e diálogos" to "Os 12 comandos remotos continuam disponíveis; acesso autenticado, conexão e controles de som/lanterna ocupam menos espaço."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -43,6 +43,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Design compacto inicial" to "A alpha.118 modernizou Início, navegação, categorias de Ajustes e a organização geral das telas em grades adaptativas.",
         "Estabilidade da conexão" to "Em Controlar ou Configurações, acompanhe latência, tentativas autenticadas, períodos sem medição, falhas e recuperação por aparelho.",
         "Heartbeat e reconexão" to "Nova sonda leve e cifrada, tentativas com espera progressiva e busca apenas em endereços salvos com a mesma chave. Segundo plano pode ser ativado nas configurações.",
         "Correção do build 9" to "A compilação Kotlin passou e 209 dos 210 testes foram aprovados. O teste de versão agora consulta o BuildConfig gerado pelo Gradle, sem exigir o número antigo alpha.112.",

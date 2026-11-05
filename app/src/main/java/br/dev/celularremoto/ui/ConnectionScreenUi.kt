@@ -21,14 +21,14 @@ internal fun MainActivity.renderController() {
         ?.takeIf { remoteConnection.cachedHost == host && it.isNotBlank() }
     val titleText = if (saved?.customName == true) saved.name
         else remoteName ?: saved?.name ?: "Nenhum aparelho selecionado"
-    val card = panel(14).apply { background = shape(fieldColor, 22) }
+    val card = panel(10).apply { background = shape(fieldColor, 17) }
     val heading = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     val phone = LinearLayout(this).apply {
         gravity = Gravity.CENTER
         background = shape(surface, 15)
         addView(vectorIcon(br.dev.celularremoto.R.drawable.ic_phone, 25, ink))
     }
-    heading.addView(phone, LinearLayout.LayoutParams(dp(48), dp(48)))
+    heading.addView(phone, LinearLayout.LayoutParams(dp(42), dp(42)))
     val names = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(11), 0, 0, 0) }
     currentDeviceTitle = label(titleText, 16f, strong = true).apply {
         maxLines = 2
@@ -72,19 +72,19 @@ internal fun MainActivity.renderController() {
         maxLines = 3
     }
     card.addView(currentUpdated)
-    sectionGap(card, 12)
+    sectionGap(card, 8)
     val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-    actions.addView(actionButton("⟳  Atualizar") { refreshRemote(silent = false) }.apply {
+    actions.addView(actionButton("Atualizar") { refreshRemote(silent = false) }.apply {
         textSize = 13.5f
         background = shape(surface, 15)
     }, LinearLayout.LayoutParams(0, dp(48), 1f))
     actions.addView(View(this), LinearLayout.LayoutParams(dp(8), 1))
-    actions.addView(actionButton("◉  Diagnóstico") { openConnectionDiagnostics() }.apply {
+    actions.addView(actionButton("Diagnóstico") { openConnectionDiagnostics() }.apply {
         textSize = 12.5f
         background = shape(surface, 15)
     }, LinearLayout.LayoutParams(0, dp(48), 1f))
     actions.addView(View(this), LinearLayout.LayoutParams(dp(8), 1))
-    actions.addView(actionButton("ⓘ  Detalhes") {
+    actions.addView(actionButton("Detalhes") {
         val current = remoteConnection.cached?.takeIf { remoteConnection.cachedHost == host }
         if (current != null) showRemoteDetailsDialog(current)
         else showAppNotice("Detalhes", "Atualize o aparelho para obter as informações remotas.")
@@ -94,7 +94,7 @@ internal fun MainActivity.renderController() {
     }, LinearLayout.LayoutParams(0, dp(48), 1f))
     card.addView(actions)
     content.addView(card)
-    gap(15)
+    gap(9)
     resultBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     content.addView(resultBox)
     updateConnectionLabels()

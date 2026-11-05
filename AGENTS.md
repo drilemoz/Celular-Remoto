@@ -1,3 +1,11 @@
+# Regras da alpha.119 — Controlar e Monitorado compactos (04/11/2026)
+
+- Base alpha.118. Versão obrigatória **0.1.0-alpha.119** e `versionCode 119`. Próxima alteração será alpha.120/120, com Gradle, `AppVersion`, README, CHANGELOG, RELEASE_NOTES, docs e Novidades sincronizados.
+- O painel Controlar utiliza indicadores compactos para bateria, temperatura e rede. Nunca remover detalhes via toque, hora da resposta autenticada, status de cache ou diagnóstico da rede.
+- O Monitorado mostra três atalhos de Tela, Câmera e Foto: MediaProjection exige consentimento do Android por sessão, câmera só inicia localmente após confirmação, e fotografia deve ser preparada localmente. Estados e ação de parar precisam permanecer visíveis.
+- Preservar 12 ações remotas, TLS/pareamento AES-GCM, compatibilidade entre versões, chaves, notificações, bateria, atualizador assinado, um único serviço e um único workflow. Nenhuma operação remota nova.
+- Manter botões acionáveis com mínimo 48dp, rotulagem acessível e grade que se adapta à fonte ampliada. Validar build Android real e testes físicos em 320/360/393dp antes de afirmar APK aprovado.
+
 # Regras da alpha.118 — reformulação visual (04/11/2026)
 
 - Base: alpha.117, nova versão **0.1.0-alpha.118** e `versionCode 118`. Próxima alteração obrigatoriamente alpha.119/119. Mantenha Gradle, `AppVersion`, README, CHANGELOG, RELEASE_NOTES, docs e tela Novidades sincronizados.
