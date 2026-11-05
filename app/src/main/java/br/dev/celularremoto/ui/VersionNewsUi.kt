@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Atualização remota acompanhada" to "Acompanhe download do monitorado por até 3 minutos com status cifrado, percentual e indicação de autorização local do instalador.",
-        "Recuperação e cancelamento" to "Cancele downloads pendentes localmente ou no monitorado autorizado; falhas permitem nova tentativa sem alterar o APK instalado.",
-        "Instalação protegida" to "O APK continua exigindo hash, pacote, versão e certificado válidos. Instalar só pelo toque local e confirmação oficial do Android."
+        "Detalhes copiáveis" to "Toque nos campos disponíveis, inclusive IP, Wi-Fi, armazenamento, bateria e modelo, para copiar apenas o valor selecionado.",
+        "Relatório completo" to "Copie os dados realmente informados por seção; o resumo técnico curto continua disponível. Campos não compartilhados não são incluídos.",
+        "Número com consentimento" to "Se o monitorado compartilhar o número e o Android fornecê-lo, ele poderá ser copiado; copiar relatório com número exige confirmação."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -45,6 +45,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Atualizações locais e remotas (alpha.132)" to "Acompanhamento remoto de downloads, cancelamento e retentativa autenticados; instalação continua com autorização local no Android.",
         "Foto remota em um passo (alpha.131)" to "Preparação local da sessão de fotografia e consulta autenticada de prontidão no controlador, sem câmera aberta continuamente.",
         "Bateria local independente (alpha.130)" to "Coleta contínua local opt-in com a tela apagada, sem abrir servidor nem duplicar a rotina quando Monitorado está ativo.",
         "Continuidade e recuperação (alpha.129)" to "Inícios repetidos não recriam agendas; a rede padrão e o registro de continuidade melhoram o diagnóstico.",

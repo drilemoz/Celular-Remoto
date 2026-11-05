@@ -1,3 +1,11 @@
+# Celular Remoto v0.1.0-alpha.133 — cópia individual e relatório completo em Detalhes (05/11/2026)
+
+- Base alpha.132. Próxima versão alpha.134/versionCode 134. Toda alteração sincroniza Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, Novidades, testes e validações.
+- Detalhes do aparelho: todos os campos disponíveis dos tiles e linhas individuais aceitam toque para copiar; ícone de cópia visível e descrição acessível. Valores ausentes/bloqueados não são copiados. Relatório completo reúne os campos realmente disponíveis por seção; resumo técnico compacto antigo permanece.
+- Número da linha: compartilhar APENAS com `sharePhoneNumber` explicitamente ativado no próprio monitorado e permissão READ_PHONE_NUMBERS concedida. Android 13+ usa `SubscriptionManager.getPhoneNumber`, Android 8–12 consulta `TelephonyManager.line1Number` com permissão. Número pode continuar indisponível por operadora/Android. Não criar campo persistido, coleta contínua, solicitação automática ou novo endpoint.
+- Clipboard é ação local explícita no controlador, marcado sensível em Android 13+. Relatório que incluir telefone pede confirmação adicional; não registrar dados pessoais em logs. A cópia do número pode continuar acessível a apps que leiam o clipboard no aparelho; não alegar proteção completa.
+- Não alterar WIRE_COMPAT=alpha.111, criptografia, autenticação, 12 comandos, atualizações, permissões de câmera/SMS ou único workflow. Testes isolados e parser não equivalem a build Android; executar CI e teste físico.
+
 # Celular Remoto v0.1.0-alpha.132 — atualização local/remota robusta (05/11/2026)
 
 - Base alpha.131, próxima versão alpha.133 / versionCode 133. Sincronizar Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, Novidades e testes em toda alteração.

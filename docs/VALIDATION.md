@@ -1,3 +1,12 @@
+# Validação mais recente — alpha.133 (05/11/2026)
+
+- [x] Verificador estrutural completo, incluindo consentimento do número e cópia por campo.
+- [x] 274 fontes Kotlin analisadas por parser PSI, sem erros de sintaxe.
+- [x] Quatro testes isolados de `DetailCopyPolicy` aprovados; 56 XMLs e um workflow YAML válidos.
+- [ ] Compilação Android/Gradle e testes instrumentados no dispositivo pendentes.
+- [ ] Copiar campos e número em dois aparelhos, fonte ampliada, Android 8–16, permissões desligadas e dual-SIM pendentes.
+- Veja `docs/VALIDATION_ALPHA133.md`.
+
 ## Alpha.126 — alertas locais/remotos (05/11/2026)
 
 - [x] Política isolada de confirmação/retentativa de eventos (canal/permissão bloqueados não confirmam evento).

@@ -1,3 +1,10 @@
+## 0.1.0-alpha.133 (versionCode 133) | 05/11/2026
+
+- Tela Detalhes do aparelho: tocar em qualquer valor disponível (incluindo Wi-Fi, IP, SSID, RSSI, armazenamento, apps, bateria, Android e operadoras) copia só esse valor. Ícones de cópia, alvos acessíveis e textos longos em até cinco linhas.
+- Botões separados para resumo técnico e relatório completo dos valores realmente disponíveis, agrupados por seção; não incluir placeholders como "Não compartilhado".
+- Número de linha é copiável se o monitorado autorizou voluntariamente o compartilhamento e o Android retornou o número. Leitura opcional compatível também com Android 8–12, sem coleta ou permissão extra; no Android 13+ permanece SubscriptionManager.
+- Clipboards sinalizados como sensíveis no Android 13+ e confirmação antes de copiar relatório contendo número; sem alteração no tráfego autenticado, WIRE_COMPAT, outras autorizações ou workflow. Build Android e testes físicos pendentes.
+
 ## 0.1.0-alpha.132 (versionCode 132) | 05/11/2026
 
 - Reforçado atualizador remoto autenticado: estado estruturado, percentual de download, autorização da origem APK no monitorado e identificação de instalação exclusivamente local.

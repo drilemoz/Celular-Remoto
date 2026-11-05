@@ -1,6 +1,7 @@
 package br.dev.celularremoto.ui
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipDescription
 import android.content.ClipboardManager
@@ -85,6 +86,21 @@ class RemoteDetailsActivity : Activity() {
         SimpleDateFormat("dd/MM HH:mm:ss", Locale.getDefault()).format(Date(value))
     } else "Não disponível"
 
+    /** Clipboard is global to the device; keep Android 13+ previews redacted for all fields. */
+    private fun copyDetail(label: String, value: String) {
+        if (!DetailCopyPolicy.isCopyable(value)) return
+        val clip = ClipData.newPlainText("Celular Remoto: $label", value.trim())
+        if (Build.VERSION.SDK_INT >= 33) {
+            clip.description.extras = PersistableBundle().apply {
+                putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
+            }
+        }
+        (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
+        if (Build.VERSION.SDK_INT < 33) {
+            android.widget.Toast.makeText(this, "$label copiado", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(if (dark) android.R.style.Theme_Material_NoActionBar else android.R.style.Theme_Material_Light_NoActionBar)
         super.onCreate(savedInstanceState)
@@ -135,7 +151,20 @@ class RemoteDetailsActivity : Activity() {
         root.addView(readingCard)
         root.addView(gap(12))
 
+        val detailFields = mutableListOf<DetailCopyPolicy.Field>()
+        var currentSection = ""
+        fun record(label: String, value: String) {
+            if (DetailCopyPolicy.isCopyable(value)) {
+                detailFields += DetailCopyPolicy.Field(currentSection, label, value.trim())
+            }
+        }
+        fun copyGlyph(): ImageView = icon(R.drawable.ic_copy, 19, teal).apply {
+            // Whole row/tile is the 48dp touch target; glyph is only a visual affordance.
+            layoutParams = LinearLayout.LayoutParams(dp(38), dp(38))
+            setPadding(dp(9), dp(9), dp(9), dp(9))
+        }
         fun section(iconId: Int, title: String, compose: (LinearLayout) -> Unit) {
+            currentSection = title
             val card = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 background = drawable(cardBg, 22, true)
@@ -154,27 +183,60 @@ class RemoteDetailsActivity : Activity() {
         fun cell(label: String, value: String): LinearLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             background = drawable(tileBg, 14)
-            setPadding(dp(12), dp(11), dp(8), dp(12))
+            setPadding(dp(12), dp(11), dp(6), dp(12))
+            minimumHeight = dp(60)
             addView(text(label, 10.5f, muted = true))
             addView(gap(7))
-            addView(text(value, 13f, bold = true).apply { maxLines = 3 })
+            val valueLine = LinearLayout(this@RemoteDetailsActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+            }
+            valueLine.addView(text(value, 13f, bold = true).apply {
+                maxLines = 5
+            }, LinearLayout.LayoutParams(0, -2, 1f))
+            if (DetailCopyPolicy.isCopyable(value)) {
+                record(label, value)
+                valueLine.addView(copyGlyph())
+                isClickable = true
+                isFocusable = true
+                contentDescription = "Copiar $label: $value"
+                setOnClickListener { copyDetail(label, value) }
+            }
+            addView(valueLine)
         }
         fun pair(parent: LinearLayout, first: Pair<String, String>, second: Pair<String, String>) {
-            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-            row.addView(cell(first.first, first.second), LinearLayout.LayoutParams(0, -2, 1f).apply {
+            val cells = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            cells.addView(cell(first.first, first.second), LinearLayout.LayoutParams(0, -2, 1f).apply {
                 rightMargin = dp(8)
             })
-            row.addView(cell(second.first, second.second), LinearLayout.LayoutParams(0, -2, 1f))
-            parent.addView(row)
+            cells.addView(cell(second.first, second.second), LinearLayout.LayoutParams(0, -2, 1f))
+            parent.addView(cells)
             parent.addView(gap(8))
         }
         fun row(parent: LinearLayout, key: String, value: String) {
-            val line = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-            line.addView(text(key, 12f, muted = true), LinearLayout.LayoutParams(0, -2, 1f))
-            line.addView(text(value, 12f, bold = true).apply { gravity = Gravity.END; maxLines = 3 },
-                LinearLayout.LayoutParams(0, -2, 1.1f))
+            val line = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                minimumHeight = dp(48)
+            }
+            line.addView(text(key, 12f, muted = true).apply {
+                maxLines = 5
+            }, LinearLayout.LayoutParams(0, -2, 0.95f))
+            line.addView(text(value, 12f, bold = true).apply {
+                gravity = Gravity.END
+                maxLines = 5
+            }, LinearLayout.LayoutParams(0, -2, 1.05f))
+            if (DetailCopyPolicy.isCopyable(value)) {
+                record(key, value)
+                line.addView(copyGlyph())
+                line.isClickable = true
+                line.isFocusable = true
+                line.contentDescription = "Copiar $key: $value"
+                line.setBackgroundResource(android.R.drawable.list_selector_background)
+                line.setOnClickListener { copyDetail(key, value) }
+            }
             parent.addView(line)
-            parent.addView(gap(12))
+            parent.addView(gap(6))
         }
         fun decimal(data: JSONObject?, key: String, unit: String, digits: Int = 1): String =
             if (data == null || !data.has(key) || data.isNull(key)) "Não disponível"
@@ -270,12 +332,16 @@ class RemoteDetailsActivity : Activity() {
             row(card, "Tempo ligado", if (uptime > 0L) "${uptime / 3_600_000} h ${(uptime / 60_000) % 60} min" else "Não disponível")
         }
 
+        val actionStyle: (Button) -> Unit = { button ->
+            button.textSize = 13.5f
+            button.isAllCaps = false
+            button.setTextColor(if (dark) Color.rgb(14, 22, 35) else Color.WHITE)
+            button.background = drawable(teal, 16)
+            button.minimumHeight = dp(51)
+        }
         val copyButton = Button(this).apply {
             text = "Copiar resumo técnico"
-            textSize = 13.5f
-            isAllCaps = false
-            setTextColor(if (dark) Color.rgb(14, 22, 35) else Color.WHITE)
-            background = drawable(teal, 16)
+            actionStyle(this)
             setOnClickListener {
                 val summary = buildString {
                     append(device).append("\nAtualização: ").append(time(received))
@@ -285,18 +351,32 @@ class RemoteDetailsActivity : Activity() {
                     append("\nArmazenamento: ").append(bytes(system, "storageTotalBytes"))
                     append("\nAndroid: ").append(labelValue(system, "androidVersion"))
                 }
-                val clip = ClipData.newPlainText("Celular Remoto: resumo", summary)
-                if (Build.VERSION.SDK_INT >= 33) {
-                    clip.description.extras = PersistableBundle().apply {
-                        putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
-                    }
-                }
-                (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
-                android.widget.Toast.makeText(this@RemoteDetailsActivity, "Resumo copiado", android.widget.Toast.LENGTH_SHORT).show()
+                copyDetail("Resumo técnico", summary)
             }
         }
         root.addView(copyButton, LinearLayout.LayoutParams(-1, dp(51)))
+        root.addView(gap(8))
+        val copyAll = Button(this).apply {
+            text = "Copiar todos os dados disponíveis"
+            actionStyle(this)
+            setOnClickListener {
+                val report = DetailCopyPolicy.report(device, time(received), detailFields)
+                if (report.isBlank()) return@setOnClickListener
+                val includesPhone = detailFields.any { it.section == "Rede móvel e chip" && it.label == "Número da linha" }
+                if (includesPhone) {
+                    AlertDialog.Builder(this@RemoteDetailsActivity)
+                        .setTitle("Copiar dados com número de telefone?")
+                        .setMessage("O relatório inclui o número autorizado no monitorado. A área de transferência pode ser acessada por outros aplicativos; compartilhe com cuidado.")
+                        .setNegativeButton("Cancelar", null)
+                        .setPositiveButton("Copiar") { _, _ -> copyDetail("Relatório do aparelho", report) }
+                        .show()
+                } else copyDetail("Relatório do aparelho", report)
+            }
+        }
+        root.addView(copyAll, LinearLayout.LayoutParams(-1, dp(51)))
         root.addView(gap(10))
+        root.addView(text("Toque em um valor com ícone de cópia para copiá-lo. Número da linha: é necessário autorizar o compartilhamento no aparelho monitorado; a operadora pode não fornecê-lo.", 11f, muted = true))
+        root.addView(gap(8))
         root.addView(text("Dados disponíveis apenas enquanto o aparelho monitorado responder. Informações não acessíveis são indicadas explicitamente.", 11f, muted = true))
     }
 }

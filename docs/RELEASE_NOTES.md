@@ -1,3 +1,11 @@
+# Celular Remoto v0.1.0-alpha.133 — cópia de detalhes e número da linha
+
+- Toque no valor com ícone de cópia em Detalhes do aparelho para copiar informações disponíveis individualmente; campos não informados ou não compartilhados permanecem não copiáveis.
+- Mantido o botão Resumo técnico, adicionado Relatório completo para copiar todos os dados efetivamente recebidos do aparelho pareado. Se houver número autorizado, há confirmação adicional antes de copiar o relatório.
+- Para copiar o número da linha, habilitar o compartilhamento opcional no monitorado e conceder READ_PHONE_NUMBERS. Android 8–12 usa a API legada sob permissão, Android 13+ usa SubscriptionManager; a operadora pode não fornecer nenhum número.
+- Cópia local sinalizada como sensível para não mostrar prévia do Android 13+; a área de transferência não é um cofre. Criptografia, autenticação, atualização e controles anteriores preservados.
+- Compilação Gradle/Android e validação em aparelhos reais pendentes.
+
 # Celular Remoto v0.1.0-alpha.132 — atualizações local e remota reforçadas
 
 - Controlador pareado consulta etapa, percentual e necessidade de autorizar a instalação no celular monitorado. Após solicitação, pode acompanhar a transferência por 3 minutos, somente com a tela aberta.

@@ -8,7 +8,14 @@
 
 **Foto remota (alpha.131):** no monitorado, abra **Ativar + Foto** ou **Fotografia remota** e toque uma vez em **Ativar Monitorado e preparar câmera**; permissões Android continuam locais. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.132 / versionCode 132** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.133 / versionCode 133** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Copiar detalhes do aparelho e número da linha (alpha.133)
+
+- **Controlar → Detalhes do aparelho:** toque em qualquer campo com ícone de cópia, incluindo IP, SSID, RSSI, dados da bateria, operadora, armazenamento e sistema. Somente valores informados são copiáveis.
+- **Copiar resumo técnico** continua disponível; **Copiar todos os dados disponíveis** reúne todas as seções do snapshot autenticado, sem campos ocultos ou não compartilhados.
+- **Número da linha:** no monitorado, habilite **Ajustes → Número do chip** e conceda READ_PHONE_NUMBERS. Mesmo com autorização, algumas operadoras não fornecem o número ao Android; o app informa que está indisponível, sem inventar um valor. Android 8–12 usa TelephonyManager legado autorizado; Android 13+ usa SubscriptionManager.
+- O relatório com número pede confirmação adicional; Android 13+ oculta a prévia do clipboard sensível. **O clipboard pode ser lido por aplicativos locais**: compartilhe com cuidado. Nenhuma permissão, endpoint ou protocolo remoto novo foi criado.
 
 ## Atualização local e remota reforçada (alpha.132)
 

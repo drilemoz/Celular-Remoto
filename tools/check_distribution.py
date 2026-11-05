@@ -291,7 +291,8 @@ assert 'ActivityManager.MemoryInfo()' in device_reader
 assert 'put("wifiDetected"' in network and 'put("cellularDetected"' in network
 assert 'READ_PHONE_NUMBERS' in manifest and 'READ_PHONE_STATE' in manifest
 assert 'getBoolean("share_phone_number", false)' in settings
-assert 'if (optedIn && granted && Build.VERSION.SDK_INT >= 33)' in telephony_reader
+assert 'if (optedIn && granted)' in telephony_reader and 'Build.VERSION.SDK_INT >= 33' in telephony_reader
+assert 'telephony?.line1Number' in telephony_reader, 'Leitura legada precisa preservar permissão e consentimento'
 assert 'phoneNumberPermissionRequest ->' in main_ui
 assert 'SettingsStore.setSharePhoneNumber(this, false)' in ui
 assert 'R.drawable.ic_battery' in ui and 'R.drawable.ic_thermometer' in ui
@@ -1909,3 +1910,17 @@ assert 'beginRemoteUpdatePolling()' in remote132 and 'requestRemoteAppUpdate("st
 assert 'REMOTE_COOLDOWN_MS' in updater132 and 'UpdatePreferences.remoteRequests(context)' in updater132
 assert '"requiresLocalInstall", true' in updater132 and '"installOriginAllowed"' in updater132
 print('PASSOU: alpha.132 atualização autenticada, cancelamento, sincronização e instalação local')
+
+# alpha.133: copy is always an explicit action in authenticated details.
+copy133 = (root / "app/src/main/java/br/dev/celularremoto/ui/RemoteDetailsActivity.kt").read_text()
+tele133 = (root / "app/src/main/java/br/dev/celularremoto/core/TelephonyReader.kt").read_text()
+policy133 = (root / "app/src/main/java/br/dev/celularremoto/ui/DetailCopyPolicy.kt").read_text()
+assert 'copyDetail(label, value)' in copy133 and 'R.drawable.ic_copy' in copy133
+assert 'Copiar todos os dados disponíveis' in copy133 and 'Copiar resumo técnico' in copy133
+assert 'includesPhone' in copy133 and 'AlertDialog.Builder' in copy133
+assert 'ClipDescription.EXTRA_IS_SENSITIVE' in copy133
+assert 'numberAuthorized' in tele133 and 'if (optedIn && granted)' in tele133
+assert 'Build.VERSION.SDK_INT >= 33' in tele133 and 'telephony?.line1Number' in tele133
+assert 'fun isCopyable' in policy133 and 'fun report' in policy133
+assert (root / "app/src/test/java/br/dev/celularremoto/ui/DetailCopyPolicyTest.kt").is_file()
+print('PASSOU: alpha.133 cópia explícita, placeholders bloqueados e número somente autorizado')

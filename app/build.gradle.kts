@@ -19,8 +19,8 @@ android {
         applicationId = "br.dev.celularremoto"
         minSdk = 26
         targetSdk = 36
-        versionCode = 132
-        versionName = "0.1.0-alpha.132"
+        versionCode = 133
+        versionName = "0.1.0-alpha.133"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

@@ -27,10 +27,17 @@ object TelephonyReader {
         val granted = context.checkSelfPermission(Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED
         put("numberAuthorized", optedIn && granted)
         // Não coletar nem transmitir o número sem consentimento ativo neste aparelho.
-        if (optedIn && granted && Build.VERSION.SDK_INT >= 33) {
-            val manager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as? SubscriptionManager
-            val number = runCatching { manager?.getPhoneNumber(SubscriptionManager.getDefaultSubscriptionId()) }.getOrNull()
-            put("phoneNumber", number?.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+        if (optedIn && granted) {
+            val number = runCatching {
+                if (Build.VERSION.SDK_INT >= 33) {
+                    val manager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as? SubscriptionManager
+                    manager?.getPhoneNumber(SubscriptionManager.getDefaultSubscriptionId())
+                } else {
+                    @Suppress("DEPRECATION")
+                    telephony?.line1Number
+                }
+            }.getOrNull()?.trim()
+            put("phoneNumber", number?.takeIf { it.isNotEmpty() } ?: JSONObject.NULL)
         } else {
             put("phoneNumber", JSONObject.NULL)
         }
