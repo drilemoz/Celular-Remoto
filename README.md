@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.130
+# Celular Remoto v0.1.0-alpha.131
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -6,9 +6,16 @@
 
 # Celular Remoto
 
-**Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
+**Foto remota (alpha.131):** no monitorado, abra **Ativar + Foto** ou **Fotografia remota** e toque uma vez em **Ativar Monitorado e preparar câmera**; permissões Android continuam locais. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.130 / versionCode 130** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.131 / versionCode 131** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Fotografia remota em um único fluxo (alpha.131)
+
+- No próprio monitorado, use **Monitorado → Ativar + Foto** (quando desativado) ou **Foto** (quando ativo). Na tela Fotografia remota, o botão ativa Monitorado se necessário, aguarda seu servidor e prepara a sessão de câmera enquanto a Activity está visível.
+- `CAMERA` e notificações (Android 13+) são solicitadas apenas se faltarem. Negar permissões impede preparar a sessão. A câmera não fica capturando em segundo plano: Camera2 abre somente para cada JPEG e fecha em seguida, sob comando de aparelho pareado.
+- No controlador, a tela de Fotografia consulta o estado autenticado uma vez ao abrir e ao tocar em **Verificar câmera no monitorado**. Estados sem sessão ativa orientam preparar localmente; versões anteriores sem campo de diagnóstico permitem tentativa manual.
+- Se Android encerrar a câmera, reiniciar o celular, interromper o app ou o usuário parar o serviço, será necessário novo toque local. Não há rearmamento remoto oculto, vídeo contínuo ou alteração no protocolo AES-GCM.
 
 ## Bateria contínua sem controle remoto (alpha.130)
 

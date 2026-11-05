@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Bateria independente" to "Ative a coleta contínua local sem iniciar compartilhamento remoto, na aba Bateria ou em Ajustes → Bateria local contínua.",
-        "Um coletor, dois modos" to "Quando Monitorado e Bateria estão autorizados, ambos usam a mesma agenda; nenhuma segunda conexão ou notificação permanente.",
-        "Retomada sem perder histórico" to "Ao parar Monitorado, a coleta local pode continuar. Desligar a coleta local não interrompe o servidor autorizado."
+        "Foto em um passo" to "No aparelho monitorado, toque em Ativar Monitorado e preparar câmera; autorizações Android continuam locais.",
+        "Estado no controlador" to "A tela Fotografia remota consulta a prontidão com resposta autenticada e informa quando falta preparar a sessão.",
+        "Foto sem vídeo contínuo" to "A câmera é aberta somente durante cada pedido de JPEG, liberada em seguida e nunca rearmada silenciosamente após encerrar."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -45,6 +45,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Bateria local independente (alpha.130)" to "Coleta contínua local opt-in com a tela apagada, sem abrir servidor nem duplicar a rotina quando Monitorado está ativo.",
         "Continuidade e recuperação (alpha.129)" to "Inícios repetidos não recriam agendas; a rede padrão e o registro de continuidade melhoram o diagnóstico.",
         "Conexão estável e WakeLock (alpha.128)" to "Diagnóstico de Doze e locks opcionais de CPU/Wi-Fi, desligados por padrão; liberação ao parar Monitorado.",
         "Preparação remota (alpha.127)" to "Diagnóstico de prontidão local/remota e autorizações individuais; acesso autenticado e permissões locais preservados.",

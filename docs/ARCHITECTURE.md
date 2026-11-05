@@ -1,4 +1,6 @@
-# Estado atual — alpha.130
+# Estado atual — alpha.131
+
+A alpha.131 preserva o serviço de fotografia `PhotoReadyService`, explicitamente iniciado por Activity visível: o botão local prepara Monitorado e câmera na sequência, enquanto o controlador consulta prontidão pelo snapshot cifrado existente. Sem serviço de câmera por comando remoto, sem captura ou polling contínuo e sem alteração de protocolo.
 
 A alpha.130 (base alpha.129) mantém `MonitorContinuityStore` (somente metadados locais, heartbeat de 2 min) para detectar recriações sem `onDestroy`/encerramento observado, sem atribuir causa. Reinícios redundantes do serviço não recriam agenda de coleta. A notificação usa tratamento de falhas e os eventos de rede observam apenas a rede padrão do Android; nenhum novo socket, serviço, wake lock ou permissão. Teste Android e dois aparelhos pendentes.
 
@@ -66,9 +68,9 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 O mesmo APK atende aos modos Monitorado, Bateria local contínua e Controle. MonitorService usa FGS connectedDevice no modo remoto e specialUse no modo bateria sem abrir o servidor TCP; as amostras são feitas pelo mesmo executor serial a cada 30 s, e apenas um ID de notificação é usado.
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.130` e `versionCode=130`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.131` e `versionCode=131`.
 
-- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.130.apk`.
+- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.131.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.
 - Com quatro Secrets, Gradle gera APK Release assinado e AAB. Sem Secrets, o arquivo é Debug de teste e não preserva necessariamente a assinatura entre execuções.
 - Releases são prévias, não substituem a futura revisão da Google Play e nem os ensaios reais.

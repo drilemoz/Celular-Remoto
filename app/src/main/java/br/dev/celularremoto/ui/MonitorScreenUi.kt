@@ -83,6 +83,9 @@ internal fun MainActivity.renderMonitor() {
             if (enabled) startServiceExplicitly() else requestStart()
         }
         addCompact("Mostrar info", br.dev.celularremoto.R.drawable.ic_info) { showMyConnectionInfo() }
+        addCompact("Ativar + Foto", br.dev.celularremoto.R.drawable.ic_remote_camera) {
+            startActivity(Intent(this, RemotePhotoSetupActivity::class.java))
+        }
     }
     compactActionGrid(actions, actionTiles)
     card.addView(actions)

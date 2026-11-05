@@ -1,3 +1,11 @@
+## 0.1.0-alpha.131 (versionCode 131) | 05/11/2026
+
+- Fotografia sob demanda: em **Monitorado → Ativar + Foto** ou **Foto**, um gesto local inicia Monitorado e arma a câmera na mesma tela; permissões do Android só são solicitadas quando faltarem.
+- Aguarda o servidor autenticado ficar disponível antes de iniciar o serviço de câmera (até 10 s), sem tentar iniciar câmera no segundo plano nem rearmar após parada.
+- A tela Foto no controlador consulta a prontidão uma vez ao abrir e por botão manual, sem polling; orienta quando o Android encerrou a sessão, quando falta permissão e quando o remoto não informa o estado.
+- Snapshot autenticado `readiness.photo` passa a informar status mais específico. O JPEG permanece único, criptografado, com câmera liberada ao final de cada captura; autorização local e notificação com Parar mantidas.
+- Compatibilidade WIRE_COMPAT alpha.111, as doze ações, bateria local independente, segurança e workflow único preservados. Build Android e aparelhos reais pendentes.
+
 ## 0.1.0-alpha.130 (versionCode 130) | 05/11/2026
 
 - Monitoramento contínuo de bateria com a tela apagada e sem necessidade de habilitar servidor Monitorado, mediante opt-in local separado.

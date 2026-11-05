@@ -49,14 +49,17 @@ class PhotoReadyService : Service() {
         @Volatile private var current: PhotoReadyService? = null
         @Volatile var armed: Boolean = false
             private set
+        @Volatile private var lastStatus = "○ Sessão desarmada · toque para preparar localmente."
+        fun statusMessage(): String = if (armed) "Câmera preparada; capturas apenas sob pedido autenticado." else lastStatus
 
-        fun stop(context: android.content.Context) {
+        fun stop(context: android.content.Context, reason: String = "○ Sessão interrompida no aparelho monitorado. Prepare a câmera localmente.") {
+            lastStatus = reason
             armed = false
             current = null
             runCatching { context.stopService(Intent(context, PhotoReadyService::class.java)) }
         }
         fun take(lens: String): PhotoResult {
-            val service = current ?: return PhotoResult(error = "Foto remota não armada. Abra a configuração no monitorado enquanto ele estiver disponível.")
+            val service = current ?: return PhotoResult(error = "Câmera não preparada ou sessão encerrada. No monitorado, abra Fotografia remota e toque em Preparar câmera.")
             return service.capture(lens)
         }
     }
@@ -80,6 +83,8 @@ class PhotoReadyService : Service() {
         if (intent?.action != ACTION_START || !SettingsStore.isMonitorEnabled(this) ||
             !MonitorService.isRunning ||
             checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            if (intent?.action != ACTION_STOP) lastStatus =
+                "○ Não foi possível preparar a câmera: verifique Monitorado e permissão CAMERA."
             stopSelf()
             return START_NOT_STICKY
         }
@@ -103,8 +108,10 @@ class PhotoReadyService : Service() {
             } else startForeground(NOTIFICATION_ID, note)
             current = this
             armed = true
+            lastStatus = "Câmera preparada. Captura somente sob solicitação autenticada."
             START_NOT_STICKY
-        } catch (_: Exception) {
+        } catch (ex: Exception) {
+            lastStatus = "○ Android recusou a sessão da câmera. Abra Fotografia remota neste aparelho."
             stopSelf()
             START_NOT_STICKY
         }
@@ -116,7 +123,8 @@ class PhotoReadyService : Service() {
         }
         if (!RemotePhotoPolicy.validLens(lens)) return PhotoResult(error = "Lente inválida.")
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            return PhotoResult(error = "Permissão de câmera revogada.")
+            stop(this, "○ Permissão CAMERA revogada. Autorize e prepare a sessão localmente.")
+            return PhotoResult(error = "Permissão de câmera revogada. Reative no monitorado.")
         }
         if (!busy.compareAndSet(false, true)) return PhotoResult(error = "Fotografia anterior ainda em andamento.")
         try {
@@ -126,7 +134,15 @@ class PhotoReadyService : Service() {
             if (br.dev.celularremoto.core.HealthAlertMonitor.protectionTriggered(this)) {
                 return PhotoResult(error = "Captura bloqueada pela proteção térmica.")
             }
-            return captureStillCamera2(lens)
+            val result = captureStillCamera2(lens)
+            if (result.error.startsWith("Android bloqueou a câmera")) {
+                lastStatus = "○ Android encerrou o acesso à câmera. Prepare a sessão localmente."
+                // Não insistir em captura sem autorização efetiva.
+                stopSelf()
+                armed = false
+                current = null
+            }
+            return result
         } finally { busy.set(false) }
     }
 
@@ -257,6 +273,8 @@ class PhotoReadyService : Service() {
     }
 
     override fun onDestroy() {
+        if (armed && current === this)
+            lastStatus = "○ Sessão de câmera encerrada pelo Android ou pelo aplicativo. Prepare localmente."
         if (current === this) current = null
         armed = false
         runCatching { thread.quitSafely() }

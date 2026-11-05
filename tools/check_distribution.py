@@ -1873,3 +1873,24 @@ assert 'WIRE_COMPAT' in (root / 'app/src/main/java/br/dev/celularremoto/transpor
 assert (root / 'app/src/test/java/br/dev/celularremoto/service/MonitorServiceModePolicyTest.kt').is_file()
 assert (root / 'docs/VALIDATION_ALPHA130.md').exists()
 print('PASSOU: alpha.130 bateria local opt-in, modo remoto exclusivo e única coleta/FGS')
+
+# alpha.131 — uma preparação local, prontidão cifrada e nenhuma abertura de câmera por comando remoto.
+photo_setup = (ui_root / "RemotePhotoSetupActivity.kt").read_text()
+photo_activity = (ui_root / "RemotePhotoActivity.kt").read_text()
+photo_svc = (root / "app/src/main/java/br/dev/celularremoto/service/PhotoReadyService.kt").read_text()
+remote_photo_policy = (root / "app/src/main/java/br/dev/celularremoto/core/RemotePhotoReadiness.kt").read_text()
+preparation = (root / "app/src/main/java/br/dev/celularremoto/core/RemotePreparation.kt").read_text()
+assert '"Ativar Monitorado e preparar câmera"' in photo_setup
+assert 'MonitorService.start(this)' in photo_setup and 'SecretVault.getOrCreateMonitorKey(this)' in photo_setup
+assert 'if (!preparing || !visible || isFinishing || isDestroyed)' in photo_setup
+assert 'requestPermissions(arrayOf(Manifest.permission.CAMERA)' in photo_setup
+assert 'waitUntilMonitorReady' in photo_setup and '10_000L' in photo_setup
+assert '"Ativar + Foto"' in module_ui['MonitorScreenUi.kt']
+assert 'RemoteClient.snapshot(host, key, this, method)' in photo_activity
+assert '"Verificar câmera no monitorado"' in photo_activity
+assert '"photo"' in preparation and 'PhotoReadyService.statusMessage()' in preparation
+assert 'captureStillCamera2(lens)' in photo_svc and 'session?.close()' in photo_svc
+assert 'START_NOT_STICKY' in photo_svc and 'startForeground(' in photo_svc
+assert 'State.UNKNOWN' in remote_photo_policy and 'canTryPhoto' in remote_photo_policy
+assert 'WIRE_COMPAT = "0.1.0-alpha.111"' in appver
+print('PASSOU: alpha.131 fotografia preparada localmente em um passo, diagnóstico cifrado e câmera sob demanda')

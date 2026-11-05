@@ -78,8 +78,18 @@ object RemotePreparation {
             }, "Exige opção local, Acessibilidade e sessão de tela ativa"),
             item("camera", "Câmera ao vivo", if (CameraFrameStore.isActive()) ready else if (cameraGranted) session else setup,
                 if (!cameraGranted) "Autorize Câmera no Android" else "Abra localmente a câmera para iniciar uma sessão"),
-            item("photo", "Fotografia sob demanda", if (PhotoReadyService.armed) ready else if (cameraGranted) session else setup,
-                "Preparação local explícita; não arma câmera remotamente"),
+            item("photo", "Fotografia sob demanda", when {
+                !monitorActive -> setup
+                PhotoReadyService.armed && cameraGranted -> ready
+                !cameraGranted -> setup
+                cameraGranted -> session
+                else -> setup
+            }, when {
+                !monitorActive -> "Monitorado inativo; preparar a câmera localmente ativa os dois modos"
+                PhotoReadyService.armed && cameraGranted -> "Câmera preparada; fotografias autenticadas com a tela apagada"
+                !cameraGranted -> "Permissão CAMERA pendente; autorize localmente"
+                else -> PhotoReadyService.statusMessage()
+            }),
             item("sound", "Alerta sonoro", if (SettingsStore.allowRemoteSound(context)) ready else off,
                 "Autorize separadamente em Som e lanterna"),
             item("torch", "Lanterna", if (SettingsStore.allowRemoteTorch(context) && cameraGranted) ready else if (SettingsStore.allowRemoteTorch(context)) setup else off,

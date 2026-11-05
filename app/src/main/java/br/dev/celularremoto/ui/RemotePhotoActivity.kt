@@ -27,6 +27,7 @@ import android.widget.TextView
 import android.widget.Toast
 import br.dev.celularremoto.core.PhotoPreviewPolicy
 import br.dev.celularremoto.core.RecentDevices
+import br.dev.celularremoto.core.RemotePhotoReadiness
 import br.dev.celularremoto.core.SettingsStore
 import br.dev.celularremoto.transport.RemoteClient
 import java.util.Locale
@@ -48,6 +49,11 @@ class RemotePhotoActivity : Activity() {
     private var pendingDocument: ByteArray? = null
     private var shareAfterDocument = false
     private var front = false
+    private var verifying = false
+    private var checkedOnOpen = false
+    private var paired = false
+    private var remoteReady = RemotePhotoReadiness.State.UNKNOWN
+    private lateinit var verify: Button
     private lateinit var photo: PhotoZoomView
     private lateinit var empty: TextView
     private lateinit var status: TextView
@@ -79,7 +85,8 @@ class RemotePhotoActivity : Activity() {
         parent.addView(container, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
     }
     private fun refreshActions() {
-        trigger.isEnabled = !taking && !saving
+        trigger.isEnabled = paired && !taking && !saving && RemotePhotoReadiness.canTryPhoto(remoteReady)
+        if (::verify.isInitialized) verify.isEnabled = !taking && !saving && !verifying
         lens.isEnabled = !taking && !saving
         save.isEnabled = jpeg != null && !taking && !saving
         share.isEnabled = jpeg != null && !taking && !saving
@@ -96,6 +103,7 @@ class RemotePhotoActivity : Activity() {
             fitsSystemWindows = true
         }
         val host = intent.getStringExtra(EXTRA_HOST).orEmpty()
+        paired = host.isNotBlank() && RecentDevices.key(this, host) != null
         val alias = RecentDevices.list(this).firstOrNull { it.host == host }?.name ?: "Aparelho monitorado"
         body.addView(skin.header(R.drawable.ic_remote_camera, "Fotografia remota", alias) { finish() },
             LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
@@ -110,6 +118,8 @@ class RemotePhotoActivity : Activity() {
         })
         indicator.addView(status)
         indicator.addView(detail, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
+        verify = action("Verificar câmera no monitorado") { checkReadiness() }
+        indicator.addView(verify, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(8) })
         indicator.addView(progress, LinearLayout.LayoutParams(-1, dp(3)).apply { topMargin = dp(9) })
         body.addView(indicator)
 
@@ -152,6 +162,66 @@ class RemotePhotoActivity : Activity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (!checkedOnOpen) {
+            checkedOnOpen = true
+            checkReadiness()
+        }
+    }
+
+    /** Uma consulta cifrada ao abrir ou sob demanda; sem polling em segundo plano. */
+    private fun checkReadiness() {
+        if (verifying || taking || saving) return
+        val host = intent.getStringExtra(EXTRA_HOST).orEmpty()
+        val method = intent.getStringExtra(EXTRA_METHOD) ?: "Chave salva"
+        val key = RecentDevices.key(this, host)
+        if (host.isBlank() || key == null) {
+            remoteReady = RemotePhotoReadiness.State.UNKNOWN
+            status.text = "Aparelho não pareado"
+            detail.text = "Salve a chave de pareamento para consultar a câmera."
+            refreshActions()
+            return
+        }
+        verifying = true
+        status.text = "Consultando câmera no monitorado…"
+        refreshActions()
+        executor.execute {
+            val result = runCatching {
+                val response = RemoteClient.snapshot(host, key, this, method)
+                val entries = response.optJSONObject("readiness")?.optJSONArray("items")
+                var state: String? = null
+                var note: String? = null
+                if (entries != null) for (i in 0 until entries.length()) {
+                    val item = entries.optJSONObject(i) ?: continue
+                    if (item.optString("id") == "photo") {
+                        state = item.optString("state")
+                        note = item.optString("note")
+                        break
+                    }
+                }
+                Pair(RemotePhotoReadiness.state(state), note)
+            }
+            main.post {
+                if (isDestroyed || isFinishing) return@post
+                verifying = false
+                result.fold({ (state, note) ->
+                    remoteReady = state
+                    status.text = RemotePhotoReadiness.headline(state)
+                    detail.text = if (note.isNullOrBlank())
+                        "A versão remota não informa a preparação; a solicitação de foto continua opcional."
+                    else note.take(180)
+                }, { error ->
+                    remoteReady = RemotePhotoReadiness.State.UNKNOWN
+                    status.text = "Não foi possível consultar o monitorado"
+                    detail.text = "Sem resposta autenticada: ${error.message ?: "rede indisponível"}. Tente novamente."
+                        .take(210)
+                })
+                refreshActions()
+            }
+        }
+    }
+
     private fun decodePreview(bytes: ByteArray): Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
@@ -185,6 +255,7 @@ class RemotePhotoActivity : Activity() {
                 }
                 taking = false
                 result.fold({ (bytes, bitmap) ->
+                    remoteReady = RemotePhotoReadiness.State.READY
                     jpeg = bytes
                     savedUri = null
                     photo.showPhoto(bitmap)
@@ -193,7 +264,11 @@ class RemotePhotoActivity : Activity() {
                     val seconds = (SystemClock.elapsedRealtime() - started) / 1000f
                     detail.text = "${bitmap.width} × ${bitmap.height} · ${bytes.size / 1024} KiB · ${"%.1f".format(Locale.getDefault(), seconds)} s · gesto de pinça para ampliar"
                 }, {
-                    status.text = "Não foi possível tirar a foto"
+                    if (it.message.orEmpty().contains("não preparada", ignoreCase = true) ||
+                        it.message.orEmpty().contains("sessão encerrada", ignoreCase = true)) {
+                        remoteReady = RemotePhotoReadiness.State.SESSION
+                        status.text = "Sessão encerrada no aparelho monitorado"
+                    } else status.text = "Não foi possível tirar a foto"
                     detail.text = (it.message ?: "Falha na conexão ou na câmera.").take(210) +
                         if (jpeg != null) " A imagem exibida é da captura anterior." else ""
                 })

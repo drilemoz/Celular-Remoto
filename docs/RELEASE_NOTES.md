@@ -1,3 +1,12 @@
+# Celular Remoto v0.1.0-alpha.131 — foto remota preparada em um passo
+
+- Toque no próprio monitorado em **Ativar + Foto** (ou Fotografia remota) para iniciar o servidor e preparar a câmera em um único fluxo; Android poderá pedir CAMERA e notificação, conforme permissões já concedidas.
+- Controlador: a tela de fotografia mostra status de prontidão consultado por snapshot autenticado e botão Verificar câmera, sem manter polling; estado ausente em versões antigas não impede a tentativa manual.
+- A câmera continua fechada entre fotos, captura apenas JPEG após solicitação cifrada e mantém notificação própria com ação Parar. Nenhuma ativação silenciosa, rearme após reinício ou nova permissão.
+- Mantidos Monitorado/Bateria separados, criptografia AES-GCM, WIRE_COMPAT alpha.111 e workflow único; falta compilação Android e teste físico com tela apagada.
+
+## Histórico
+
 # Celular Remoto v0.1.0-alpha.130 — coleta local independente
 
 - Novo modo **Bateria local contínua**, ativado manualmente pela aba Bateria ou em Ajustes: coleta bateria, temperatura, corrente, metas e sessões automáticas com a tela apagada sem abrir servidor remoto.

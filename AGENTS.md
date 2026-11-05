@@ -1,3 +1,11 @@
+# Celular Remoto v0.1.0-alpha.131 — fotografia remota preparada em um passo (05/11/2026)
+
+- Base alpha.130; próxima versão alpha.132/versionCode 132. Sincronizar Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, Novidades e validação.
+- `RemotePhotoSetupActivity`: APENAS após toque local e Activity visível, pedir CAMERA e POST_NOTIFICATIONS quando necessário, habilitar Monitorado explicitamente, aguardar o servidor ficar pronto e iniciar `PhotoReadyService` de câmera FGS ainda com Activity visível. Nunca ativar sessão de câmera por comando remoto, boot, alarm ou sem gesto.
+- `RemotePhotoReadiness` classifica estados do snapshot autenticado já existente (`readiness.items[id=photo]`) sem alterar `WIRE_COMPAT=alpha.111`, protocolo AES-GCM ou endpoints. Versões antigas sem campo de prontidão permanecem consultáveis, mas nunca recebem autorização implícita.
+- `PhotoReadyService`: não deixar câmera capturando continuamente, manter uma notificação de câmera com ação Parar e fechar Camera2/ImageReader após cada JPEG. Encerramento do serviço exige novo consentimento local; nenhum rearmamento automático.
+- Não criar novos serviços, permissões, sockets, sessões de vídeo, polling remoto ou novo workflow; WakeLock permanece opt-in e os modos de bateria da alpha.130 independentes. Testar CI Android e dois aparelhos, tela apagada e retorno após interrupção.
+
 # Celular Remoto v0.1.0-alpha.130 — bateria independente (05/11/2026)
 
 - Base alpha.129; próxima versão obrigatória alpha.131/versionCode 131. Sincronizar Gradle, AppVersion, README, CHANGELOG, validações e Novidades.
