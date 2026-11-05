@@ -1,3 +1,12 @@
+## 0.1.0-alpha.123 (versionCode 123) | 05/11/2026
+
+- Novo tema **Preto AMOLED**, mantendo Claro, Escuro e Seguir o sistema. A tela principal tem fundo preto e as superfícies/diálogos recebem tratamento próprio; telas secundárias passam a reconhecer AMOLED como modo escuro.
+- Configurações: botões lado a lado mudam para disposição vertical quando a largura é menor que 360dp ou a fonte supera 1,20x; área de toque preservada e descrições podem ocupar mais linhas.
+- Atalhos: grade de uma coluna em fontes extremas (>1,60x), duas colunas em telas estreitas ou fontes grandes e três/quatro onde couber. Rótulos deixaram de ser truncados à força no atalho compacto.
+- Navegação: altura e rótulos se adaptam à fonte ampliada, preservando os cinco destinos.
+- Testes JVM `AppearancePolicyTest` e regressões estruturais acrescentados. Protocolo remoto, criptografia, bateria, atualização e único workflow não foram alterados.
+- **Pendente:** compilar via GitHub Actions e testar visualmente em 320/360/393dp, fontes ampliadas, temas e aparelhos reais.
+
 ## 0.1.0-alpha.122 (versionCode 122) | 05/11/2026
 
 - Corrige `:app:compileDebugKotlin` do workflow 15, `BatteryCompactUi.kt:114`: propriedade inexistente `minHeight` num `LinearLayout` substituída por `minimumHeight`.

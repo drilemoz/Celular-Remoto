@@ -65,12 +65,13 @@ internal fun MainActivity.renderBottomNavigation() {
         Triple(5, R.drawable.ic_battery, "Bateria"),
         Triple(3, R.drawable.ic_settings, "Ajustes"),
     )
+    val navHeight = AppearancePolicy.navigationHeightDp(resources.configuration.fontScale)
     entries.forEach { (destination, icon, title) ->
         val selected = mode == destination
         val tab = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            minimumHeight = dp(58)
+            minimumHeight = dp(navHeight)
             background = if (selected) shape(fieldColor, 13) else null
             isClickable = true
             isFocusable = true
@@ -83,9 +84,11 @@ internal fun MainActivity.renderBottomNavigation() {
             gravity = Gravity.CENTER
             includeFontPadding = false
             setPadding(0, dp(5), 0, 0)
-            maxLines = 1
+            maxLines = 2
+            ellipsize = null
+            gravity = Gravity.CENTER
         })
-        bottomNavigation.addView(tab, LinearLayout.LayoutParams(0, dp(58), 1f).apply {
+        bottomNavigation.addView(tab, LinearLayout.LayoutParams(0, dp(navHeight), 1f).apply {
             if (destination != 3) rightMargin = dp(2)
         })
     }

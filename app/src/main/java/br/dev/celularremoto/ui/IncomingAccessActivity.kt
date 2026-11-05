@@ -44,7 +44,7 @@ class IncomingAccessActivity : Activity() {
 
     internal fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
     private val dark: Boolean get() = when (SettingsStore.theme(this)) {
-        "dark" -> true
+        "dark", "amoled" -> true
         "system" -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
         else -> false
     }

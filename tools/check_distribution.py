@@ -1684,7 +1684,7 @@ settings118 = (ui_root / "SettingsHubUi.kt").read_text()
 remote118 = (ui_root / "RemoteDashboardUi.kt").read_text()
 monitor118 = (ui_root / "MonitorScreenUi.kt").read_text()
 news118 = (ui_root / "VersionNewsUi.kt").read_text()
-assert all(p in compact118 for p in ["fontScale > 1.20f", "widthDp < 360", "widthDp >= 600", "minimumHeight = dp(76)", "contentDescription ="]), "Grid responsivo/acessivel alterado"
+assert all(p in compact118 for p in ["fontScale > 1.20f", "widthDp < 360", "widthDp >= 600", "minimumHeight = dp(if (resources.configuration.fontScale > 1.20f) 96 else 76)", "contentDescription ="]), "Grid responsivo/acessivel alterado"
 assert all(p in home118 for p in ["connectSavedDevice(item)", "showHomeSavedDeviceOptions(item)", "showConnectionChooser()", "navigateMainTab(0)", "navigateMainTab(1)", "navigateMainTab(5)"]), "Atalhos e acoes do Inicio ausentes"
 assert all(p in settings118 for p in ["PermissionCenter.pending(this)", "settingSearchIndex", "search.removeCallbacks(pendingSearch)", "openSettingsSection(item.section)", "compactActionGrid(categoryGrid"]), "Busca, categorias ou permissoes ausentes"
 assert "compactActionGrid(parent, tiles)" in remote118 and remote118.count('actionTile(R.drawable.') == 12, "Acoes remotas alteradas"
@@ -1747,3 +1747,16 @@ battery_row122 = battery_compact122.split('internal fun MainActivity.batterySess
 assert 'minimumHeight = dp(57)' in battery_row122, 'Linha do histórico sem altura mínima Android válida'
 assert not re.search(r'(?<!\w)minHeight\s*=', battery_row122), 'LinearLayout com minHeight inválido — workflow 15'
 print('PASSOU: alpha.122 propriedade minimumHeight do LinearLayout na lista de sessões')
+
+# Alpha.123 — acessibilidade e tema AMOLED, sem alterar serviço ou protocolo.
+appearance123 = (ui_root / 'AppearancePolicy.kt').read_text(encoding='utf8')
+settings123 = (ui_root / 'SettingsCompactUi.kt').read_text(encoding='utf8')
+nav123 = (ui_root / 'MobileNavigationUi.kt').read_text(encoding='utf8')
+assert '"amoled"' in (root / 'app/src/main/java/br/dev/celularremoto/core/SettingsStore.kt').read_text()
+assert 'MonitorDialogAmoled' in (ui_root / 'ThemedPopup.kt').read_text()
+assert (root / 'app/src/main/res/drawable/monitor_dialog_surface_amoled.xml').is_file()
+assert '"amoled", "Preto AMOLED"' in (ui_root / 'SettingsScreenUi.kt').read_text()
+assert 'fun stackSecondaryActions' in appearance123 and 'if (stacked)' in settings123
+assert 'navigationHeightDp' in nav123 and 'maxLines = 2' in nav123
+assert (root / 'app/src/test/java/br/dev/celularremoto/ui/AppearancePolicyTest.kt').is_file()
+print('PASSOU: alpha.123 AMOLED, fontes ampliadas, navegação e botões responsivos')

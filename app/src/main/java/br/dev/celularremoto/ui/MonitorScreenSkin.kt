@@ -19,7 +19,7 @@ import br.dev.celularremoto.core.SettingsStore
 /** Estilo único das telas especializadas. Não executa nenhum comando ou permissão. */
 internal class MonitorScreenSkin(private val activity: Activity) {
     private val night = when (SettingsStore.theme(activity)) {
-        "dark" -> true
+        "dark", "amoled" -> true
         "system" -> activity.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
         else -> false
     }

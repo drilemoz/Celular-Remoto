@@ -75,7 +75,7 @@ class RemoteCatalogActivity : Activity() {
     private lateinit var summary: TextView
     private lateinit var action: TextView
     private val dark get() = when (SettingsStore.theme(this)) {
-        "dark" -> true
+        "dark", "amoled" -> true
         "system" -> resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
         else -> false
     }

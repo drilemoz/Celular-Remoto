@@ -1,3 +1,12 @@
+# Celular Remoto v0.1.0-alpha.123 — regras de aparência e acessibilidade (05/11/2026)
+
+- Base alpha.122; próxima versão obrigatória **alpha.124/versionCode 124**. Sincronizar Gradle, AppVersion, documentação, testes, Novidades e notas a cada alteração.
+- `AppearancePolicy.kt` controla resolução de modo escuro/AMOLED e decisões de densidade de UI, sem acesso a rede ou permissão.
+- Modo AMOLED deve manter fundo preto e diálogos correspondentes, reconhecido nas Activities secundárias. Não presumir economia em telas LCD.
+- Grades e botões devem se ajustar a fontes maiores e largura estreita sem esconder ações; controles continuam acionáveis por toque e acessibilidade.
+- Não alterar AES-GCM, WIRE_COMPAT alpha.111, consentimentos, captura, monitoramento, bateria, atualizador nem workflow único.
+- Validar compilação Gradle/CI real e UI em 320/360/393 dp, fontes ampliadas e aparelhos antes de considerar release testada.
+
 # Regras da alpha.122 — correção de compilação do build 15 (05/11/2026)
 
 - Base alpha.121; versão obrigatória `0.1.0-alpha.122`, `versionCode 122`; próxima versão alpha.123/123, mantendo Gradle, AppVersion, documentação, testes e Novidades sincronizados.

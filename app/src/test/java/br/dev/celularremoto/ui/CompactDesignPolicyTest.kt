@@ -8,6 +8,8 @@ class CompactDesignPolicyTest {
         assertEquals(2, CompactDesignPolicy.columns(320, 1f))
         assertEquals(2, CompactDesignPolicy.columns(359, 1f))
         assertEquals(2, CompactDesignPolicy.columns(393, 1.3f))
+        assertEquals(1, CompactDesignPolicy.columns(393, 1.7f))
+        assertEquals(1, CompactDesignPolicy.columns(300, 1f))
     }
 
     @Test fun regularPhonesUseThreeAndTabletsFour() {

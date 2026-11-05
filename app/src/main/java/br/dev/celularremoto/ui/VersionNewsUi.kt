@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Correção do build 15" to "Corrigida a propriedade de altura mínima da lista compacta de sessões da Bateria que impedia a compilação Kotlin.",
-        "Layout preservado" to "Linhas do histórico mantêm a altura mínima de 57 dp, os controles e os detalhes anteriores.",
-        "Sem alteração de conexão" to "Pareamento, medições, alertas, permissões, atualizações e protocolos remotos continuam como na versão anterior."
+        "Tema preto AMOLED" to "Nova opção visual com fundo preto, superfícies discretas e diálogos escuros; temas claro, escuro e automático foram preservados.",
+        "Fonte ampliada sem cortes" to "Atalhos e pares de botões se reorganizam em telas estreitas e com fontes maiores; a barra inferior mantém os cinco destinos.",
+        "Sem alteração de serviços" to "Pareamento, monitoramento, bateria, permissões, atualizações e criptografia continuam com as mesmas regras."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -45,6 +45,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Correção de compilação (alpha.122)" to "Corrigida a altura mínima no histórico de Bateria após o erro do workflow 15.",
         "Configurações compactas (alpha.121)" to "Categorias e permissões reorganizadas, atualizador e diálogos com menos cartões, preservando autorizações locais e instalação por toque.",
         "Bateria compacta (alpha.120)" to "Indicador de percentual, métricas adaptativas e histórico em lista, mantendo diagnósticos e cálculos existentes.",
         "Controlar e Monitorado compactos" to "A alpha.119 trouxe telemetria compacta, painel único de Tela/Câmera/Foto e controles secundários mais densos sem remover confirmações locais.",

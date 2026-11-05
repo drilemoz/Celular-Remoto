@@ -14,4 +14,11 @@
         <item name="android:textColorSecondary">#A7B8CB</item>
         <item name="android:backgroundDimAmount">0.66</item>
     </style>
+    <style name="MonitorDialogAmoled" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/monitor_dialog_surface_amoled</item>
+        <item name="android:colorAccent">#4ED3BA</item>
+        <item name="android:textColorPrimary">#F1F5F9</item>
+        <item name="android:textColorSecondary">#B2BBC2</item>
+        <item name="android:backgroundDimAmount">0.70</item>
+    </style>
 </resources>

@@ -35,14 +35,15 @@ internal fun Activity.showMonitorActionSheet(
 ): AlertDialog {
     require(actions.isNotEmpty() && actions.size <= 40)
     val night = when (SettingsStore.theme(this)) {
-        "dark" -> true
+        "dark", "amoled" -> true
         "system" -> resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
         else -> false
     }
     val density = resources.displayMetrics.density
     fun dp(value: Int): Int = (value * density).toInt()
-    val panel = if (night) Color.rgb(27, 40, 55) else Color.WHITE
-    val field = if (night) Color.rgb(40, 55, 72) else Color.rgb(242, 246, 249)
+    val amoled = SettingsStore.theme(this) == "amoled"
+    val panel = if (amoled) Color.rgb(12, 12, 12) else if (night) Color.rgb(27, 40, 55) else Color.WHITE
+    val field = if (amoled) Color.rgb(26, 26, 26) else if (night) Color.rgb(40, 55, 72) else Color.rgb(242, 246, 249)
     val ink = if (night) Color.rgb(238, 244, 251) else Color.rgb(22, 34, 48)
     val muted = if (night) Color.rgb(177, 190, 206) else Color.rgb(97, 112, 129)
     val highlight = if (night) Color.rgb(90, 214, 188) else Color.rgb(19, 156, 138)

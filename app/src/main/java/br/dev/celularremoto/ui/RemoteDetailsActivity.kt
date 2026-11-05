@@ -40,7 +40,7 @@ class RemoteDetailsActivity : Activity() {
         const val EXTRA_UPDATED = "br.dev.celularremoto.DETAILS_UPDATED"
     }
     private val dark: Boolean get() = when (SettingsStore.theme(this)) {
-        "dark" -> true
+        "dark", "amoled" -> true
         "system" -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
         else -> false
     }

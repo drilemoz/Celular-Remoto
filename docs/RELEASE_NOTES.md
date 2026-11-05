@@ -1,3 +1,10 @@
+# Celular Remoto v0.1.0-alpha.123 — aparência e acessibilidade
+
+- Adicionado tema **Preto AMOLED** com fundo preto e diálogos escuros coerentes; Claro, Escuro e Seguir o sistema preservados.
+- Grades responsivas com fonte ampliada, botões de ação que passam para disposição vertical em telas estreitas, rótulos de atalhos com mais linhas e navegação ajustável.
+- Sem alteração em captura, conexão criptografada, pareamento, controles remotos, testes de bateria, permissões ou atualização automática.
+- Validação local estrutural/JVM; compilação Android e testes físicos ainda pendentes.
+
 # Celular Remoto — 0.1.0-alpha.122
 
 **Correção do workflow 15:** corrigida falha de compilação Kotlin na interface compacta de histórico da Bateria, substituindo `minHeight` por `minimumHeight` em um `LinearLayout`. A altura mínima de 57 dp foi preservada.

@@ -44,8 +44,8 @@ internal fun MainActivity.settingsSlimRow(
     })
     if (detail.isNotBlank()) words.addView(label(detail, 11f, muted = true).apply {
         setPadding(0, dp(2), 0, 0)
-        maxLines = 2
-        ellipsize = TextUtils.TruncateAt.END
+        maxLines = if (resources.configuration.fontScale > 1.20f) 4 else 2
+        if (resources.configuration.fontScale <= 1.20f) ellipsize = TextUtils.TruncateAt.END
     })
     addView(words, LinearLayout.LayoutParams(0, -2, 1f))
     if (trailing.isNotBlank()) addView(label(trailing, 11f, muted = true).apply {
@@ -77,8 +77,8 @@ internal fun MainActivity.settingsToggleRow(
     texts.addView(label(title, 13.5f, strong = true).apply { setPadding(0,0,0,0); maxLines = 2 })
     texts.addView(label(detail, 11f, muted = true).apply {
         setPadding(0,dp(2),0,0)
-        maxLines = 2
-        ellipsize = TextUtils.TruncateAt.END
+        maxLines = if (resources.configuration.fontScale > 1.20f) 4 else 2
+        if (resources.configuration.fontScale <= 1.20f) ellipsize = TextUtils.TruncateAt.END
     })
     addView(texts, LinearLayout.LayoutParams(0, -2, 1f))
     // O toque pertence à linha inteira. O controle é apenas o indicador visual;
@@ -101,10 +101,23 @@ internal fun MainActivity.settingsActionPair(
     second: () -> Unit,
     emphasizeFirst: Boolean = false
 ) {
-    val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-    row.addView(actionButton(firstTitle, emphasis = emphasizeFirst, onClick = first),
-        LinearLayout.LayoutParams(0, dp(46), 1f).apply { rightMargin = dp(7) })
-    row.addView(actionButton(secondTitle, onClick = second), LinearLayout.LayoutParams(0, dp(46), 1f))
+    val stacked = AppearancePolicy.stackSecondaryActions(
+        resources.configuration.screenWidthDp, resources.configuration.fontScale
+    )
+    val row = LinearLayout(this).apply {
+        orientation = if (stacked) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
+    }
+    if (stacked) {
+        row.addView(actionButton(firstTitle, emphasis = emphasizeFirst, onClick = first),
+            LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(7) })
+        row.addView(actionButton(secondTitle, onClick = second),
+            LinearLayout.LayoutParams(-1, dp(52)))
+    } else {
+        row.addView(actionButton(firstTitle, emphasis = emphasizeFirst, onClick = first),
+            LinearLayout.LayoutParams(0, dp(52), 1f).apply { rightMargin = dp(7) })
+        row.addView(actionButton(secondTitle, onClick = second),
+            LinearLayout.LayoutParams(0, dp(52), 1f))
+    }
     parent.addView(row)
 }
 

@@ -11,6 +11,7 @@ import br.dev.celularremoto.R
  */
 internal object CompactDesignPolicy {
     fun columns(widthDp: Int, fontScale: Float): Int = when {
+        fontScale > 1.60f || widthDp < 320 -> 1
         fontScale > 1.20f || widthDp < 360 -> 2
         widthDp >= 600 -> 4
         else -> 3
@@ -26,7 +27,7 @@ internal fun MainActivity.compactActionTile(
 ): LinearLayout = LinearLayout(this).apply {
     orientation = LinearLayout.VERTICAL
     gravity = Gravity.CENTER
-    minimumHeight = dp(76)
+    minimumHeight = dp(if (resources.configuration.fontScale > 1.20f) 96 else 76)
     background = shape(if (selected) highlight else fieldColor, 14, !selected)
     setPadding(dp(5), dp(9), dp(5), dp(8))
     isClickable = true
@@ -37,8 +38,9 @@ internal fun MainActivity.compactActionTile(
         LinearLayout.LayoutParams(dp(22), dp(22)).apply { gravity = Gravity.CENTER_HORIZONTAL })
     addView(label(title, 11.5f, strong = true).apply {
         gravity = Gravity.CENTER
-        maxLines = 2
-        ellipsize = android.text.TextUtils.TruncateAt.END
+        maxLines = AppearancePolicy.actionLabelLines(resources.configuration.fontScale)
+        // Permitir quebra de linha em vez de esconder o título em telas estreitas.
+        ellipsize = null
         includeFontPadding = false
         setTextColor(if (selected) highlightText else ink)
         setPadding(dp(2), dp(5), dp(2), 0)

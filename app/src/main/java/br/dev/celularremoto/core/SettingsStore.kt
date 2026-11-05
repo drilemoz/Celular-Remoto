@@ -192,7 +192,7 @@ object SettingsStore {
     /** Aparência: claro por padrão; nunca depende de tema escolhido no sistema. */
     fun theme(context: Context) = prefs(context).getString("theme", "light") ?: "light"
     fun setTheme(context: Context, value: String) {
-        require(value in setOf("light", "dark", "system"))
+        require(value in setOf("light", "dark", "amoled", "system"))
         prefs(context).edit().putString("theme", value).apply()
     }
 

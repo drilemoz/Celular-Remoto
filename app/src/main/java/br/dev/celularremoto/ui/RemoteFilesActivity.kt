@@ -104,7 +104,7 @@ class RemoteFilesActivity : Activity() {
     private var selectButton: Button? = null
 
     private val dark get() = when (SettingsStore.theme(this)) {
-        "dark" -> true
+        "dark", "amoled" -> true
         "system" -> resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
         else -> false
     }

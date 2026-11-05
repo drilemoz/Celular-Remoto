@@ -36,20 +36,20 @@ import java.util.Locale
 /** Interface Android Views sem dependências adicionais; ambos os modos no mesmo APK. */
 class MainActivity : Activity() {
     internal var activeUiDialog: AlertDialog? = null
-    internal fun darkTheme(): Boolean = when (SettingsStore.theme(this)) {
-        "dark" -> true
-        "system" -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        else -> false
-    }
-    internal val bg get() = if (darkTheme()) Color.rgb(14, 18, 24) else Color.rgb(248, 250, 252)
-    internal val surface get() = if (darkTheme()) Color.rgb(26, 33, 42) else Color.WHITE
+    internal fun darkTheme(): Boolean = AppearancePolicy.isDark(
+        SettingsStore.theme(this),
+        (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+    )
+    internal fun amoledTheme(): Boolean = AppearancePolicy.isAmoled(SettingsStore.theme(this))
+    internal val bg get() = when { amoledTheme() -> Color.BLACK; darkTheme() -> Color.rgb(14, 18, 24); else -> Color.rgb(248, 250, 252) }
+    internal val surface get() = when { amoledTheme() -> Color.rgb(12, 12, 12); darkTheme() -> Color.rgb(26, 33, 42); else -> Color.WHITE }
     internal val ink get() = if (darkTheme()) Color.rgb(241, 245, 249) else Color.rgb(15, 23, 42)
-    internal val dim get() = if (darkTheme()) Color.rgb(164, 176, 188) else Color.rgb(96, 110, 124)
+    internal val dim get() = if (darkTheme()) Color.rgb(178, 187, 194) else Color.rgb(96, 110, 124)
     internal val highlight get() = if (darkTheme()) Color.rgb(78, 211, 186) else Color.rgb(13, 148, 136)
     internal val highlightText get() = if (darkTheme()) Color.rgb(14, 22, 35) else Color.WHITE
-    internal val lineColor get() = if (darkTheme()) Color.rgb(55, 64, 76) else Color.rgb(226, 232, 240)
-    internal val secondaryAccent get() = if (darkTheme()) Color.rgb(54, 116, 171) else Color.rgb(38, 113, 174)
-    internal val fieldColor get() = if (darkTheme()) Color.rgb(38, 47, 58) else Color.rgb(238, 242, 246)
+    internal val lineColor get() = when { amoledTheme() -> Color.rgb(65, 65, 65); darkTheme() -> Color.rgb(55, 64, 76); else -> Color.rgb(226, 232, 240) }
+    internal val secondaryAccent get() = if (darkTheme()) Color.rgb(86, 174, 224) else Color.rgb(38, 113, 174)
+    internal val fieldColor get() = when { amoledTheme() -> Color.rgb(24, 24, 24); darkTheme() -> Color.rgb(38, 47, 58); else -> Color.rgb(238, 242, 246) }
     internal lateinit var content: LinearLayout
     internal lateinit var bottomNavigation: LinearLayout
     internal lateinit var permissionsNoticeHost: LinearLayout

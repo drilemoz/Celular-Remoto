@@ -468,7 +468,8 @@ private fun MainActivity.fillAppearanceSettings(layout: LinearLayout) {
     dialogIntro(layout, "Escolha o tema usado no aplicativo.")
     val options = listOf(
         Triple("light", "Claro", "Visual claro padrão"),
-        Triple("dark", "Escuro", "Preferível em ambientes escuros"),
+        Triple("dark", "Escuro", "Fundo grafite com contraste elevado"),
+        Triple("amoled", "Preto AMOLED", "Fundo preto e superfícies discretas para telas OLED"),
         Triple("system", "Seguir o sistema", "Acompanha o Android")
     )
     options.forEachIndexed { i, entry ->

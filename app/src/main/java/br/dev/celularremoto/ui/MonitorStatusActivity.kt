@@ -40,7 +40,7 @@ class MonitorStatusActivity : Activity() {
     }
     private fun dp(n: Int): Int = (n * resources.displayMetrics.density).toInt()
     private val dark: Boolean get() = when (SettingsStore.theme(this)) {
-        "dark" -> true
+        "dark", "amoled" -> true
         "system" -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
         else -> false
     }
