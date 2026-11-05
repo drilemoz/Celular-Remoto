@@ -1,20 +1,48 @@
 package br.dev.celularremoto.ui
 
-import android.app.AlertDialog
 import br.dev.celularremoto.R
 import br.dev.celularremoto.core.SettingsStore
 import br.dev.celularremoto.transport.AppVersion
 
-/** Exibido somente após a primeira abertura de cada versão instalada. */
+/** O modal mostra apenas novidades da versão atual. O histórico longo é opcional. */
 internal fun MainActivity.showVersionNewsIfNeeded() {
-    if (SettingsStore.seenNewsVersion(this) == AppVersion.NAME) return
-    showVersionNews()
+    if (SettingsStore.seenNewsVersion(this) != AppVersion.NAME) showVersionNews()
 }
+
 internal fun MainActivity.showVersionNews() {
     val (wrapper, layout) = dialogWrapper()
-    layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "Bem-vindo à atualização"))
+    layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
-    val entries = listOf(
+    val current = listOf(
+        "Interface mais compacta" to "Nova hierarquia visual, cores de contraste melhorado e espaços menores. Os dados e as autorizações continuam como antes.",
+        "Início e comandos" to "Aparelhos em linhas compactas e atalhos em grade adaptativa de até 3 colunas no celular. Nenhuma ação remota é iniciada automaticamente.",
+        "Configurações mais claras" to "Seis categorias e pesquisa. O histórico de mudanças está separado desta janela para evitar rolagem extensa."
+    )
+    current.forEach { (title, details) ->
+        layout.addView(dialogCardRow(title, details, ""))
+        sectionGap(layout, 6)
+    }
+    val dialog = themedPopup(this).setView(wrapper)
+        .setNeutralButton("Histórico completo") { _, _ ->
+            SettingsStore.markNewsSeen(this, AppVersion.NAME)
+            openSettingsModule()
+            openSettingsSection("news")
+        }
+        .setPositiveButton("Entendi") { _, _ -> SettingsStore.markNewsSeen(this, AppVersion.NAME) }
+        .create().apply { setCancelable(false); setCanceledOnTouchOutside(false) }
+    showManagedDialog(dialog)
+}
+
+internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayout) {
+    layout.addView(label("Histórico das melhorias anteriores", 14f, strong = true))
+    layout.addView(label("As mudanças mais recentes aparecem na primeira abertura de cada versão.", 11.5f, muted = true))
+    PREVIOUS_NEWS.forEach { (title, details) ->
+        layout.addView(dialogCardRow(title, details, ""))
+        sectionGap(layout, 6)
+    }
+}
+
+private val PREVIOUS_NEWS = listOf(
         "Estabilidade da conexão" to "Em Controlar ou Configurações, acompanhe latência, tentativas autenticadas, períodos sem medição, falhas e recuperação por aparelho.",
         "Heartbeat e reconexão" to "Nova sonda leve e cifrada, tentativas com espera progressiva e busca apenas em endereços salvos com a mesma chave. Segundo plano pode ser ativado nas configurações.",
         "Correção do build 9" to "A compilação Kotlin passou e 209 dos 210 testes foram aprovados. O teste de versão agora consulta o BuildConfig gerado pelo Gradle, sem exigir o número antigo alpha.112.",
@@ -40,13 +68,3 @@ internal fun MainActivity.showVersionNews() {
         "Alertas local e remoto" to "Meta de carga, bateria baixa e limite de temperatura configuráveis para cada aparelho, com eventos remotos no canal autenticado.",
         "100% confirmado" to "O teste de carga encerra após duas leituras consecutivas de 100%, mesmo se o Android ainda exibir CHARGING."
     )
-    entries.forEach { (title, details) ->
-        layout.addView(dialogCardRow(title, details, ""))
-        sectionGap(layout, 7)
-    }
-    layout.addView(label("A transferência pode ser limitada pelo Wi-Fi ou armazenamento. Versões anteriores à alpha.111 podem não suportar o novo modo de compatibilidade.", 12f, muted = true))
-    val dialog = themedPopup(this).setView(wrapper)
-        .setPositiveButton("Entendi") { _, _ -> SettingsStore.markNewsSeen(this, AppVersion.NAME) }
-        .create().apply { setCancelable(false); setCanceledOnTouchOutside(false) }
-    showManagedDialog(dialog)
-}

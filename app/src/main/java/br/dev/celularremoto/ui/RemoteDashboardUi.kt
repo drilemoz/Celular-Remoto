@@ -126,7 +126,7 @@ private fun MainActivity.mobileDashboardHeader(parent: LinearLayout, title: Stri
 private fun MainActivity.mobileMetricCard(icon: Int, title: String, value: String,
     subtitle: String, temperatureZone: BatteryTemperaturePolicy.Zone? = null, onClick: () -> Unit): LinearLayout = LinearLayout(this).apply {
     orientation = LinearLayout.VERTICAL
-    minimumHeight = dp(117)
+    minimumHeight = dp(91)
     val themed = when (temperatureZone) {
         BatteryTemperaturePolicy.Zone.COLD -> if (darkTheme()) android.graphics.Color.rgb(35, 61, 78) else android.graphics.Color.rgb(224, 241, 252)
         BatteryTemperaturePolicy.Zone.WARM -> if (darkTheme()) android.graphics.Color.rgb(91, 67, 35) else android.graphics.Color.rgb(255, 240, 214)
@@ -135,7 +135,7 @@ private fun MainActivity.mobileMetricCard(icon: Int, title: String, value: Strin
         else -> fieldColor
     }
     background = shape(themed, 20)
-    setPadding(dp(13), dp(12), dp(9), dp(11))
+    setPadding(dp(11), dp(9), dp(9), dp(9))
     isClickable = true; isFocusable = true
     contentDescription = "$title: $value. $subtitle"
     setOnClickListener { onClick() }
@@ -154,9 +154,9 @@ private fun MainActivity.mobileNetworkRow(title: String, subtitle: String, onCli
     LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
-        minimumHeight = dp(75)
+        minimumHeight = dp(58)
         background = shape(fieldColor, 19)
-        setPadding(dp(13), dp(12), dp(12), dp(12))
+        setPadding(dp(11), dp(8), dp(9), dp(8))
         isClickable = true; isFocusable = true
         contentDescription = "$title. $subtitle"
         setOnClickListener { onClick() }
@@ -249,7 +249,7 @@ private fun MainActivity.renderRemoteActions(container: LinearLayout, snapshot: 
     val others = cards.filterNot { it in shortcuts }
     mobileDashboardHeader(container, "Acesso rápido", "4 funções")
     mobileActionGrid(container, shortcuts)
-    sectionGap(container, 17)
+    sectionGap(container, 11)
     mobileDashboardHeader(container, "Outras funções", "8 funções")
     val toggle = actionButton(if (expandedRemoteFunctions) "⌃  Ocultar funções" else "⌄  Mostrar todas as funções") {
         expandedRemoteFunctions = !expandedRemoteFunctions
@@ -259,7 +259,7 @@ private fun MainActivity.renderRemoteActions(container: LinearLayout, snapshot: 
     }.apply {
         textSize = 13.5f
         background = shape(surface, 18, true)
-        minimumHeight = dp(50)
+        minimumHeight = dp(48)
     }
     if (expandedRemoteFunctions) {
         mobileActionGrid(container, others)
@@ -269,19 +269,7 @@ private fun MainActivity.renderRemoteActions(container: LinearLayout, snapshot: 
 }
 
 private fun MainActivity.mobileActionGrid(parent: LinearLayout, tiles: List<LinearLayout>) {
-    tiles.chunked(2).forEachIndexed { rowIndex, chunk ->
-        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        chunk.forEachIndexed { index, tile ->
-            tile.background = shape(fieldColor, 19)
-            tile.minimumHeight = dp(102)
-            row.addView(tile, LinearLayout.LayoutParams(0, dp(104), 1f).apply {
-                if (index == 0) rightMargin = dp(9)
-            })
-        }
-        if (chunk.size == 1) row.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
-        parent.addView(row)
-        if (rowIndex < (tiles.size + 1) / 2 - 1) sectionGap(parent, 9)
-    }
+    compactActionGrid(parent, tiles)
 }
 
 /** A conexão normal AES-GCM não confere privilégio de reinicialização. */
@@ -347,27 +335,9 @@ private fun MainActivity.showRemoteMaintenance() {
     dialog.window?.setLayout((resources.displayMetrics.widthPixels * .92f).toInt().coerceAtMost(dp(520)), -2)
 }
 
-private fun MainActivity.actionTile(icon: Int, title: String, subtitle: String, enabled: Boolean = false, onClick: () -> Unit): LinearLayout =
-    LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        gravity = Gravity.CENTER
-        background = shape(surface, 16, true)
-        setPadding(dp(3), dp(10), dp(3), dp(9))
-        minimumHeight = dp(86)
-        isClickable = true
-        isFocusable = true
-        contentDescription = listOf(title, subtitle).filter { it.isNotBlank() }.joinToString(". ")
-        setOnClickListener { onClick() }
-        addView(vectorIcon(icon, 23, if (enabled) ink else dim),
-            LinearLayout.LayoutParams(dp(23), dp(23)).apply { gravity = Gravity.CENTER_HORIZONTAL })
-        addView(label(title, 14f, strong = true).apply {
-            gravity = Gravity.CENTER
-            maxLines = 2
-            setPadding(dp(1), dp(7), dp(1), 0)
-            ellipsize = android.text.TextUtils.TruncateAt.END
-        })
-        // Subtítulos permanecem no contentDescription para TalkBack; não ocupam linhas.
-    }
+private fun MainActivity.actionTile(
+    icon: Int, title: String, subtitle: String, enabled: Boolean = false, onClick: () -> Unit
+): LinearLayout = compactActionTile(icon, title, subtitle, selected = false, onClick = onClick)
 
 private fun MainActivity.showFeatureSoon(name: String, description: String) {
     showAppNotice(name, "$description\n\nEste recurso ainda não está implementado.", R.drawable.ic_info)

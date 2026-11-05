@@ -1,3 +1,11 @@
+# Regras da alpha.118 — reformulação visual (04/11/2026)
+
+- Base: alpha.117, nova versão **0.1.0-alpha.118** e `versionCode 118`. Próxima alteração obrigatoriamente alpha.119/119. Mantenha Gradle, `AppVersion`, README, CHANGELOG, RELEASE_NOTES, docs e tela Novidades sincronizados.
+- `CompactDesignUi.kt` agrega atalhos responsivos: 2 colunas em telas menores que 360dp ou fonte acima de 1,20; 3 em celulares comuns; 4 em tablets. Nunca reduzir tamanho físico mínimo de toque abaixo de 48dp para controles.
+- Configurações devem abrir por categorias e busca; preservar todos os destinos existentes, status reais e botões de consentimento. Novidades na abertura exibe só os destaques da versão e oferece histórico separado.
+- Preservar criptografia AES-GCM, opt-in local para câmera/tela, permissão de SMS/ADB, sockets, versões do protocolo, controle e diagnóstico de conexão, limites de bateria e atualização assinada. Redesenho não autoriza coleta/remoto extra.
+- Validar compilação Android **real** no GitHub Actions e teste físico em 320/360/393dp, escala de fonte grande, temas claro/escuro, 2 celulares pareados antes de alegar release aprovada.
+
 # Celular Remoto — 0.1.0-alpha.117 — Diagnóstico de conexão
 
 - Marcador `WIRE_COMPAT` permanece alpha.111, `versionName/versionCode` passam para alpha.117/117.

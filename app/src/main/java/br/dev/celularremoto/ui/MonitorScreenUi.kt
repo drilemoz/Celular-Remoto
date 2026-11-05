@@ -23,14 +23,14 @@ internal fun MainActivity.renderMonitor() {
     gap(12)
     val enabled = SettingsStore.isMonitorEnabled(this)
     val running = MonitorService.isRunning
-    val card = panel(16).apply { background = shape(fieldColor, 22) }
+    val card = panel(12).apply { background = shape(surface, 18, true) }
     val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     val iconHolder = LinearLayout(this).apply {
         gravity = Gravity.CENTER
         background = shape(fieldColor, 17)
-        addView(vectorIcon(br.dev.celularremoto.R.drawable.ic_phone, 31, highlight))
+        addView(vectorIcon(br.dev.celularremoto.R.drawable.ic_phone, 25, highlight))
     }
-    header.addView(iconHolder, LinearLayout.LayoutParams(dp(62), dp(62)))
+    header.addView(iconHolder, LinearLayout.LayoutParams(dp(46), dp(46)))
     header.addView(View(this), LinearLayout.LayoutParams(dp(12), 1))
     val headerText = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     headerText.addView(label("Este aparelho", 17f, strong = true).apply { setPadding(0, 0, 0, 0) })
@@ -60,22 +60,12 @@ internal fun MainActivity.renderMonitor() {
     val access = iconMetric("Acesso", "Chave autorizada", br.dev.celularremoto.R.drawable.ic_shield)
     columns.addView(access, LinearLayout.LayoutParams(0, -2, 1f))
     card.addView(columns)
-    sectionGap(card, 16)
+    sectionGap(card, 10)
 
     val actions = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-    var actionCount = 0
-    var actionRow: LinearLayout? = null
+    val actionTiles = mutableListOf<LinearLayout>()
     fun addCompact(title: String, icon: Int, emphasize: Boolean = false, onClick: () -> Unit) {
-        if (actionCount % 2 == 0) {
-            if (actionCount > 0) sectionGap(actions, 8)
-            actionRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-            actions.addView(actionRow)
-        } else actionRow?.addView(View(this), LinearLayout.LayoutParams(dp(8), 1))
-        val tile = iconTile(icon, title, featured = emphasize, onClick = onClick).apply {
-            minimumHeight = dp(90)
-        }
-        actionRow?.addView(tile, LinearLayout.LayoutParams(0, -2, 1f))
-        actionCount++
+        actionTiles.add(compactActionTile(icon, title, selected = emphasize, onClick = onClick))
     }
     if (enabled && running) {
         addCompact("Gerar QR", br.dev.celularremoto.R.drawable.ic_qr, true) { chooseQrAddress() }
@@ -92,6 +82,7 @@ internal fun MainActivity.renderMonitor() {
         }
         addCompact("Mostrar info", br.dev.celularremoto.R.drawable.ic_info) { showMyConnectionInfo() }
     }
+    compactActionGrid(actions, actionTiles)
     card.addView(actions)
     content.addView(card)
     gap(9)

@@ -194,7 +194,7 @@ assert 'ACCESS_CHANNEL' in service and 'IMPORTANCE_DEFAULT' in service
 assert 'SettingsStore.isMonitorEnabled(this) && !MonitorService.isServiceActive' in ui
 assert 'private fun recoverAuthorizedServiceIfStopped()' in ui
 assert 'renderSettingsModule()' in ui and 'openSettingsModule()' in ui
-assert 'private fun MainActivity.mobileMetricCard(' in ui and 'minimumHeight = dp(117)' in ui
+assert 'private fun MainActivity.mobileMetricCard(' in ui and 'minimumHeight = dp(91)' in ui
 assert (root / 'app/src/test/java/br/dev/celularremoto/transport/AppVersionTest.kt').is_file()
 assert len(list((root / 'app/src/main/res/drawable').glob('ic_*.xml'))) >= 10
 print('PASSOU: alpha.20, marcador de protocolo, disconnect, notificação, Activity e UI vetorial')
@@ -310,7 +310,7 @@ settings_ui = module_ui['SettingsScreenUi.kt']
 qr_reader = (ui_root / 'QrScanActivity.kt').read_text()
 for function in ['iconTile(', 'iconMenuRow(', 'iconSectionHeader(', 'iconMetric(', 'twoColumnTiles(', 'headerIconButton(']:
     assert function in components, f'Componente visual alpha.27 ausente: {function}'
-assert 'mobileSurfaceCard()' in home and 'R.drawable.ic_phone' in home and 'showHomeSavedDeviceOptions(item)' in home
+assert 'panel(8)' in home and 'R.drawable.ic_phone' in home and 'showHomeSavedDeviceOptions(item)' in home and 'connectSavedDevice(item)' in home
 assert 'Conectar novo aparelho' in home and 'showConnectionChooser()' in home
 assert 'addCompact("Gerar QR"' in monitor and 'addCompact("Mostrar info"' in monitor and 'addCompact("Interromper"' in monitor
 assert 'iconMetric("IP da rede"' in monitor and 'SettingsStore.setMonitorEnabled(this, false)' in monitor
@@ -1222,7 +1222,7 @@ assert all(x not in recent85 for x in ['put("path"', 'put("name"', 'put("ip"', '
 assert 'RemoteOperationHistoryPolicy.valid(' in recent85 and 'operations = setOf' in policy85
 assert 'private fun showHistory()' in files85 and 'logOperation("download"' in files85
 assert 'logOperation("upload"' in files85 and 'logOperation(action,' in files85
-assert 'tiles.chunked(2)' in remote85 and 'Dados armazenados.' in remote85
+assert 'compactActionGrid(parent, tiles)' in remote85 and 'Dados armazenados.' in remote85
 assert 'Sem conexão com o aparelho' in location85 and 'Leitura antiga' in location85
 print('PASSOU: alpha.85 histórico local mínimo, grade legível, diagnóstico da conexão e GPS.')
 
@@ -1267,7 +1267,8 @@ dashboard88 = (ui_root / "RemoteDashboardUi.kt").read_text()
 settings88 = (ui_root / "SettingsHubUi.kt").read_text()
 conn88 = (ui_root / "RemoteConnectionManager.kt").read_text()
 dialogs88 = (ui_root / "AppDialogUi.kt").read_text()
-assert 'tiles.chunked(2)' in dashboard88 and 'tiles.chunked(3)' not in dashboard88
+assert 'compactActionGrid(parent, tiles)' in dashboard88 and (ui_root / 'CompactDesignUi.kt').exists()
+assert 'fun columns(widthDp: Int, fontScale: Float)' in (ui_root / 'CompactDesignUi.kt').read_text()
 assert '"Detalhes", ""' not in dashboard88 and 'showRemoteDetailsDialog' in (ui_root / "ConnectionScreenUi.kt").read_text()
 assert 'renderSettingsHome()' in (ui_root / "SettingsScreenUi.kt").read_text()
 assert 'Pesquisar configurações' in settings88 and 'openSettingsSection(item.section)' in settings88
@@ -1289,7 +1290,7 @@ assert 'ACTION_OPEN_DOCUMENT_TREE' not in settings89
 assert 'copyBatchDownloads(chosen)' in activity89 and 'copyRemoteFolderDownloads' in activity89
 assert 'publishStaged(part, item' in activity89 and 'confirmBatchDelete' in activity89
 assert (ui_root / 'ThemedPopup.kt').exists() and 'setGravity(Gravity.BOTTOM)' in (ui_root / 'MonitorActionSheet.kt').read_text()
-assert 'tiles.chunked(2)' in dashboard88
+assert 'compactActionGrid(parent, tiles)' in dashboard88
 print('PASSOU: alpha.89 Downloads fixos de propriedade do app, operações autenticadas e menus modernos.')
 
 # Alpha.90/95: o menu agora usa a folha visual compartilhada, com dialog local
@@ -1358,7 +1359,7 @@ assert 'item.destructive' in sheet95 and 'item.invoke()' in sheet95
 assert all(x in files95 for x in ['showMonitorActionSheet(name,', 'showMonitorActionSheet("Ordenar arquivos"', 'showMonitorActionSheet("Downloads interrompidos"'])
 assert 'confirmBatchDelete(listOf(item))' in files95 and 'confirmBatchTrash(listOf(item))' in files95
 assert 'showMonitorActionSheet(name, "$pkg' in apps95 and 'stopApp(pkg)' in apps95
-assert 'visualHeader(R.drawable.ic_settings' in settings95 and 'openSettingsSection(item.section)' in settings95
+assert 'openSettingsSection("permissions")' in settings95 and 'openSettingsSection(item.section)' in settings95
 print("PASSOU: alpha.95 menus, navegação e confirmação sensível preservados.")
 
 # Alpha.96: modernização em telas especializadas sem modificar o transporte.
@@ -1434,8 +1435,8 @@ monitor101 = (ui_root / 'MonitorScreenUi.kt').read_text(encoding='utf-8')
 components101 = (ui_root / 'UiComponents.kt').read_text(encoding='utf-8')
 assert 'internal fun MainActivity.statePill(' in components101
 assert 'internal fun MainActivity.monitorFeatureCard(' in components101
-assert 'Aguardando primeira resposta' in home101 and 'Última resposta:' in home101
-assert 'Última resposta:' in home101
+assert 'Aguardando primeira resposta' in home101 and 'Última resposta ·' in home101
+assert 'Última resposta ·' in home101
 assert 'monitorFeatureCard(' in monitor101 and monitor101.count('monitorFeatureCard(') == 3
 assert 'ScreenShareService.stop(this)' in monitor101
 assert 'manager.createScreenCaptureIntent()' in monitor101
@@ -1449,10 +1450,10 @@ print('PASSOU: alpha.101 Home/Monitorado com estados claros, consentimento e par
 settings102 = (ui_root / 'SettingsHubUi.kt').read_text(encoding='utf-8')
 screen102 = (ui_root / 'SettingsScreenUi.kt').read_text(encoding='utf-8')
 dialog102 = (ui_root / 'AppDialogUi.kt').read_text(encoding='utf-8')
-assert 'PERMISSÕES DO ANDROID' in settings102
-assert 'LocationShareStore.hasPermission(this)' in settings102
-assert 'Manifest.permission.CAMERA' in settings102
-assert 'hasListener()' in settings102
+assert 'Permissões do aparelho' in settings102
+assert 'PermissionCenter.pending(this)' in settings102
+assert 'openSettingsSection("permissions")' in settings102
+assert 'compactActionGrid(categoryGrid' in settings102
 assert 'visibility = View.GONE' in settings102 and 'search.text?.clear()' in settings102
 assert 'if (section == "home") {' in screen102 and 'renderSettingsHome()' in screen102
 assert 'showSettingsChoiceDialog(' in screen102 and 'Intervalo do GPS' in screen102
@@ -1478,7 +1479,7 @@ assert 'handler.removeCallbacks(monitorUiInvalidation)' in main103
 assert 'AuthenticatedAccess.recent()' in pulse103 and 'recentClients: List<String>' in policy103
 assert 'val latest = AuthenticatedAccess.recent().firstOrNull' in mon103
 assert 'settingSearchIndex' in settings103 and 'search.postDelayed(pendingSearch, 120L)' in settings103
-assert 'search.removeCallbacks(pendingSearch)' in settings103 and 'if (s.isNullOrEmpty()) update("")' in settings103
+assert 'search.removeCallbacks(pendingSearch)' in settings103 and 'refresh("")' in settings103
 assert 'dp(48)' in conn103
 assert (root / 'app/src/test/java/br/dev/celularremoto/ui/MonitorUiRefreshPolicyTest.kt').exists()
 print('PASSOU: alpha.103 invalidacao de UI, temporizador unico, pesquisa adiada e alvo de toque ampliado.')
@@ -1499,7 +1500,7 @@ mobile = (ui_root / 'MobileNavigationUi.kt').read_text()
 home105 = (ui_root / 'HomeScreenUi.kt').read_text()
 dashboard105 = (ui_root / 'RemoteDashboardUi.kt').read_text()
 assert 'root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))' in main_ui
-assert 'root.addView(bottomNavigation, LinearLayout.LayoutParams(-1, dp(82)))' in main_ui
+assert 'root.addView(bottomNavigation, LinearLayout.LayoutParams(-1, dp(70)))' in main_ui
 assert all(phrase in mobile for phrase in ['"Início"', '"Controlar"', '"Monitorado"', '"Ajustes"'])
 assert 'renderBottomNavigation()' in main_ui and 'renderMobileHeader()' in main_ui
 assert 'showHomeSavedDeviceOptions(item)' in home105 and 'connectSavedDevice(item)' in home105
@@ -1675,3 +1676,18 @@ assert 'fillConnectionHealthSettings' in connection_ui and 'forceRecovery = true
 assert 'ConnectionHealthJobService' in manifest and 'ConnectionHealthScheduler.refresh(this)' in main_ui
 assert (root / "app/src/test/java/br/dev/celularremoto/core/ConnectionHealthMathTest.kt").exists()
 print('PASSOU: alpha.117 sonda AES-GCM, lacunas, limites, JobScheduler opt-in e interface')
+
+# Alpha.118: a densidade do layout é responsiva sem afetar ações nem permissões.
+compact118 = (ui_root / "CompactDesignUi.kt").read_text()
+home118 = (ui_root / "HomeScreenUi.kt").read_text()
+settings118 = (ui_root / "SettingsHubUi.kt").read_text()
+remote118 = (ui_root / "RemoteDashboardUi.kt").read_text()
+monitor118 = (ui_root / "MonitorScreenUi.kt").read_text()
+news118 = (ui_root / "VersionNewsUi.kt").read_text()
+assert all(p in compact118 for p in ["fontScale > 1.20f", "widthDp < 360", "widthDp >= 600", "minimumHeight = dp(76)", "contentDescription ="]), "Grid responsivo/acessivel alterado"
+assert all(p in home118 for p in ["connectSavedDevice(item)", "showHomeSavedDeviceOptions(item)", "showConnectionChooser()", "navigateMainTab(0)", "navigateMainTab(1)", "navigateMainTab(5)"]), "Atalhos e acoes do Inicio ausentes"
+assert all(p in settings118 for p in ["PermissionCenter.pending(this)", "settingSearchIndex", "search.removeCallbacks(pendingSearch)", "openSettingsSection(item.section)", "compactActionGrid(categoryGrid"]), "Busca, categorias ou permissoes ausentes"
+assert "compactActionGrid(parent, tiles)" in remote118 and remote118.count('actionTile(R.drawable.') == 12, "Acoes remotas alteradas"
+assert "compactActionGrid(actions, actionTiles)" in monitor118 and "ScreenShareService.stop(this)" in monitor118 and 'showAppConfirm("Compartilhar câmera ao vivo?"' in monitor118, "Consentimentos locais do Monitorado alterados"
+assert "renderVersionHistory" in news118 and "Histórico completo" in news118 and "markNewsSeen" in news118, "Novidades compactas sem historico/acusacao"
+print('PASSOU: alpha.118 design responsivo, navegação, busca, 12 acoes e segurança preservadas')

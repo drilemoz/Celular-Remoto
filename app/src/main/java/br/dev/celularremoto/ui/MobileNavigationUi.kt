@@ -13,7 +13,7 @@ internal fun MainActivity.renderMobileHeader() {
     val header = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
-        minimumHeight = dp(62)
+        minimumHeight = dp(54)
     }
     if (mode == 3 && settingsSection != "home") {
         header.addView(headerIconButton(R.drawable.ic_back, "Voltar às categorias") {
@@ -51,7 +51,7 @@ internal fun MainActivity.renderMobileHeader() {
             LinearLayout.LayoutParams(dp(48), dp(48)))
     }
     content.addView(header)
-    sectionGap(content, 17)
+    sectionGap(content, 11)
 }
 
 internal fun MainActivity.renderBottomNavigation() {
@@ -70,8 +70,8 @@ internal fun MainActivity.renderBottomNavigation() {
         val tab = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            minimumHeight = dp(66)
-            background = if (selected) shape(fieldColor, 16) else null
+            minimumHeight = dp(58)
+            background = if (selected) shape(fieldColor, 13) else null
             isClickable = true
             isFocusable = true
             contentDescription = "$title${if (selected) ", selecionado" else ""}"
@@ -85,7 +85,7 @@ internal fun MainActivity.renderBottomNavigation() {
             setPadding(0, dp(5), 0, 0)
             maxLines = 1
         })
-        bottomNavigation.addView(tab, LinearLayout.LayoutParams(0, dp(66), 1f).apply {
+        bottomNavigation.addView(tab, LinearLayout.LayoutParams(0, dp(58), 1f).apply {
             if (destination != 3) rightMargin = dp(2)
         })
     }

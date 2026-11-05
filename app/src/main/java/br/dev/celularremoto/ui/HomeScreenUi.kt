@@ -15,116 +15,97 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Lista de aparelhos mobile-first: dados salvos não significam conexão ativa. */
+/** Tela inicial compacta: o nome salvo não implica conexão ativa. */
 internal fun MainActivity.renderHome() {
-    val recentAccess = AuthenticatedAccess.recent()
-    if (recentAccess.isNotEmpty() && SettingsStore.isMonitorEnabled(this) && MonitorService.isRunning) {
-        val access = mobileSurfaceCard()
-        access.addView(iconMenuRow(R.drawable.ic_shield, "Acessos recentes",
-            "${recentAccess.size} aparelho(s) consultaram este telefone") { navigateMainTab(0) })
-        content.addView(access)
-        gap(12)
-    }
-
     val saved = RecentDevices.list(this)
-    val devices = mobileSurfaceCard()
-    devices.addView(mobileHeading(R.drawable.ic_phone, "Meus aparelhos"))
-    sectionGap(devices, 12)
+    val top = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; orientation = LinearLayout.HORIZONTAL }
+    top.addView(compactSectionTitle("Meus aparelhos", "${saved.size} salvo(s)"),
+        LinearLayout.LayoutParams(0, -2, 1f))
+    top.addView(headerIconButton(R.drawable.ic_phone, "Adicionar aparelho por QR ou IP") {
+        showConnectionChooser()
+    }, LinearLayout.LayoutParams(dp(48), dp(48)))
+    content.addView(top)
+    sectionGap(content, 8)
+
+    val devices = panel(8).apply { background = shape(surface, 18, true) }
     if (saved.isEmpty()) {
-        val empty = mobileWhiteCard().apply {
-            gravity = Gravity.CENTER
-            setPadding(dp(16), dp(21), dp(16), dp(21))
-        }
-        empty.addView(vectorIcon(R.drawable.ic_phone, 28, dim))
-        empty.addView(label("Nenhum aparelho salvo", 15f, strong = true).apply { gravity = Gravity.CENTER })
-        empty.addView(label("Conecte por QR Code ou informe o IP e a chave de pareamento.", 12f, muted = true).apply {
-            gravity = Gravity.CENTER
-            textAlignment = View.TEXT_ALIGNMENT_CENTER
-        })
-        devices.addView(empty)
+        devices.addView(label("Nenhum aparelho pareado", 14f, strong = true))
+        devices.addView(label("Use o botão + para conectar via QR ou IP e chave autorizada.", 12f, muted = true))
+        devices.addView(actionButton("Conectar novo aparelho") { showConnectionChooser() })
     } else {
         saved.forEachIndexed { index, item ->
-            if (index > 0) sectionGap(devices, 9)
-            val device = mobileWhiteCard()
-            val heading = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-            val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-            words.addView(label(item.name, 16f, strong = true).apply {
-                maxLines = 2
+            val device = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                minimumHeight = dp(76)
+                setPadding(dp(7), dp(5), dp(4), dp(5))
+                isClickable = true
+                isFocusable = true
+                contentDescription = "${item.name}. Abrir controles; última resposta salva não é conexão permanente"
+                setOnClickListener { connectSavedDevice(item) }
+            }
+            device.addView(vectorIcon(R.drawable.ic_phone, 24, highlight),
+                LinearLayout.LayoutParams(dp(28), dp(28)))
+            val info = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(10), 0, dp(4), 0) }
+            info.addView(label(item.name, 14f, strong = true).apply {
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
                 setPadding(0, 0, 0, 0)
             })
-            val lastUsed = if (item.lastSuccessMs > 0L)
-                "Última resposta: " + SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(item.lastSuccessMs))
+            val last = if (item.lastSuccessMs > 0L)
+                "Última resposta · " + SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(item.lastSuccessMs))
                 else "Aguardando primeira resposta"
-            words.addView(label(lastUsed, 11.5f, muted = true).apply { setPadding(0, dp(5), 0, 0) })
-            heading.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
-            val menu = ImageView(this).apply {
-                setImageResource(R.drawable.ic_settings)
-                imageTintList = ColorStateList.valueOf(dim)
-                setPadding(dp(11), dp(11), dp(11), dp(11))
-                background = shape(fieldColor, 13, true)
-                contentDescription = "Gerenciar ${item.name}"
-                isClickable = true; isFocusable = true
-                setOnClickListener { showHomeSavedDeviceOptions(item) }
-            }
-            heading.addView(menu, LinearLayout.LayoutParams(dp(48), dp(48)))
-            device.addView(heading)
-            sectionGap(device, 10)
-            device.addView(actionButton("Abrir controles", onClick = { connectSavedDevice(item) }).apply {
-                textSize = 14f
-                minimumHeight = dp(50)
-                background = shape(fieldColor, 15, true)
-            }, LinearLayout.LayoutParams(-1, dp(50)))
+            info.addView(label(last, 11f, muted = true).apply { setPadding(0, dp(3), 0, 0) })
+            device.addView(info, LinearLayout.LayoutParams(0, -2, 1f))
+            device.addView(headerIconButton(R.drawable.ic_settings, "Gerenciar ${item.name}") {
+                showHomeSavedDeviceOptions(item)
+            }, LinearLayout.LayoutParams(dp(48), dp(48)))
             devices.addView(device)
+            if (index < saved.lastIndex) compactDivider(devices, 38)
         }
     }
-    sectionGap(devices, 11)
-    val addNew = actionButton("＋  Conectar novo aparelho") { showConnectionChooser() }.apply {
-        textSize = 14f
-        minHeight = dp(60)
-        background = shape(surface, 18, true)
-    }
-    devices.addView(addNew, LinearLayout.LayoutParams(-1, dp(60)))
     content.addView(devices)
-    gap(21)
+    sectionGap(content, 16)
 
-    content.addView(label("Este telefone", 18f, strong = true).apply { setPadding(0, 0, 0, dp(12)) })
     val enabled = SettingsStore.isMonitorEnabled(this) && MonitorService.isRunning
-    val own = LinearLayout(this).apply {
+    content.addView(compactSectionTitle("Este telefone"))
+    sectionGap(content, 8)
+    val local = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
-        background = shape(fieldColor, 20, true)
-        setPadding(dp(15), dp(16), dp(14), dp(16))
-        isClickable = true; isFocusable = true
-        contentDescription = "Monitoramento: ${if (enabled) "ativo" else "inativo"}. Gerenciar compartilhamento"
+        minimumHeight = dp(68)
+        background = shape(surface, 17, true)
+        setPadding(dp(12), dp(8), dp(10), dp(8))
+        isClickable = true
+        isFocusable = true
+        contentDescription = "Monitorado: ${if (enabled) "serviço ativo" else "sem serviço ativo"}. Gerenciar"
         setOnClickListener { navigateMainTab(0) }
     }
-    own.addView(vectorIcon(R.drawable.ic_shield, 26, if (enabled) highlight else dim),
-        LinearLayout.LayoutParams(dp(32), dp(32)))
-    val ownText = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
-    ownText.addView(label("Monitoramento", 16.5f, strong = true).apply { setPadding(0, 0, 0, 0) })
-    ownText.addView(label("Gerenciar compartilhamento", 12f, muted = true).apply { setPadding(0, dp(3), 0, 0) })
-    own.addView(ownText, LinearLayout.LayoutParams(0, -2, 1f))
-    own.addView(label("›", 27f, muted = true))
-    content.addView(own)
-}
+    local.addView(vectorIcon(R.drawable.ic_shield, 23, if (enabled) highlight else dim))
+    val localText = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(10), 0, 0, 0) }
+    localText.addView(label("Monitoramento", 14f, strong = true).apply { setPadding(0, 0, 0, 0) })
+    localText.addView(label(if (enabled) "Servidor local em execução" else "Toque para configurar", 11f, muted = true).apply {
+        setPadding(0, dp(2), 0, 0)
+    })
+    local.addView(localText, LinearLayout.LayoutParams(0, -2, 1f))
+    local.addView(statePill(if (enabled) "Ativo" else "Inativo", if (enabled) "active" else "neutral"))
+    content.addView(local)
 
-private fun MainActivity.mobileSurfaceCard(): LinearLayout = panel(13).apply {
-    background = shape(fieldColor, 23)
-}
-
-private fun MainActivity.mobileWhiteCard(): LinearLayout = panel(15).apply {
-    background = shape(surface, 19)
-}
-
-private fun MainActivity.mobileHeading(icon: Int, title: String): LinearLayout =
-    LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER_VERTICAL
-        addView(vectorIcon(icon, 23, ink), LinearLayout.LayoutParams(dp(25), dp(25)))
-        addView(label(title, 18f, strong = true).apply { setPadding(dp(10), 0, 0, 0) })
+    val recentCount = if (enabled) AuthenticatedAccess.recent().size else 0
+    if (recentCount > 0) {
+        sectionGap(content, 7)
+        content.addView(label("$recentCount acesso(s) autenticado(s) recente(s) · ver em Monitorado", 11f, muted = true))
     }
+    sectionGap(content, 17)
+    content.addView(compactSectionTitle("Acesso rápido"))
+    sectionGap(content, 8)
+    compactActionGrid(content, listOf(
+        compactActionTile(R.drawable.ic_monitor, "Controlar", "Aparelho pareado") { navigateMainTab(1) },
+        compactActionTile(R.drawable.ic_shield, "Monitorado", "Este celular") { navigateMainTab(0) },
+        compactActionTile(R.drawable.ic_battery, "Bateria", "Leituras e testes") { navigateMainTab(5) }
+    ))
+}
 
-/** Opções de um aparelho ficam em cartões com ícones, sem lista nativa simples. */
 private fun MainActivity.showHomeSavedDeviceOptions(item: RecentDevices.Device) {
     val (wrapper, layout) = dialogWrapper()
     dialogIntro(layout, "${item.name} · ${item.host}")
@@ -133,20 +114,16 @@ private fun MainActivity.showHomeSavedDeviceOptions(item: RecentDevices.Device) 
         popup?.dismiss()
         connectSavedDevice(item)
     })
-    sectionGap(layout, 9)
-    layout.addView(iconMenuRow(R.drawable.ic_info, "Renomear", "Alterar o nome do aparelho salvo") {
+    sectionGap(layout, 7)
+    layout.addView(iconMenuRow(R.drawable.ic_info, "Renomear", "Alterar nome local") {
         popup?.dismiss()
         renameSavedDevice(item, returnToChooser = false)
     })
-    sectionGap(layout, 9)
-    layout.addView(iconMenuRow(R.drawable.ic_logout, "Esquecer aparelho", "Remover credencial e histórico local", dangerous = true) {
+    sectionGap(layout, 7)
+    layout.addView(iconMenuRow(R.drawable.ic_logout, "Esquecer aparelho", "Remove credencial e histórico local", dangerous = true) {
         popup?.dismiss()
         forgetSavedDevice(item, returnToChooser = false)
     })
-    popup = themedPopup(this)
-        .setTitle("Gerenciar aparelho")
-        .setView(wrapper)
-        .setNegativeButton("Fechar", null)
-        .create()
+    popup = themedPopup(this).setTitle("Gerenciar aparelho").setView(wrapper).setNegativeButton("Fechar", null).create()
     popup?.let { showManagedDialog(it) }
 }

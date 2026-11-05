@@ -1,3 +1,14 @@
+## 0.1.0-alpha.118 (versionCode 118) | 04/11/2026
+
+- **Redesenho visual inicial:** novo kit de atalhos compactos com grade adaptativa por largura e escala da fonte, cores contrastantes e cabeçalho/rodapé menores.
+- **Início:** aparelhos salvos em linhas compactas, status com última resposta explicitamente histórica, opções de gestão, estado local e atalhos de ações.
+- **Controlar:** 12 ações mantidas e reorganizadas em grade responsiva; telemetria e rede mais densas, sem abrir conexão permanente.
+- **Monitorado:** ações QR, informações, ativação e parada em grade compacta; permissões e confirmações continuam explícitas.
+- **Bateria:** métricas menores e quatro testes em grade 2×2, mantendo origens de medições e cautela com corrente/potência solar.
+- **Ajustes:** seis categorias e busca, com conteúdo detalhado por seleção. **Novidades:** três destaques atuais em vez de histórico longo; histórico acessível separadamente.
+- Verificador estrutural adaptado para inspecionar o novo design e preservar contratos de segurança, com teste para larguras pequenas e fontes ampliadas.
+- APK completo, usabilidade real, contraste, TalkBack e comunicação entre aparelhos ainda precisam de validação no GitHub Actions/dispositivos.
+
 ## 0.1.0-alpha.117 (versionCode 117) | 04/11/2026
 
 - Diagnóstico autenticado de disponibilidade, latência e recuperação, com novo heartbeat leve e fallback entre versões compatíveis.

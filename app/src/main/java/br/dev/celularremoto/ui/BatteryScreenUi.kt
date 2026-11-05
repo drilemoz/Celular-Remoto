@@ -114,7 +114,7 @@ internal fun MainActivity.renderBatteryScreen() {
         content.addView(dialogCardRow("Diagnóstico da corrente", "Leituras brutas, média Android e contador de carga · ${battery.optString("currentSource", "NONE")}") {
             showBatteryCurrentDiagnostic(battery)
         })
-        content.addView(label("Corrente líquida da bateria, não da entrada USB. Fonte: $powerSource. A geração solar real exige medidor externo.", 11f, muted = true))
+        content.addView(label("Fonte: $powerSource · corrente líquida da bateria, não produção solar.", 11f, muted = true))
     }
     val goalAlerts = data?.optJSONObject("goalAlerts")
     if (goalAlerts != null) {
@@ -161,7 +161,7 @@ internal fun MainActivity.renderBatteryScreen() {
         }
     }
     gap(12)
-    content.addView(label("Medições locais pelo serviço Monitorado. Testes são avaliados a cada 30 s; sessões automáticas têm pontos a cada 60 s ou mudança de percentual. Lacunas e previsões insuficientes não são inventadas. Sem internet.", 11f, muted = true))
+    content.addView(label("Leituras medidas no próprio aparelho · sem internet para monitoramento local.", 11f, muted = true))
 }
 
 private fun MainActivity.selectBatteryDevice(remote: Boolean) {
@@ -225,7 +225,8 @@ internal fun MainActivity.queryBatteryReport(action: String = "status", kind: St
     }
 }
 
-private fun MainActivity.batteryMetric(title: String, value: String, subtitle: String, icon: Int): LinearLayout = panel(11).apply {
+private fun MainActivity.batteryMetric(title: String, value: String, subtitle: String, icon: Int): LinearLayout = panel(9).apply {
+    minimumHeight = dp(88)
     val heading = LinearLayout(this@batteryMetric).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = android.view.Gravity.CENTER_VERTICAL
@@ -233,8 +234,8 @@ private fun MainActivity.batteryMetric(title: String, value: String, subtitle: S
     heading.addView(vectorIcon(icon, 17, dim), LinearLayout.LayoutParams(dp(17), dp(17)))
     heading.addView(label(title, 11.5f, muted = true), LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(6) })
     addView(heading)
-    addView(label(value, 21f, strong = true))
-    addView(label(subtitle, 10.5f, muted = true).apply { maxLines = 2 })
+    addView(label(value, 19f, strong = true))
+    addView(label(subtitle, 10.5f, muted = true).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
 }
 
 private fun MainActivity.showBatteryCurrentDiagnostic(battery: JSONObject) {
@@ -280,10 +281,16 @@ private fun MainActivity.renderBatteryTests(active: JSONObject?) {
         Triple("DISCHARGE", "▾ Teste de Consumo", "Descarga sem fonte externa conectada"),
         Triple("AUTO", "↻ Carga Automática", "Finaliza ao chegar a 100% ou após desconexão confirmada")
     )
-    options.forEach { (kind, title, description) ->
-        content.addView(dialogCardRow(title, description) { showBatteryStartDialog(kind) })
-        gap(7)
-    }
+    val icons = mapOf(
+        "SOLAR" to R.drawable.ic_power,
+        "ELECTRIC" to R.drawable.ic_battery_charging,
+        "DISCHARGE" to R.drawable.ic_battery,
+        "AUTO" to R.drawable.ic_activity
+    )
+    compactActionGrid(content, options.map { (kind, title, description) ->
+        compactActionTile(icons[kind] ?: R.drawable.ic_battery, title.removePrefix("☀ ").removePrefix("⚡ ")
+            .removePrefix("▾ ").removePrefix("↻ "), description) { showBatteryStartDialog(kind) }
+    }, preferredColumns = 2)
 }
 
 private fun MainActivity.showBatteryStartDialog(kind: String) {

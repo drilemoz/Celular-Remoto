@@ -304,9 +304,9 @@ internal fun MainActivity.iconMenuRow(
     val trailingLabel = actionLabel ?: resolvedBadge.label
     orientation = LinearLayout.HORIZONTAL
     gravity = Gravity.CENTER_VERTICAL
-    background = shape(fieldColor, 19, true)
-    setPadding(dp(12), dp(12), dp(12), dp(12))
-    minimumHeight = dp(72)
+    background = shape(surface, 14, true)
+    setPadding(dp(9), dp(7), dp(9), dp(7))
+    minimumHeight = dp(56)
     isClickable = true
     isFocusable = true
     contentDescription = listOf(title, subtitle, resolvedBadge.label).filter { it.isNotBlank() }.joinToString(". ")
@@ -317,8 +317,8 @@ internal fun MainActivity.iconMenuRow(
         gravity = Gravity.CENTER
         addView(vectorIcon(iconRes, 22, if (dangerous) Color.rgb(186, 67, 58) else highlight))
     }
-    addView(symbol, LinearLayout.LayoutParams(dp(44), dp(44)))
-    addView(View(this@iconMenuRow), LinearLayout.LayoutParams(dp(10), 1))
+    addView(symbol, LinearLayout.LayoutParams(dp(37), dp(37)))
+    addView(View(this@iconMenuRow), LinearLayout.LayoutParams(dp(8), 1))
 
     val words = LinearLayout(this@iconMenuRow).apply { orientation = LinearLayout.VERTICAL }
     words.addView(label(title, 15f, strong = true).apply {
@@ -328,7 +328,7 @@ internal fun MainActivity.iconMenuRow(
     })
     if (subtitle.isNotBlank()) {
         words.addView(label(subtitle, 11.5f, muted = true).apply {
-            maxLines = 2
+            maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END
             setPadding(0, dp(2), 0, 0)
             setLineSpacing(dp(1).toFloat(), 1f)
@@ -336,7 +336,7 @@ internal fun MainActivity.iconMenuRow(
     }
     addView(words, LinearLayout.LayoutParams(0, -2, 1f))
     addView(View(this@iconMenuRow), LinearLayout.LayoutParams(dp(8), 1))
-    addView(statusBadge(resolvedBadge).apply { text = trailingLabel }, LinearLayout.LayoutParams(-2, -2))
+    addView(statusBadge(resolvedBadge).apply { text = trailingLabel; minWidth = 0 }, LinearLayout.LayoutParams(-2, -2))
 }
 
 internal fun MainActivity.iconSectionHeader(iconRes: Int, title: String, subtitle: String = ""): LinearLayout =

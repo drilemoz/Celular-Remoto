@@ -41,15 +41,15 @@ class MainActivity : Activity() {
         "system" -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
         else -> false
     }
-    internal val bg get() = if (darkTheme()) Color.rgb(16, 18, 22) else Color.rgb(252, 252, 252)
-    internal val surface get() = if (darkTheme()) Color.rgb(29, 31, 35) else Color.WHITE
-    internal val ink get() = if (darkTheme()) Color.rgb(241, 242, 244) else Color.rgb(23, 23, 23)
-    internal val dim get() = if (darkTheme()) Color.rgb(175, 179, 185) else Color.rgb(103, 103, 103)
-    internal val highlight get() = if (darkTheme()) Color.rgb(90, 214, 188) else Color.rgb(24, 166, 146)
+    internal val bg get() = if (darkTheme()) Color.rgb(14, 18, 24) else Color.rgb(248, 250, 252)
+    internal val surface get() = if (darkTheme()) Color.rgb(26, 33, 42) else Color.WHITE
+    internal val ink get() = if (darkTheme()) Color.rgb(241, 245, 249) else Color.rgb(15, 23, 42)
+    internal val dim get() = if (darkTheme()) Color.rgb(164, 176, 188) else Color.rgb(96, 110, 124)
+    internal val highlight get() = if (darkTheme()) Color.rgb(78, 211, 186) else Color.rgb(13, 148, 136)
     internal val highlightText get() = if (darkTheme()) Color.rgb(14, 22, 35) else Color.WHITE
-    internal val lineColor get() = if (darkTheme()) Color.rgb(58, 60, 63) else Color.rgb(232, 232, 232)
+    internal val lineColor get() = if (darkTheme()) Color.rgb(55, 64, 76) else Color.rgb(226, 232, 240)
     internal val secondaryAccent get() = if (darkTheme()) Color.rgb(54, 116, 171) else Color.rgb(38, 113, 174)
-    internal val fieldColor get() = if (darkTheme()) Color.rgb(39, 41, 45) else Color.rgb(242, 242, 242)
+    internal val fieldColor get() = if (darkTheme()) Color.rgb(38, 47, 58) else Color.rgb(238, 242, 246)
     internal lateinit var content: LinearLayout
     internal lateinit var bottomNavigation: LinearLayout
     internal lateinit var permissionsNoticeHost: LinearLayout
@@ -177,7 +177,7 @@ class MainActivity : Activity() {
         }
         content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(16), dp(16), dp(25))
+            setPadding(dp(14), dp(12), dp(14), dp(19))
         }
         scroll.addView(content)
         permissionsNoticeHost = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -187,10 +187,10 @@ class MainActivity : Activity() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             background = shape(bg, 0)
-            setPadding(dp(12), dp(8), dp(12), dp(8))
-            elevation = dp(5).toFloat()
+            setPadding(dp(10), dp(6), dp(10), dp(6))
+            elevation = dp(3).toFloat()
         }
-        root.addView(bottomNavigation, LinearLayout.LayoutParams(-1, dp(82)))
+        root.addView(bottomNavigation, LinearLayout.LayoutParams(-1, dp(70)))
         setContentView(root)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val callback = android.window.OnBackInvokedCallback {

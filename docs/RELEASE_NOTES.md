@@ -1,3 +1,11 @@
+# Celular Remoto — 0.1.0-alpha.118
+
+**Redesenho visual compacto (primeira etapa):** telas Início, Controlar, Monitorado, Bateria e início de Configurações modernizadas com novos componentes, menores espaços vazios, estados legíveis e atalhos em 2 ou 3 colunas conforme tela/fonte. A barra fixa é menor e a tela Novidades exibe somente as três mudanças principais, com histórico acessível em Ajustes.
+
+**Sem mudança de autorização ou rede:** QR, chaves AES-GCM, serviço, permissões, modos de bateria, alertas, atualização de APK e workflow único permanecem. Ainda requer build Android no GitHub Actions e ensaios reais de rolagem, fonte ampliada, acessibilidade e contraste.
+
+---
+
 # Celular Remoto — 0.1.0-alpha.117
 
 **Diagnóstico de conexão:** heartbeat autenticado leve, histórico de latência e falhas, barras de medições, tempo da última resposta e alerta após três verificações sem resposta, com aviso de recuperação. Em Configurações → Estabilidade da conexão ou no botão Diagnóstico do Controlar. Reconexão somente em endereços já pareados com credencial idêntica.

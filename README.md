@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.117
+# Celular Remoto v0.1.0-alpha.118
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,16 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.117 / versionCode 117** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.118 / versionCode 118** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Interface compacta (alpha.118)
+
+- Tela Início redesenhada para mostrar aparelhos salvos em linhas acionáveis, horário da última resposta **sem fingir conexão permanente**, estado do Monitorado e três atalhos adaptativos.
+- Configurações reorganizadas em seis categorias com pesquisa preservada; as opções completas só aparecem após escolher uma categoria ou pesquisar. Central de Permissões continua disponível no topo.
+- Ações da tela Controlar e do Monitorado em grades de 2/3/4 colunas segundo largura e fonte Android; os 12 comandos e os consentimentos locais são preservados.
+- Ajustados indicadores, cartões de telemetria, atalhos dos quatro testes de bateria e tema claro/escuro. Novidades mostram apenas três destaques com histórico separado.
+- Nenhuma mudança nos protocolos AES-GCM, credenciais, banco de sessões, serviço Monitorado, permissões ou workflow. 
+- **Validação local não substitui compilação Android nem testes de usabilidade e TalkBack em aparelhos físicos.**
 
 ## Diagnóstico de conexão (alpha.117)
 

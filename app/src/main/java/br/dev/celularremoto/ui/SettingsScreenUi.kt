@@ -54,13 +54,11 @@ internal fun MainActivity.renderSettingsModule() {
         // A página inicial possui seu próprio cabeçalho. Não repetir "Configurações".
         renderSettingsHome()
     } else {
-        val top = panel(13)
-        top.addView(visualHeader(R.drawable.ic_settings, title ?: "Configurações",
-            "Preferências e permissões deste aparelho"))
-        sectionGap(top, 10)
-        top.addView(actionButton("‹ Categorias") { openSettingsSection("home") })
-        content.addView(top)
-        sectionGap(content, 10)
+        val breadcrumb = actionButton("‹  Categorias  /  ${title ?: "Configurações"}") {
+            openSettingsSection("home")
+        }.apply { textSize = 13f; minimumHeight = dp(48) }
+        content.addView(breadcrumb, LinearLayout.LayoutParams(-1, dp(48)))
+        sectionGap(content, 9)
         val page = panel(12)
         when (section) {
             "permissions" -> renderPermissionCenter(page)
@@ -740,8 +738,10 @@ internal fun MainActivity.handleRecoveryPickerResult(resultCode: Int, data: Inte
 }
 
 private fun MainActivity.fillVersionNewsSettings(layout: LinearLayout) {
-    dialogIntro(layout, "Veja novamente as melhorias desta versão.")
-    layout.addView(iconMenuRow(R.drawable.ic_info, "Abrir novidades", "Versão ${AppVersion.NAME}") { showVersionNews() })
+    dialogIntro(layout, "Novidades atuais: ${AppVersion.NAME}")
+    layout.addView(actionButton("Ver novidades da versão atual") { showVersionNews() })
+    sectionGap(layout, 10)
+    renderVersionHistory(layout)
 }
 
 private fun MainActivity.fillHealthSettings(layout: LinearLayout) {

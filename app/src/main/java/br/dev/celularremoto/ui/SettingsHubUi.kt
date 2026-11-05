@@ -69,52 +69,38 @@ private val settingSearchIndex by lazy {
 
 /** Índice compacto e pesquisável, com estado verdadeiro das permissões locais. */
 internal fun MainActivity.renderSettingsHome() {
-    val header = panel(14)
-    header.addView(visualHeader(R.drawable.ic_settings, "Configurações", "Controle o que este aparelho compartilha"))
-    sectionGap(header, 12)
-    val overview = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        background = shape(fieldColor, 16)
-        setPadding(dp(11), dp(10), dp(11), dp(10))
+    // A página inicial apresenta categorias/atalhos. Os 20 itens completos aparecem
+    // apenas após selecionar uma categoria ou pesquisar, evitando rolagem obrigatória.
+    val pending = PermissionCenter.pending(this).size
+    val permissionsStrip = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        background = shape(if (darkTheme()) android.graphics.Color.rgb(37, 54, 53)
+            else android.graphics.Color.rgb(230, 247, 242), 14)
+        setPadding(dp(11), dp(8), dp(9), dp(8))
+        minimumHeight = dp(54)
+        isClickable = true
+        isFocusable = true
+        contentDescription = "Central de permissões: $pending pendentes. Abrir"
+        setOnClickListener { openSettingsSection("permissions") }
     }
-    overview.addView(label("PERMISSÕES DO ANDROID", 10.5f, strong = true, muted = true).apply {
-        setPadding(0, 0, 0, dp(7))
-    })
-    fun overviewRow(icon: Int, labelText: String, enabled: Boolean, section: String) {
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            minimumHeight = dp(45)
-            isClickable = true
-            isFocusable = true
-            contentDescription = "$labelText: ${if (enabled) "Autorizado" else "Não autorizado"}. Abrir configurações"
-            setOnClickListener { openSettingsSection(section) }
-        }
-        row.addView(vectorIcon(icon, 18, highlight), LinearLayout.LayoutParams(dp(21), dp(21)))
-        row.addView(label(labelText, 12.5f, strong = true).apply {
-            setPadding(dp(9), 0, 0, 0)
-        }, LinearLayout.LayoutParams(0, -2, 1f))
-        row.addView(statePill(if (enabled) "Autorizado" else "Pendente", if (enabled) "active" else "neutral"))
-        overview.addView(row)
-    }
-    overviewRow(R.drawable.ic_pin, "Localização", LocationShareStore.hasPermission(this), "location")
-    overviewRow(R.drawable.ic_remote_camera, "Câmera", checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED, "physical")
-    overviewRow(R.drawable.ic_bell, "Notificações", hasListener(), "notifications")
-    header.addView(overview)
-    sectionGap(header, 8)
-    header.addView(actionButton("Ver todas as permissões (${PermissionCenter.pending(this).size} pendentes)") {
-        openSettingsSection("permissions")
-    })
-    content.addView(header)
-    sectionGap(content, 11)
+    permissionsStrip.addView(vectorIcon(R.drawable.ic_shield, 21, highlight))
+    val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(10), 0, 0, 0) }
+    words.addView(label("Permissões do aparelho", 13f, strong = true).apply { setPadding(0, 0, 0, 0) })
+    words.addView(label(if (pending > 0) "$pending pendência(s) · toque para revisar" else "Acessos solicitáveis revisados",
+        11f, muted = true).apply { setPadding(0, dp(2), 0, 0) })
+    permissionsStrip.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
+    permissionsStrip.addView(label("›", 21f, muted = true))
+    content.addView(permissionsStrip)
+    sectionGap(content, 14)
 
     val searchRow = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
-        background = shape(fieldColor, 15, true)
-        setPadding(dp(12), 0, dp(6), 0)
+        background = shape(fieldColor, 14)
+        setPadding(dp(11), 0, dp(3), 0)
     }
-    searchRow.addView(vectorIcon(R.drawable.ic_search, 20, dim))
+    searchRow.addView(vectorIcon(R.drawable.ic_search, 19, dim))
     val search = EditText(this).apply {
         hint = "Buscar configuração"
         textSize = 14f
@@ -127,10 +113,10 @@ internal fun MainActivity.renderSettingsHome() {
         setPadding(dp(10), dp(5), dp(4), dp(5))
         contentDescription = "Pesquisar configurações"
     }
-    searchRow.addView(search, LinearLayout.LayoutParams(0, dp(50), 1f))
+    searchRow.addView(search, LinearLayout.LayoutParams(0, dp(48), 1f))
     val clear = TextView(this).apply {
         text = "✕"
-        textSize = 16f
+        textSize = 17f
         setTextColor(dim)
         gravity = Gravity.CENTER
         isClickable = true
@@ -139,94 +125,117 @@ internal fun MainActivity.renderSettingsHome() {
         visibility = View.GONE
         setOnClickListener { search.text?.clear() }
     }
-    searchRow.addView(clear, LinearLayout.LayoutParams(dp(42), dp(48)))
+    searchRow.addView(clear, LinearLayout.LayoutParams(dp(48), dp(48)))
     content.addView(searchRow)
-    val resultCount = label("", 11f, muted = true).apply { setPadding(dp(4), dp(8), 0, dp(4)) }
+    sectionGap(content, 15)
+    content.addView(compactSectionTitle("Categorias"))
+    sectionGap(content, 8)
+    val categoryGrid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+    content.addView(categoryGrid)
+    sectionGap(content, 15)
+    val resultHeader = compactSectionTitle("Acesso rápido")
+    content.addView(resultHeader)
+    sectionGap(content, 7)
+    val resultCount = label("", 11f, muted = true).apply { setPadding(0, 0, 0, dp(6)) }
     content.addView(resultCount)
     val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     content.addView(results)
 
-    var renderedQuery: String? = null
-    fun update(query: String) {
-        val normalized = folded(query)
-        if (normalized == renderedQuery) return
-        renderedQuery = normalized
-        results.removeAllViews()
-        clear.visibility = if (query.isNotBlank()) View.VISIBLE else View.GONE
-        var count = 0
-        settingGroups.forEach { group ->
-            val matches = group.entries.filter { entry ->
-                normalized.isBlank() || settingSearchIndex[group.title]?.get(entry)?.contains(normalized) == true
-            }
-            if (matches.isEmpty()) return@forEach
-            count += matches.size
-            val card = panel(12)
-            val head = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(3), dp(2), 0, dp(7))
-            }
-            head.addView(View(this).apply { background = shape(highlight, 99) },
-                LinearLayout.LayoutParams(dp(3), dp(17)))
-            head.addView(label(group.title, 10.5f, strong = true, muted = true).apply {
-                setPadding(dp(9), 0, 0, 0)
+    var selectedGroup: String? = null
+    var renderedKey = ""
+    fun openItem(item: SettingsDestination) {
+        if (item.section == "adb") startActivity(Intent(this, AdbActivity::class.java))
+        else openSettingsSection(item.section)
+    }
+    lateinit var refresh: (String) -> Unit
+    refresh = { raw ->
+        val normalized = folded(raw)
+        val key = "$normalized|$selectedGroup"
+        if (key != renderedKey) {
+            renderedKey = key
+            clear.visibility = if (raw.isNotBlank()) View.VISIBLE else View.GONE
+            categoryGrid.removeAllViews()
+            compactActionGrid(categoryGrid, settingGroups.map { group ->
+                val label = when (group.title) {
+                    "SEGURANÇA E PERMISSÕES" -> "Segurança"
+                    "RECUPERAÇÃO E LOCALIZAÇÃO" -> "Conexão e GPS"
+                    "CÂMERA E TELA" -> "Câmera e tela"
+                    "ARQUIVOS E APLICATIVOS" -> "Arquivos e apps"
+                    "ALERTAS E COMUNICAÇÃO" -> "Alertas"
+                    else -> "Aplicativo"
+                }
+                compactActionTile(group.entries.first().icon, label, group.title,
+                    selected = normalized.isBlank() && group.title == selectedGroup) {
+                    selectedGroup = if (selectedGroup == group.title) null else group.title
+                    refresh(search.text?.toString().orEmpty())
+                }
             })
-            card.addView(head)
+            results.removeAllViews()
+            val quick = setOf("permissions", "connection", "updates", "appearance", "health")
+            val matches = settingGroups.flatMap { group ->
+                group.entries.filter { item -> when {
+                    normalized.isNotBlank() -> settingSearchIndex[group.title]?.get(item)?.contains(normalized) == true
+                    selectedGroup != null -> group.title == selectedGroup
+                    else -> item.section in quick
+                } }
+            }
+            val heading = when {
+                normalized.isNotBlank() -> "Resultados da busca"
+                selectedGroup != null -> when (selectedGroup) {
+                    "SEGURANÇA E PERMISSÕES" -> "Segurança e permissões"
+                    "RECUPERAÇÃO E LOCALIZAÇÃO" -> "Recuperação e localização"
+                    "CÂMERA E TELA" -> "Câmera e tela"
+                    "ARQUIVOS E APLICATIVOS" -> "Arquivos e aplicativos"
+                    "ALERTAS E COMUNICAÇÃO" -> "Alertas e comunicação"
+                    else -> "Aparência e aplicativo"
+                }
+                else -> "Acesso rápido"
+            }
+            (resultHeader.getChildAt(0) as? TextView)?.text = heading
+            resultCount.text = if (normalized.isNotBlank()) "${matches.size} resultado(s)"
+                else if (selectedGroup == null) "Selecione uma categoria para ver todas as opções"
+                else "${matches.size} opções nesta categoria"
+            val list = panel(4).apply { background = shape(surface, 15, true) }
             matches.forEachIndexed { index, item ->
-                val row = LinearLayout(this).apply {
+                val entry = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
-                    minimumHeight = dp(62)
+                    minimumHeight = dp(58)
+                    setPadding(dp(10), dp(5), dp(9), dp(5))
                     isClickable = true
                     isFocusable = true
-                    setPadding(dp(5), dp(8), dp(4), dp(8))
                     contentDescription = "${item.title}. ${item.hint}"
-                    setOnClickListener {
-                        if (item.section == "adb") startActivity(Intent(this@renderSettingsHome, AdbActivity::class.java))
-                        else openSettingsSection(item.section)
-                    }
+                    setOnClickListener { openItem(item) }
                 }
-                val iconPlate = LinearLayout(this).apply {
-                    gravity = Gravity.CENTER
-                    background = shape(fieldColor, 13)
-                    addView(vectorIcon(item.icon, 21, highlight))
-                }
-                row.addView(iconPlate, LinearLayout.LayoutParams(dp(40), dp(40)))
-                val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(11), 0, 0, 0) }
-                words.addView(label(item.title, 13.5f, strong = true).apply {
-                    maxLines = 2
+                entry.addView(vectorIcon(item.icon, 20, highlight), LinearLayout.LayoutParams(dp(25), dp(25)))
+                val texts = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(9), 0, dp(4), 0) }
+                texts.addView(label(item.title, 13.5f, strong = true).apply {
                     setPadding(0, 0, 0, 0)
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
                 })
-                words.addView(label(item.hint, 11f, muted = true).apply {
-                    maxLines = 2
+                texts.addView(label(item.hint, 10.5f, muted = true).apply {
                     setPadding(0, dp(2), 0, 0)
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
                 })
-                row.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
-                row.addView(label("›", 21f, muted = true).apply { gravity = Gravity.CENTER })
-                card.addView(row)
-                if (index < matches.lastIndex) card.addView(View(this).apply {
-                    background = shape(lineColor, 1)
-                }, LinearLayout.LayoutParams(-1, dp(1)).apply { leftMargin = dp(54) })
+                entry.addView(texts, LinearLayout.LayoutParams(0, -2, 1f))
+                entry.addView(label("›", 20f, muted = true))
+                list.addView(entry)
+                if (index < matches.lastIndex) compactDivider(list, 43)
             }
-            results.addView(card)
-            sectionGap(results, 9)
+            if (matches.isEmpty()) list.addView(label("Nenhuma opção encontrada. Tente outro termo.", 12.5f, muted = true))
+            results.addView(list)
         }
-        resultCount.text = if (normalized.isBlank()) "$count opções organizadas por categoria"
-            else "$count resultado(s) para “${query.trim()}”"
-        if (count == 0) results.addView(panel(14).apply {
-            addView(visualHeader(R.drawable.ic_search, "Nenhum resultado", "Tente buscar por GPS, câmera, notificações ou arquivos"))
-        })
     }
-    // Atualização com 120 ms de pausa: evita destruir/recriar dezenas de Views
-    // em cada tecla, sem atrasar abertura das categorias ou o botão Limpar.
     val pendingSearch = Runnable {
-        if (results.isAttachedToWindow) update(search.text?.toString().orEmpty())
+        if (results.isAttachedToWindow) refresh(search.text?.toString().orEmpty())
     }
     search.addTextChangedListener(object : TextWatcher {
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
         override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
             search.removeCallbacks(pendingSearch)
-            if (s.isNullOrEmpty()) update("") else search.postDelayed(pendingSearch, 120L)
+            search.postDelayed(pendingSearch, 120L)
         }
         override fun afterTextChanged(s: Editable?) = Unit
     })
@@ -234,5 +243,5 @@ internal fun MainActivity.renderSettingsHome() {
         override fun onViewAttachedToWindow(v: View) = Unit
         override fun onViewDetachedFromWindow(v: View) { search.removeCallbacks(pendingSearch) }
     })
-    update("")
+    refresh("")
 }
