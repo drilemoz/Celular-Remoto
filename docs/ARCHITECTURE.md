@@ -1,3 +1,11 @@
+# Estado atual — alpha.137
+
+A alpha.137 corrige a verificação do host de conexão ADB durante callbacks mDNS, limita candidatos a nomes de serviço TLS ADB válidos no mesmo IP pareado, e revalida host+chave após entregar callbacks de eventos à UI. Mensagens descartam dados temporários antigos na abertura via notificação, esperando a Activity ficar visível para consultar. Não há alteração de protocolo ou novas permissões.
+
+A alpha.136 adiciona operação opcional `eventWatch` pela **mesma porta TCP 37842 e criptografia AES-GCM**, exclusivamente com Activity visível. O controlador abre uma consulta longa por até 11 s, terminada por novo evento ou expiração. O monitorado permite somente uma espera simultânea (`Semaphore(1)`), deixando dois dos três workers disponíveis. A resposta transfere apenas epoch, revisão e metadados (id/horário/tipo/pacote), sem remetente ou conteúdo. SMS requer permissões e consentimentos locais, e notificações respeitam allowlist e filtros. O servidor revalida serviço e chave após a espera. Um cliente de versão antiga continua usando os snapshots; `eventWatch` pode retornar sem suporte e é tratado como falha sem mudar o marcador WIRE_COMPAT. A central Mensagens atualiza por evento enquanto aberta, com controle local para desligar. Sair do app fecha o socket do observador. No segundo plano permanece JobScheduler de melhor esforço, sem serviço extra, push permanente, WakeLock ou garantia de imediatismo.
+
+A ação **Acender tela** no menu Energia agora chama o endpoint `wakeScreen` existente, apenas após confirmação, exigindo consentimento prévio no monitorado; não desbloqueia. Build Android real e testes de dois aparelhos continuam pendentes.
+
 # Estado atual — alpha.135
 
 A alpha.135 reforça avisos remotos com filtros por categoria, cursor por host+chave e revalidação do pareamento no retorno do JobScheduler; eventos até 60 minutos ainda em buffer são sinalizados com atraso, sem push em tempo real. A alpha.134 centraliza Controlar, trata WindowInsets, melhora a sirene e adiciona cursores de eventos remotos genéricos por snapshot autenticado; não amplia portas nem autorizações locais. A alpha.133 adiciona cópia individual e relatório de dados disponíveis em Detalhes, com número de telefone somente por compartilhamento opcional, sem alterar o snapshot autenticado. A alpha.132 reforça atualização local e remota sem alterar o serviço de fotografia existente. A alpha.131 preserva o serviço de fotografia `PhotoReadyService`, explicitamente iniciado por Activity visível: o botão local prepara Monitorado e câmera na sequência, enquanto o controlador consulta prontidão pelo snapshot cifrado existente. Sem serviço de câmera por comando remoto, sem captura ou polling contínuo e sem alteração de protocolo.
@@ -68,9 +76,9 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 O mesmo APK atende aos modos Monitorado, Bateria local contínua e Controle. MonitorService usa FGS connectedDevice no modo remoto e specialUse no modo bateria sem abrir o servidor TCP; as amostras são feitas pelo mesmo executor serial a cada 30 s, e apenas um ID de notificação é usado.
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.135` e `versionCode=135`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.137` e `versionCode=137`.
 
-- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.135.apk`.
+- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.137.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.
 - Com quatro Secrets, Gradle gera APK Release assinado e AAB. Sem Secrets, o arquivo é Debug de teste e não preserva necessariamente a assinatura entre execuções.
 - Releases são prévias, não substituem a futura revisão da Google Play e nem os ensaios reais.

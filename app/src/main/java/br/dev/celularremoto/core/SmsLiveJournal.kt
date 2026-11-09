@@ -14,8 +14,12 @@ object SmsLiveJournal {
         if (entries.any { it.address == address && it.text == body && kotlin.math.abs(it.whenMs - whenMs) < 30_000L }) return
         entries.addLast(Entry(++sequence, address.take(40), body.take(400), whenMs, System.currentTimeMillis()))
         while (entries.size > 20) entries.removeFirst()
+        RemoteEventSignal.changed()
     }
-    @Synchronized fun clear() = entries.clear()
+    @Synchronized fun clear() {
+        entries.clear()
+        RemoteEventSignal.changed()
+    }
     /** Metadados mínimos para aviso de chegada. Nunca envia remetente nem texto nesta operação. */
     @Synchronized fun alerts(): JSONArray = JSONArray().apply {
         entries.forEach { put(JSONObject().put("id", it.id).put("whenMs", it.arrivalMs)) }

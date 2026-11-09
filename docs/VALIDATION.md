@@ -1,3 +1,9 @@
+# Validação mais recente — alpha.136 (09/11/2026)
+
+- Fonte alpha.135 como base, atualização de código e documentação para alpha.136/versionCode 136.
+- Verificações e pendências detalhadas em `docs/VALIDATION_ALPHA136.md`.
+- Build Android Gradle/CI e testes em dois aparelhos **pendentes**; verificação estática não substitui build.
+
 # Validação mais recente — alpha.135 (09/11/2026)
 
 - [x] `python3 tools/check_distribution.py`: verificações estruturais legadas até alpha.135 aprovadas.

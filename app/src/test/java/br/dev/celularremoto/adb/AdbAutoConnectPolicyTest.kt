@@ -22,4 +22,20 @@ class AdbAutoConnectPolicyTest {
         assertEquals(2, AdbAutoConnectPolicy.connectionServices("192.168.1.10", services).size)
         assertTrue(AdbAutoConnectPolicy.connectionServices("192.168.1.12", services).isEmpty())
     }
+
+    @Test fun rejectsLookalikeServicesAndInvalidPorts() {
+        val host = "192.168.1.10"
+        val services = listOf(
+            endpoint(host, 41001, "not_adb-tls-connect._tcp."),
+            endpoint(host, 41002, "_adb-tls-connect-fake._tcp."),
+            endpoint(host, 0),
+            endpoint(host, 65536),
+            endpoint(host, 41003, "_adb-tls-connect._tcp."),
+            endpoint(host, 41003, "_adb-tls-connect._tcp."),
+            endpoint(host, 41004, "_ADB-TLS-CONNECT._TCP."),
+            endpoint("192.168.1.11", 41005)
+        )
+        assertEquals(listOf(41003, 41004),
+            AdbAutoConnectPolicy.connectionServices(host, services).map { it.port })
+    }
 }

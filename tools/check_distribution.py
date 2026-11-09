@@ -1610,7 +1610,7 @@ remote_preferences = (root / 'app/src/main/java/br/dev/celularremoto/updates/Upd
 remote_ui = (ui_root / 'UpdatesSettingsUi.kt').read_text()
 assert 'const val WIRE_COMPAT = "0.1.0-alpha.111"' in remote_version
 assert 'AppVersion.WIRE_COMPAT' in client and 'AppVersion.WIRE_COMPAT' in server
-assert '"appUpdate", "heartbeat")) return' in server and 'UpdateController.remoteAction(context, action)' in server
+assert '"appUpdate", "heartbeat", "eventWatch")) return' in server and 'UpdateController.remoteAction(context, action)' in server
 assert 'fun appUpdate(' in client and '"checkDownload"' in client
 assert 'fun remoteAction(context: Context, action: String)' in update
 assert 'UpdatePreferences.remoteRequests(context)' in update and 'REMOTE_COOLDOWN_MS' in update
@@ -1959,3 +1959,44 @@ assert 'it.arrivalMs' in sms135 and '"whenMs", it.whenMs' in sms135
 assert (root / 'app/src/test/java/br/dev/celularremoto/core/RemoteEventNoticePolicyTest.kt').is_file()
 assert (root / 'docs/VALIDATION_ALPHA135.md').is_file()
 print('PASSOU: alpha.135 filtros SMS/WhatsApp, janela de 60 min, linha de base e pareamento revistos')
+
+# alpha.136: long-poll protegido somente em Activity visível, um worker por aparelho,
+# metadados sem conteúdo sensível, token de sessão e parada/cancelamento ao sair.
+watch136 = (ui_root / 'ForegroundEventWatcher.kt').read_text()
+signal136 = (root / 'app/src/main/java/br/dev/celularremoto/core/RemoteEventSignal.kt').read_text()
+msg136 = (ui_root / 'RemoteMessagesUi.kt').read_text()
+conn136 = (ui_root / 'RemoteConnectionManager.kt').read_text()
+assert 'eventWatchSlot = Semaphore(1, true)' in server
+assert 'RemoteEventSignal.await(since, 11_000L)' in server
+assert 'SecretVault.load(context, SecretVault.MONITOR_KEY)' in server
+assert 'MessageDigest.isEqual(currentKey, permanentKey)' in server
+assert 'put("app", event.app)' in server and 'put("preview", event.preview)' not in server
+assert 'put("smsAlertEvents", if (smsAllowed)' in server
+assert 'RemoteClient.watchEvents(' in watch136 and 'MessageDigest.isEqual(it, key)' in watch136
+assert 'onEventsChanged(host, scope)' in watch136 and 'id == session' in watch136
+assert 'eventWatcher.start()' in main_ui and 'eventWatcher.stop()' in main_ui
+assert 'mode == 4 && messagesAutoRefresh' in watch136
+assert 'Atualização por eventos:' in msg136
+assert 'RemoteEventSignal.changed()' in journal and 'RemoteEventSignal.changed()' in sms135
+assert 'timeoutMs in 0L..12_000L' in signal136
+assert 'fun wakeScreen(' in conn136 and 'remoteConnection.wakeScreen(selectedHost)' in dashboard124
+assert (root / 'app/src/test/java/br/dev/celularremoto/core/RemoteEventSignalTest.kt').is_file()
+assert (root / 'docs/VALIDATION_ALPHA136.md').is_file()
+print('PASSOU: alpha.136 espera autenticada limitada, opt-in e cancelamento, metadados mínimos, wake local')
+
+# alpha.137: reconnect mDNS exact, privacy on notification and scoped event callback.
+adb137 = (ui_root / 'AdbActivity.kt').read_text()
+adb_policy137 = (root / 'app/src/main/java/br/dev/celularremoto/adb/AdbAutoConnectPolicy.kt').read_text()
+watch137 = (ui_root / 'ForegroundEventWatcher.kt').read_text()
+messages137 = (ui_root / 'RemoteMessagesUi.kt').read_text()
+assert 'val selectedHost = host ?: return@found' in adb137
+assert 'connectCandidates(selectedHost)' in adb137
+assert 'discoveryHost == selectedHost' in adb137
+assert 'type.startsWith("_adb-tls-connect._tcp.")' in adb_policy137
+assert 'openRemoteMessagesScreen()' in main_ui
+assert 'if (active) loadRemoteMessages()' in messages137
+assert 'onEventsChanged(host, scope)' in watch137
+assert 'messagesHost == notifiedHost' in watch137
+assert 'validSelection' in watch137
+assert (root / 'docs/VALIDATION_ALPHA137.md').exists()
+print('PASSOU: alpha.137 ADB nullable e serviço exato, mensagens limpas, evento por escopo de sessão')

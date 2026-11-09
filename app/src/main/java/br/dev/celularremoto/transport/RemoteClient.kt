@@ -45,6 +45,41 @@ object RemoteClient {
         }
     }
 
+    /** Consulta longa de metadados, opcional e somente enquanto o controlador está visível.
+     * Um único socket por observador, prazo máximo e nenhum conteúdo de mensagens.
+     */
+    fun watchEvents(host: String, key: ByteArray, context: Context, revision: Long,
+        onSocket: (Socket) -> Unit): JSONObject {
+        require(host.isNotBlank() && host.length <= 253 &&
+            '/' !in host && ':' !in host && ' ' !in host) { "Host inválido." }
+        require(revision >= 0L)
+        val request = JSONObject().put("v", WireProtocol.VERSION)
+            .put("op", "eventWatch").put("revision", revision)
+            .put("appVersion", AppVersion.WIRE_COMPAT)
+            .put("ts", System.currentTimeMillis())
+            .put("clientId", SettingsStore.controllerId(context))
+            .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
+            .put("accessMethod", "Avisos locais")
+        return Socket().use { socket ->
+            onSocket(socket)
+            socket.connect(InetSocketAddress(host, WireProtocol.PORT), 3_500)
+            socket.soTimeout = 16_000
+            WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(key, request))
+            val reply = WireProtocol.decode(key, WireProtocol.receive(socket.getInputStream(), 24 * 1024))
+            if (reply.optString("op") == "versionMismatch")
+                error(AppVersion.incompatibility(reply.optString("appVersion")))
+            check(reply.optString("op") == "eventWatch" && reply.optInt("v") == WireProtocol.VERSION &&
+                AppVersion.compatible(reply.optString("appVersion"))) { "Resposta de eventos inválida." }
+            if (!reply.optBoolean("busy")) {
+                check(reply.optLong("revision", 0L) > 0L && reply.optString("epoch").isNotBlank() &&
+                    reply.optJSONArray("events") != null && reply.optJSONArray("smsAlertEvents") != null) {
+                    "Metadados de eventos incompletos."
+                }
+            }
+            reply
+        }
+    }
+
     /** Sonda leve cifrada para alpha.117+. Em versões antigas, usa snapshot autenticado.
      * Não mantém um socket persistente e não solicita conteúdo sensível de forma rotineira.
      */

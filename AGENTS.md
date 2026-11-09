@@ -1,3 +1,18 @@
+# Celular Remoto v0.1.0-alpha.137 — correções ADB e isolamento de sessões (09/11/2026)
+
+- Base alpha.136; próxima alteração alpha.138/versionCode 138. Sincronizar Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, novidades, testes e validações.
+- Na descoberta ADB, endereço de conexão é obrigatório e não nulo; mDNS pode sugerir somente serviço `_adb-tls-connect._tcp`, host já selecionado e porta válida. Não adicionar varredura nem conectar a IP de terceiros.
+- Abrir Mensagens via notificação deve zerar todos os dados temporários da sessão anterior antes de renderizar; se a Activity estiver invisível, esperar o `onResume` para consultar.
+- Callback de eventos deve revalidar host, chave e escopo criptográfico no momento da entrega à UI. Não ampliar coleta, permissões, serviços de segundo plano nem dados transferidos.
+- Requer confirmação de compilação Gradle/Android e teste real em dois aparelhos antes de instalar/distribuir como validado.
+
+# Celular Remoto v0.1.0-alpha.136 — eventos locais e despertar de tela (09/11/2026)
+
+- Base alpha.135; próxima versão alpha.137/versionCode 137. Sincronizar Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, Novidades, testes e validações.
+- `eventWatch` é opcional, somente em tela visível, na porta AES-GCM existente, com um slot de longa espera; nunca transferir conteúdo de SMS/WhatsApp no resumo de eventos. Continuar verificando consentimentos locais, allowlist e pareamento antes de enviar/consumir respostas.
+- Encerrar socket ao pausar Activity, preservar fallback JobScheduler em segundo plano, sem serviço persistente novo. Não prometer entrega imediata sob Doze/sem rede.
+- Acender tela exige autorização já concedida no próprio monitorado e não remove bloqueio. Testar via CI e em dois celulares antes de considerar funcionalidade homologada.
+
 # Celular Remoto v0.1.0-alpha.135 — alertas e pareamento (09/11/2026)
 
 - Base alpha.134; próxima versão alpha.136/versionCode 136. Toda edição sincroniza Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, Novidades, testes e validações.

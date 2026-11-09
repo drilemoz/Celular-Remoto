@@ -7,6 +7,7 @@ import br.dev.celularremoto.core.BatteryReader
 import br.dev.celularremoto.core.NetworkReader
 import br.dev.celularremoto.core.DeviceInfoReader
 import br.dev.celularremoto.core.TelephonyReader
+import br.dev.celularremoto.core.RemoteEventSignal
 import br.dev.celularremoto.core.EventJournal
 import br.dev.celularremoto.core.SmsInboxReader
 import br.dev.celularremoto.core.SmsReplySender
@@ -35,6 +36,7 @@ import br.dev.celularremoto.core.SettingsStore
 import br.dev.celularremoto.security.CryptoBox
 import br.dev.celularremoto.security.SecretVault
 import org.json.JSONObject
+import java.security.MessageDigest
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
@@ -58,6 +60,8 @@ class MonitorServer(private val context: Context) {
     )
     // Não deixar transferências longas ocupar os três workers simultaneamente.
     private val streamSlots = Semaphore(1, true)
+    // Uma única espera de eventos: sempre sobram dois workers para os comandos.
+    private val eventWatchSlot = Semaphore(1, true)
     // Inclui sockets aguardando na fila, não somente os workers em execução.
     // Fechar todos ao parar evita respostas da sessão antiga após reiniciar o listener.
     private val acceptedSockets = ConcurrentHashMap.newKeySet<Socket>()
@@ -134,7 +138,7 @@ class MonitorServer(private val context: Context) {
                 val regular = runCatching { WireProtocol.decode(permanentKey, encrypted) }.getOrNull()
                 if (regular != null) {
                     if (regular.optInt("v") != WireProtocol.VERSION ||
-                        regular.optString("op") !in setOf("snapshot", "disconnect", "notificationReply", "smsReply", "screenFrame", "screenCapture", "remoteTouch", "audioChunk", "requestScreen", "videoFrame", "wakeScreen", "dataList", "dataChunk", "dataChunks", "dataHash", "dataRead", "dataStream", "dataManage", "dataUploadStart", "dataUploadChunk", "dataUploadFinish", "dataUploadAbort", "dataUploadStatus", "appsList", "appsIcons", "appLaunch", "deviceControl", "cameraFrame", "cameraSwitch", "photoTake", "thermalDiagnostics", "locationSnapshot", "batteryLab", "appUpdate", "heartbeat")) return
+                        regular.optString("op") !in setOf("snapshot", "disconnect", "notificationReply", "smsReply", "screenFrame", "screenCapture", "remoteTouch", "audioChunk", "requestScreen", "videoFrame", "wakeScreen", "dataList", "dataChunk", "dataChunks", "dataHash", "dataRead", "dataStream", "dataManage", "dataUploadStart", "dataUploadChunk", "dataUploadFinish", "dataUploadAbort", "dataUploadStatus", "appsList", "appsIcons", "appLaunch", "deviceControl", "cameraFrame", "cameraSwitch", "photoTake", "thermalDiagnostics", "locationSnapshot", "batteryLab", "appUpdate", "heartbeat", "eventWatch")) return
                     if (abs(now - regular.optLong("ts")) > 5 * 60 * 1000L) return
                     synchronized(seenNonces) {
                         // Retenção compatível com ±5 minutos de validade do envelope.
@@ -157,6 +161,46 @@ class MonitorServer(private val context: Context) {
                             .put("op", "versionMismatch")
                             .put("appVersion", AppVersion.WIRE_COMPAT)
                         WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, mismatch))
+                        return
+                    }
+                    if (regular.optString("op") == "eventWatch") {
+                        // Long-poll de metadados: somente após autenticação AES-GCM, sem
+                        // abrir porta nova. Ocupa no máximo um worker durante 12 segundos.
+                        if (!eventWatchSlot.tryAcquire()) {
+                            val busy = JSONObject().put("v", WireProtocol.VERSION)
+                                .put("op", "eventWatch").put("appVersion", AppVersion.WIRE_COMPAT)
+                                .put("busy", true).put("revision", 0L)
+                            WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, busy))
+                            return
+                        }
+                        try {
+                            val since = regular.optLong("revision", 0L).coerceAtLeast(0L)
+                            val revision = RemoteEventSignal.await(since, 11_000L)
+                            // Revogação e parada da sessão durante a espera impedem entrega.
+                            val currentKey = SecretVault.load(context, SecretVault.MONITOR_KEY)
+                            if (!running || !SettingsStore.isMonitorEnabled(context) ||
+                                currentKey == null || !MessageDigest.isEqual(currentKey, permanentKey)) return
+                            val events = org.json.JSONArray()
+                            EventJournal.latest(SettingsStore.notificationAllowlist(context),
+                                SettingsStore.allNotifications(context)).forEach { event ->
+                                events.put(JSONObject().put("id", event.id)
+                                    .put("whenMs", event.whenMs).put("type", event.type)
+                                    .put("app", event.app))
+                            }
+                            val smsAllowed = SettingsStore.shareSmsInbox(context) &&
+                                SettingsStore.receiveSmsEvents(context) &&
+                                context.checkSelfPermission(android.Manifest.permission.RECEIVE_SMS) ==
+                                    android.content.pm.PackageManager.PERMISSION_GRANTED
+                            val reply = JSONObject().put("v", WireProtocol.VERSION)
+                                .put("op", "eventWatch").put("appVersion", AppVersion.WIRE_COMPAT)
+                                .put("revision", revision).put("epoch", EventJournal.epoch)
+                                .put("events", events)
+                                .put("smsAlertEvents", if (smsAllowed) SmsLiveJournal.alerts() else org.json.JSONArray())
+                            WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, reply))
+                            AuthenticatedAccess.authenticated(socket.inetAddress?.hostAddress.orEmpty(),
+                                regular.optString("clientId"), regular.optString("clientName"),
+                                regular.optString("accessMethod"))
+                        } finally { eventWatchSlot.release() }
                         return
                     }
                     if (regular.optString("op") == "heartbeat") {

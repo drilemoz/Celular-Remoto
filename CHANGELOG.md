@@ -1,3 +1,20 @@
+## 0.1.0-alpha.137 (versionCode 137) | 09/11/2026
+
+- Corrigida incompatibilidade de nulidade no fluxo de descoberta ADB: o IP selecionado passa a ser não nulo antes de consultar portas mDNS ou tentar a conexão; callbacks antigos são descartados.
+- mDNS aceita somente serviços TLS ADB de conexão com identificação exata e IP previamente selecionado; rejeita tipos parecidos e portas inválidas.
+- Ao abrir Mensagens por notificação, dados sensíveis mantidos em memória de sessão anterior são limpos antes da nova tela. A consulta inicia apenas quando a Activity está visível.
+- Atualização por eventos agora confirma também, no momento de executar o callback na thread principal, o aparelho e a chave de pareamento que originaram o aviso.
+- Sem mudanças no protocolo AES-GCM, WIRE_COMPAT, consentimentos, captura, ADB shell ou escopo de SMS/WhatsApp. Testes estáticos/JVM não equivalem a build Android.
+
+## 0.1.0-alpha.136 (versionCode 136) | 09/11/2026
+
+- Operação `eventWatch` autenticada pela porta TCP já existente, sinalizada por chegada de SMS/notificação autorizada, até 11 segundos de espera, sem abrir novas portas ou serviços.
+- Um único observador remoto aguarda eventos por vez; demais comandos mantêm workers disponíveis. O servidor revalida a chave e o consentimento após a espera.
+- Metadados mínimos de eventos, sem remetente nem texto; no controlador, cursor por pareamento e notificação genérica continuam intactos. Socket e thread do observador são cancelados ao sair da Activity.
+- Central Mensagens pode atualizar automaticamente por eventos enquanto a tela estiver aberta, com botão para desligar; leitura manual permanece.
+- Menu Energia permite solicitar Acender tela após confirmação, usando endpoint já existente e autorização local prévia, sem desbloquear.
+- Modo em segundo plano permanece JobScheduler de melhor esforço; não há garantia de tempo real, build Android e testes físicos pendentes.
+
 ## 0.1.0-alpha.135 (versionCode 135) | 09/11/2026
 
 - Controle separado para alertas de SMS, WhatsApp/Business e demais apps: os primeiros ligados por padrão somente quando a função geral opt-in estiver habilitada; outros desligados.

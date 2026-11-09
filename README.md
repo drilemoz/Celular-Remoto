@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.135
+# Celular Remoto v0.1.0-alpha.137
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,23 @@
 
 **Foto remota (alpha.131):** no monitorado, abra **Ativar + Foto** ou **Fotografia remota** e toque uma vez em **Ativar Monitorado e preparar câmera**; permissões Android continuam locais. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.135 / versionCode 135** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.137 / versionCode 137** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Segurança de sessão e ADB (alpha.137)
+
+- **ADB Wi-Fi:** corrigido o uso de host opcional no fluxo de descoberta; é necessário ter um IP definido antes de procurar/selecionar a porta de conexão. O filtro mDNS aceita apenas o nome de serviço TLS ADB de conexão, no IP selecionado, e exclui portas inválidas ou anúncios similares.
+- **Mensagens e notificações:** ao abrir a central a partir de uma notificação, os textos da sessão anterior são removidos da RAM antes de renderizar. Não há solicitação de dados sensíveis com Activity invisível.
+- **Eventos em primeiro plano:** callbacks de atualização atrasados são descartados se host ou chave mudarem antes da thread principal processá-los. No segundo plano permanece o JobScheduler, sem notificações em tempo real garantidas.
+- Não muda protocolo AES-GCM, `WIRE_COMPAT`, comandos ADB, permissões ou consentimentos locais. **Build Android completo e testes nos dois aparelhos ainda pendentes.**
+
+## Eventos mais rápidos na rede local (alpha.136)
+
+- **Avisos ativados no controlador:** enquanto este aplicativo estiver visível, `eventWatch` aguarda por até 11 segundos um evento no monitorado, retornando assim que a captura autorizada mudar. Usa AES-GCM na mesma porta 37842 e ocupa no máximo um dos três workers do servidor.
+- Transfere apenas metadados mínimos (ID, hora, tipo e pacote). O conteúdo e o remetente de SMS não são incluídos nesta consulta. SMS e notificações só entram se o monitorado permitir localmente a captura e o compartilhamento; filtros de apps e proteção de dados sensíveis continuam em vigor.
+- **Mensagens:** ao abrir a central, a atualização por evento fica ligada somente enquanto a página e o aplicativo estão visíveis; há controle para desligá-la e continua possível atualizar manualmente. Nenhum serviço de atualização permanente é criado.
+- **Em segundo plano:** o Android continua usando a consulta agendada de 15 minutos ou mais. O observador é encerrado em `onPause`; a rede pode falhar, o Android pode suspender o monitorado e a primeira conexão estabelece linha de base, portanto **não se promete alerta instantâneo nem entrega garantida**.
+- **Energia → Acender tela:** comando autenticado com confirmação explícita, usando a autorização `Acender tela` habilitada no monitorado. Não desbloqueia e o Android pode recusar.
+- Segurança: verifica host e chave antes de aceitar respostas, limita um observador por monitorado e não altera `WIRE_COMPAT=0.1.0-alpha.111`. Versões antigas podem não atender `eventWatch`; snapshot e JobScheduler continuam. A compilação Android e o teste em dois celulares estão pendentes.
 
 ## Avisos remotos mais confiáveis (alpha.135)
 

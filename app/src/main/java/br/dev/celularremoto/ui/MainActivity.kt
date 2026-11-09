@@ -62,6 +62,9 @@ class MainActivity : Activity() {
     // Dados temporários: não persistir mensagens em Bundle, preferências ou disco.
     internal var messagesData: org.json.JSONObject? = null
     internal var messagesHost = ""
+    @Volatile internal var messagesAutoRefresh = true // Apenas enquanto a central estiver visível.
+    internal var messagesRefreshPending = false // Coalescer eventos durante consulta em voo.
+    internal val eventWatcher by lazy { makeForegroundEventWatcher() }
     internal var messagesTab = 0 // 0: SMS; 1: notificações
     internal var messagesBaselineMs = 0L
     internal var messagesLatestShownMs = 0L
@@ -70,6 +73,7 @@ class MainActivity : Activity() {
     internal var messagesTechnicalExpanded = false
     internal var messagesExpandedSender: String? = null
     internal var messagesRequestGeneration = 0
+    @Volatile
     internal var mode = 1 // 1: controle (entrada), 0: monitorado, 3: ajustes, 4: mensagens, 5: bateria
     internal var batteryRemote = false
     internal var batteryData: org.json.JSONObject? = null
@@ -95,7 +99,7 @@ class MainActivity : Activity() {
     internal val smsReceivePermissionRequest = 106
     internal val smsSimPermissionRequest = 107
     internal val audioPermissionRequest = 108
-    internal var active = false
+    @Volatile internal var active = false
     // Última tentativa monotônica de retomar serviço autorizado; somente em RAM.
     private var lastRecoveryAttemptMs = 0L
     // Mantém o conteúdo e a posição de rolagem intactos quando nenhum estado mudou.
@@ -227,11 +231,9 @@ class MainActivity : Activity() {
                 render()
             }
             intent.getBooleanExtra(EXTRA_OPEN_MESSAGES, false) -> {
-                messagesHost = SettingsStore.getRemoteHost(this)
-                messagesBaselineMs = lastMessageViewedMs[messagesHost] ?: 0L
-                mode = 4
-                render()
-                if (active) loadRemoteMessages()
+                // Uma notificação pode chegar quando a Activity ainda guarda mensagens de
+                // outro aparelho. Reiniciar a central sempre elimina o texto antigo da RAM.
+                openRemoteMessagesScreen()
             }
             intent.getBooleanExtra(EXTRA_OPEN_UPDATES, false) -> {
                 mode = 3
@@ -279,6 +281,7 @@ class MainActivity : Activity() {
         refreshPermissionsNotice()
         recoverAuthorizedServiceIfStopped()
         if (mode == 4) loadRemoteMessages()
+        eventWatcher.start()
         handler.removeCallbacks(monitorStatusPoll)
         if (mode == 0) handler.postDelayed(monitorStatusPoll, 5_000L)
         handler.removeCallbacks(poller)
@@ -313,6 +316,7 @@ class MainActivity : Activity() {
         }, 800L)
     }
     override fun onPause() {
+        eventWatcher.stop()
         br.dev.celularremoto.core.VisibleMonitorUi.changed(false)
         active = false
         if (mode == 4) {

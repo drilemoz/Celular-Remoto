@@ -29,12 +29,15 @@ internal fun MainActivity.openRemoteMessagesScreen() {
     messagesData = null
     messagesError = null
     messagesLoading = false
+    messagesRefreshPending = false
     messagesTechnicalExpanded = false
     messagesExpandedSender = null
     messagesTab = 0
     mode = 4
     render()
-    loadRemoteMessages()
+    // Se aberto por uma notificação durante a retomada, onResume fará a consulta.
+    // Não iniciar requisição com Activity invisível: o callback seria descartado.
+    if (active) loadRemoteMessages()
 }
 
 /** Sai da central, invalidando callbacks e removendo os textos do estado da Activity. */
@@ -48,6 +51,7 @@ internal fun MainActivity.clearRemoteMessagesScreen() {
     messagesData = null
     messagesError = null
     messagesLoading = false
+    messagesRefreshPending = false
     messagesHost = ""
     messagesExpandedSender = null
     messagesLatestShownMs = 0L
@@ -84,6 +88,12 @@ internal fun MainActivity.loadRemoteMessages() {
                 result.onSuccess { messagesData = it }
                     .onFailure { messagesError = it.message ?: "Consulta indisponível." }
                 render()
+                // Se outro evento chegou durante a consulta, consultar novamente UMA vez;
+                // o booleano agrega vários eventos sem criar uma fila infinita.
+                if (messagesRefreshPending) {
+                    messagesRefreshPending = false
+                    if (messagesAutoRefresh && validPage()) loadRemoteMessages()
+                }
             }
         }
     }
@@ -204,6 +214,16 @@ internal fun MainActivity.renderRemoteMessagesPage() {
         addView(row)
     }
     content.addView(info)
+    sectionGap(content, 8)
+    content.addView(messageTextAction(
+        if (messagesAutoRefresh) "Atualização por eventos: ligada (tela aberta)" else "Atualização por eventos: desligada"
+    ) {
+        messagesAutoRefresh = !messagesAutoRefresh
+        if (!messagesAutoRefresh) messagesRefreshPending = false
+        eventWatcher.reconsider()
+        render()
+    })
+    content.addView(label("Enquanto esta tela estiver aberta, novos eventos autorizados podem atualizar as conversas. Com o app em segundo plano, vale a consulta periódica do Android.", 11f, muted = true))
     sectionGap(content, 12)
 
     val root = messagesData

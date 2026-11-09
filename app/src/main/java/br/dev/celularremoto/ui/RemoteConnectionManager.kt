@@ -126,6 +126,24 @@ internal class RemoteConnectionManager(context: Context) {
         }
     }
 
+    /** Acender tela somente com autorização LOCAL no monitorado; não desbloqueia. */
+    fun wakeScreen(host: String, onComplete: (Result<String>) -> Unit) {
+        val key = if (host.isBlank()) null else RecentDevices.key(appContext, host)
+        if (key == null || state != "connected" || cachedHost != host) {
+            onComplete(Result.failure(IllegalStateException("Conecte e atualize o aparelho antes de acender a tela.")))
+            return
+        }
+        val accessMethod = method
+        thread(name = "CelularRemoto-wake-screen") {
+            val result = runCatching { RemoteClient.wakeScreen(host, key, appContext, accessMethod) }
+            main.post {
+                if (cachedHost == host && br.dev.celularremoto.core.SettingsStore.getRemoteHost(appContext) == host)
+                    onComplete(if (keyStillMatches(host, key)) result
+                        else Result.failure(IllegalStateException("Pareamento alterado durante o comando.")))
+            }
+        }
+    }
+
     /** Resposta ignorada se o aparelho selecionado mudou durante a operação. */
     fun deviceControl(host: String, action: String, seconds: Int = 0,
         confirmation: String = "", onComplete: (Result<JSONObject>) -> Unit) {

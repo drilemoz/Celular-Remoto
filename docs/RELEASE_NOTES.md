@@ -1,3 +1,18 @@
+# Celular Remoto v0.1.0-alpha.137 — correções ADB e central de mensagens
+
+- Corrigida a seleção de conexão ADB via mDNS quando o host ainda não estiver informado; somente o serviço real de conexão TLS e o mesmo IP pareado podem ser candidatos.
+- Notificações que abrem Mensagens limpam os dados temporários anteriores, sem exibir mensagens de outro aparelho enquanto uma nova consulta está sendo feita.
+- Eventos de atualização de Mensagens descartam callbacks atrasados após troca de aparelho/chave.
+- Permanecem autorização local e criptografia; atualizações rápidas só funcionam com a interface visível. Compilação Android e testes físicos pendentes.
+
+# Celular Remoto v0.1.0-alpha.136 — eventos locais e Energia
+
+- Enquanto o controlador está aberto, novas notificações e SMS autorizados podem produzir avisos mais rápidos pela espera curta `eventWatch` na mesma rede e canal AES-GCM, sem incluir conteúdo de mensagens. Em segundo plano o intervalo continua sujeito ao JobScheduler.
+- A central Mensagens pode atualizar por chegada de evento, com controle para desativar essa atualização. Eventos continuam filtrados no monitorado e o cursor não reexibe indiscriminadamente o passado.
+- Energia → Acender tela passa a solicitar efetivamente o comando `wakeScreen` já disponível, com confirmação, autorização prévia no monitorado e sem desbloqueio.
+- Conexões são limitadas, canceladas ao sair da Activity e revalidadas pela chave/host. Nenhuma porta adicional, sem novo foreground service ou permissão.
+- Código-fonte preparado; compilação Android e testes físicos ainda não realizados nesta revisão.
+
 # Celular Remoto v0.1.0-alpha.135 — reforço de alertas remotos
 
 - Em Ajustes → Notificações, escolher quais alertas o controlador exibirá: SMS, WhatsApp e WhatsApp Business, ou outros aplicativos elegíveis. A função geral segue desligada inicialmente e depende de consentimento no monitorado.

@@ -508,10 +508,13 @@ class AdbActivity : Activity() {
             }
             if (discoveryPending && (mode == "connect" || mode == "reconnect" || mode == "recover") &&
                 endpoint.type.contains("_adb-tls-connect") && endpoint.host == host && !busy) {
-                // Aguarde outros anúncios do mesmo host antes de escolher uma porta.
+                // Host de conexão obrigatório: não passar String? para conexão TLS.
+                // A porta descoberta só pode pertencer ao host previamente pareado.
+                val selectedHost = host ?: return@found
                 handler.postDelayed({
-                    if (visible && sequence == discoveryGeneration && discoveryPending && !busy) {
-                        val possible = connectCandidates(host)
+                    if (visible && sequence == discoveryGeneration && discoveryPending && !busy &&
+                        discoveryHost == selectedHost) {
+                        val possible = connectCandidates(selectedHost)
                         if (possible.size == 1) {
                             discoveryPending = false
                             connectEndpoint(possible[0].host, possible[0].port,

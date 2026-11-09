@@ -354,7 +354,15 @@ private fun MainActivity.showRemoteMaintenance() {
         },
         compactActionTile(R.drawable.ic_remote_wake, "Acender tela", "Não desbloqueia") {
             activeUiDialog?.dismiss()
-            showAppNotice("Acender tela", "A função de visualização está disponível em Tela e exige autorização local. O comando de despertar isolado ainda não é oferecido por esta conexão.")
+            showAppConfirm("Acender tela remota",
+                "Solicita apenas que a tela do aparelho pareado acenda. Não remove PIN, senha ou bloqueio. Exige a autorização Acender tela em Ajustes do próprio monitorado.",
+                R.drawable.ic_remote_wake, "Solicitar") {
+                remoteConnection.wakeScreen(selectedHost) { result ->
+                    showAppNotice("Resultado do comando",
+                        result.getOrElse { it.message ?: "Não foi possível obter a confirmação do aparelho." },
+                        R.drawable.ic_remote_wake)
+                }
+            }
         },
         compactActionTile(R.drawable.ic_power, "Reiniciar", "ADB autorizado") {
             activeUiDialog?.dismiss()

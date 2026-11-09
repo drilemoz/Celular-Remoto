@@ -31,16 +31,18 @@ object EventJournal {
             app.take(100), title.take(120), sanitized(preview).take(400), replyToken
         ))
         while (records.size > CAPACITY) records.removeFirst()
+        RemoteEventSignal.changed()
     }
 
     /** Remove imediatamente eventos quando o acesso do usuário é interrompido. */
     @Synchronized fun clear() {
         records.clear()
+        RemoteEventSignal.changed()
     }
 
     /** Remove eventos de aplicativos não mais autorizados, inclusive do buffer antigo. */
     @Synchronized fun retainAllowed(allowedPackages: Set<String>) {
-        records.removeAll { it.app !in allowedPackages }
+        if (records.removeAll { it.app !in allowedPackages }) RemoteEventSignal.changed()
     }
 
     /** Revalida a lista positiva ao ENVIAR, inclusive contra notificações em trânsito.
