@@ -62,5 +62,5 @@ internal fun MainActivity.fillRemoteBatterySettings(layout: LinearLayout) {
     sectionGap(layout, 11)
     layout.addView(label("Dados de bateria recentes são válidos por três minutos. " +
         "Quando a conexão falhar, o aplicativo indica leitura desatualizada, sem fingir que está online. " +
-        "O monitorado deve usar alpha.140 ou superior para a consulta compacta.", 12f, muted = true))
+        "O monitorado deve usar alpha.141 ou superior para a consulta compacta.", 12f, muted = true))
 }

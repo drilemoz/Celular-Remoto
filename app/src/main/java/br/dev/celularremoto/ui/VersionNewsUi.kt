@@ -14,10 +14,10 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Bateria remota contínua" to "Em Ajustes, habilite consultas opcionais em segundo plano com serviço visível, sem iniciar Monitorado ou ADB neste aparelho.",
-        "Consulta econômica e segura" to "Nova operação AES-GCM com dados mínimos, atualização aproximada a cada minuto e espera de até cinco minutos após falhas.",
-        "Medições identificadas" to "Última leitura é vinculada ao pareamento e preservada, mas após três minutos aparece como desatualizada.",
-        "Requisitos" to "Os dois aparelhos precisam da alpha.140 e estar na mesma rede local; o Android pode encerrar o serviço, sem garantia de tempo real."
+        "Tela Bateria reorganizada" to "Leitura atual, ferramentas/alertas e resumos ficaram separados para reduzir confusão visual sem esconder informações.",
+        "Corrente com sentido coerente" to "Em descarga, valores positivos do Android podem aparecer visualmente como saída da bateria; o diagnóstico continua exibindo a leitura bruta.",
+        "Taxas preservadas" to "Ritmo e previsão continuam baseados em variação de percentual por hora; corrente e potência seguem líquidas na bateria.",
+        "Requisitos" to "Os dois aparelhos precisam da alpha.141 e estar na mesma rede local; o Android pode encerrar o serviço, sem garantia de tempo real."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))

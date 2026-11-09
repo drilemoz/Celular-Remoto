@@ -15,6 +15,7 @@ internal fun MainActivity.batteryHero(level: Int, status: String, source: String
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
     }
+    val charging = status.contains("carreg", ignoreCase = true) || status.contains("full", ignoreCase = true)
     val main = LinearLayout(this@batteryHero).apply { orientation = LinearLayout.VERTICAL }
     main.addView(label(if (level in 0..100) "$level%" else "—", 30f, strong = true).apply {
         setPadding(0, 0, 0, 0)
@@ -22,7 +23,7 @@ internal fun MainActivity.batteryHero(level: Int, status: String, source: String
     })
     main.addView(label(status, 12.5f, muted = true).apply { setPadding(0, dp(2), 0, 0) })
     top.addView(main, LinearLayout.LayoutParams(0, -2, 1f))
-    top.addView(vectorIcon(R.drawable.ic_battery_charging, 29, highlight),
+    top.addView(vectorIcon(if (charging) R.drawable.ic_battery_charging else R.drawable.ic_battery, 29, highlight),
         LinearLayout.LayoutParams(dp(29), dp(29)))
     addView(top)
     val bar = ProgressBar(this@batteryHero, null, android.R.attr.progressBarStyleHorizontal).apply {

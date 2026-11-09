@@ -45,7 +45,7 @@ object RemoteClient {
         }
     }
 
-    /** Resumo mínimo de bateria pelo canal AES-GCM existente. Requer alpha.140 no monitorado.
+    /** Resumo mínimo de bateria pelo canal AES-GCM existente. Requer alpha.141 no monitorado.
      * Não faz fallback para snapshot completo: isso ampliaria dados consultados em segundo plano.
      */
     fun batteryProbe(host: String, key: ByteArray, context: Context): JSONObject {

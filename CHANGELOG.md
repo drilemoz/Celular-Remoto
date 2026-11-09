@@ -1,3 +1,11 @@
+## 0.1.0-alpha.141 (versionCode 141) | 09/11/2026
+
+- Reorganizada a tela Bateria para separar leitura atual, ferramentas/alertas e resumos automáticos, reduzindo a mistura visual entre status, ações e histórico.
+- A apresentação da corrente e da potência ficou coerente com o estado de descarga: quando o Android informa valor positivo em `DISCHARGING`, o painel mostra visualmente saída da bateria, sem alterar a leitura bruta guardada no diagnóstico.
+- Resumo automático e histórico receberam rótulos mais claros e linhas mais compactas; relatórios automáticos passam a usar a mesma convenção visual de sinal.
+- Validada a preservação das grandezas: taxas em p.p./h continuam independentes das leituras de corrente em mA, que seguem baseadas nas propriedades BatteryManager e/ou CHARGE_COUNTER.
+- Documentação, notas e versionamento sincronizados para alpha.141/141. Compilação Android completa e testes físicos permanecem pendentes.
+
 ## 0.1.0-alpha.140 (versionCode 140) | 09/11/2026
 
 - Nova consulta autenticada `batteryProbe` na porta existente com apenas percentual, temperatura, corrente, estado e horário medido. Sem localização, apps ou mensagens; sem nova permissão ou quebra do WIRE_COMPAT.

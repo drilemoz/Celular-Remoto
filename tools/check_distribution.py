@@ -2043,4 +2043,4 @@ assert 'SettingsStore.setControllerBatteryPolling(this, true)' in ui140 and 'sho
 assert 'requestHealthNotificationPermission()' in ui140
 assert (root / 'app/src/test/java/br/dev/celularremoto/core/RemoteBatteryPollingPolicyTest.kt').is_file()
 assert (root / 'docs/VALIDATION_ALPHA140.md').is_file()
-print('PASSOU: alpha.140 opt-in, consulta mínima AES-GCM, FGS único, backoff, escopo, expiração e desligamento')
+print('PASSOU: alpha.141 UI de bateria reorganizada, sinal visual coerente, consulta mínima AES-GCM e desligamento seguro')

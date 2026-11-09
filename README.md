@@ -1,7 +1,7 @@
-<!-- alpha.140 -->
-**Bateria remota contínua (alpha.140):** Ajustes → Bateria remota contínua: ativação opcional no controlador, com notificação foreground e consultas compactas AES-GCM a cada ~60 segundos pela porta existente. Requer servidor Monitorado ligado e alpha.140 nos dois aparelhos. Falhas aplicam 2/3/5 minutos de espera; não inicia ADB, câmera, GPS, captura de mensagens ou servidor TCP no controlador. Última leitura mínima permanece salva localmente, mas passa a ser marcada desatualizada após 3 minutos. Android pode interromper/restringir o serviço; não há garantia de atualização enquanto o aparelho não estiver na LAN. Build e testes físicos pendentes.
+<!-- alpha.141 -->
+**Bateria mais clara (alpha.141):** a aba Bateria separa leitura atual, ferramentas/alertas e resumos automáticos para reduzir confusão visual. Corrente e potência continuam líquidas na bateria; quando o Android reportar valor positivo durante descarga, a interface mostra visualmente o sentido de saída, enquanto o diagnóstico preserva a leitura bruta. As taxas de ritmo/autonomia permanecem calculadas por variação de percentual ao longo do tempo. Build e testes físicos pendentes.
 
-# Celular Remoto v0.1.0-alpha.140
+# Celular Remoto v0.1.0-alpha.141
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -11,7 +11,15 @@
 
 **Foto remota (alpha.131):** no monitorado, abra **Ativar + Foto** ou **Fotografia remota** e toque uma vez em **Ativar Monitorado e preparar câmera**; permissões Android continuam locais. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.140 / versionCode 140** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.141 / versionCode 141** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Bateria mais clara e coerente (alpha.141)
+
+- **Organização visual:** a tela separa **Leitura atual**, **Ferramentas e alertas** e os blocos de resumo/histórico para reduzir a sensação de mistura entre status, ação e diagnóstico.
+- **Sinal visual da corrente:** se o Android informar corrente positiva mesmo com estado de descarga, o painel passa a exibir o sentido visual como **saída da bateria**. O valor bruto continua visível em Diagnóstico elétrico.
+- **Taxas preservadas:** previsões e ritmos continuam baseados em variação real de percentual por hora; a corrente em mA segue derivada de `CURRENT_NOW`, `CURRENT_AVERAGE` ou `CHARGE_COUNTER`, sem misturar grandezas.
+- **Resumo automático:** rótulos mais claros para janela observada, cobertura das leituras e ritmo observado.
+- **Limite:** compilação Android completa e teste real em dois aparelhos ainda pendentes.
 
 ## Mensagens isoladas por credencial (alpha.139)
 

@@ -54,7 +54,7 @@ internal class ControllerBatteryBackgroundPoller(
                             !current -> "Pareamento alterado"
                             result.exceptionOrNull() is java.net.SocketTimeoutException -> "Consulta expirou"
                             result.exceptionOrNull() is java.net.ConnectException -> "Aparelho indisponível"
-                            else -> "Sem resposta autenticada (requer alpha.140)"
+                            else -> "Sem resposta autenticada (requer alpha.141)"
                         })
                     }
                     onUpdated()
