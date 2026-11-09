@@ -8,7 +8,6 @@ import br.dev.celularremoto.R
 import br.dev.celularremoto.ui.MainActivity
 import org.json.JSONArray
 import org.json.JSONObject
-import java.security.MessageDigest
 
 /** Avisos sem conteúdo de mensagens. A lista vem somente de snapshot cifrado autenticado.
  * No segundo plano a consulta é periódica, não é um push e NÃO garante imediatismo.
@@ -16,15 +15,22 @@ import java.security.MessageDigest
 object RemoteEventAlerts {
     private const val STORE = "remote_event_cursor_v1"
     private const val CHANNEL = "remote_messages_notice"
-    private const val MAX_AGE_MS = 5 * 60_000L
     private const val MAX_NOTICES_PER_POLL = 3
+
+    /** Reativação dos avisos estabelece uma nova linha de base, sem replay. */
+    @Synchronized fun resetCursors(context: Context) {
+        context.getSharedPreferences(STORE, Context.MODE_PRIVATE).edit().clear().apply()
+    }
 
     @Synchronized fun onSnapshot(context: Context, host: String, snapshot: JSONObject) {
         if (host.isBlank() || host != SettingsStore.getRemoteHost(context) ||
             !SettingsStore.controllerNotificationAlerts(context)) return
         val epoch = snapshot.optString("epoch").takeIf { it.isNotBlank() } ?: return
-        val identity = MessageDigest.getInstance("SHA-256").digest(host.toByteArray(Charsets.UTF_8))
-            .take(8).joinToString("") { "%02x".format(it.toInt() and 255) }
+        val key = RecentDevices.key(context, host) ?: return
+        val identity = RemoteEventNoticePolicy.pairingScope(host, key)
+        val smsAlerts = SettingsStore.controllerSmsAlerts(context)
+        val whatsappAlerts = SettingsStore.controllerWhatsappAlerts(context)
+        val otherAlerts = SettingsStore.controllerOtherNotificationAlerts(context)
         val prefs = context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
         val now = System.currentTimeMillis()
         val lists = listOf("notification" to snapshot.optJSONArray("events"),
@@ -50,17 +56,20 @@ object RemoteEventAlerts {
             for (item in pending) {
                 val seq = item.optLong("id")
                 val at = item.optLong("whenMs")
-                if (at <= 0 || at > now + 60_000L || now - at > MAX_AGE_MS) {
+                if (!RemoteEventNoticePolicy.recentArrival(at, now)) {
                     cursor = maxOf(cursor, seq) // não reapresentar avisos antigos
                     continue
                 }
+                val category = RemoteEventNoticePolicy.classify(kind, item.optString("app"))
+                if (!RemoteEventNoticePolicy.enabled(category, smsAlerts, whatsappAlerts, otherAlerts)) {
+                    cursor = maxOf(cursor, seq) // Nunca reapresentar eventos anteriores à ativação do filtro.
+                    continue
+                }
                 if (sent >= MAX_NOTICES_PER_POLL) break
-                val isWhatsapp = kind == "notification" && item.optString("app") in
-                    setOf("com.whatsapp", "com.whatsapp.w4b")
-                val title = when {
-                    kind == "sms" -> "Novo SMS no aparelho remoto"
-                    isWhatsapp -> "Nova notificação do WhatsApp"
-                    else -> "Notificação do aparelho remoto"
+                val title = when (category) {
+                    RemoteEventNoticePolicy.Category.SMS -> "Novo SMS no aparelho remoto"
+                    RemoteEventNoticePolicy.Category.WHATSAPP -> "Nova notificação do WhatsApp"
+                    RemoteEventNoticePolicy.Category.OTHER -> "Notificação do aparelho remoto"
                 }
                 val intent = Intent(context, MainActivity::class.java)
                     .putExtra(MainActivity.EXTRA_OPEN_MESSAGES, true)
@@ -71,7 +80,7 @@ object RemoteEventAlerts {
                 val note = Notification.Builder(context, CHANNEL)
                     .setSmallIcon(R.drawable.ic_stat_shield)
                     .setContentTitle(title)
-                    .setContentText("Toque para consultar no aparelho pareado")
+                    .setContentText(RemoteEventNoticePolicy.ageLabel(at, now))
                     .setContentIntent(pendingIntent)
                     .setAutoCancel(true)
                     .setVisibility(Notification.VISIBILITY_PRIVATE)

@@ -1,3 +1,12 @@
+## 0.1.0-alpha.135 (versionCode 135) | 09/11/2026
+
+- Controle separado para alertas de SMS, WhatsApp/Business e demais apps: os primeiros ligados por padrão somente quando a função geral opt-in estiver habilitada; outros desligados.
+- Janela de avaliação dos avisos passa de 5 para 60 minutos para compatibilidade com o JobScheduler de intervalo mínimo 15 min, indicando atraso real, sem prometer entrega instantânea.
+- SMS recebidos usam o horário real do recebimento para alertas, preservando o horário informado da mensagem no histórico.
+- Cursores isolados por aparelho+credencial; ao desativar/reativar avisos a próxima leitura vira linha de base. Pareamento selecionado e chave revalidados após resposta de Job em segundo plano.
+- Testes da política de categorias, filtro, antiguidade e isolamento por chave. Autenticação, permissões do monitorado, Wi-Fi/ADB, sirene e interfaces da alpha.134 preservados.
+- Validação local em `docs/VALIDATION_ALPHA135.md`; compilação Android completa e teste físico continuam pendentes.
+
 ## 0.1.0-alpha.134 (versionCode 134) | 09/11/2026
 
 - Navegação inicial diretamente em Controlar, remoção de Início, quatro destinos, retorno ao controle e proteção de barras/cutouts por WindowInsets.

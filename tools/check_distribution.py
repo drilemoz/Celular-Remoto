@@ -1938,3 +1938,24 @@ assert 'SmsLiveJournal.alerts()' in server and 'regular.optBoolean("includeSms")
 assert 'AudioTrack.Builder()' in (root / 'app/src/main/java/br/dev/celularremoto/core/RemotePhysicalControls.kt').read_text()
 assert 'TONE_PROP_BEEP' not in (root / 'app/src/main/java/br/dev/celularremoto/core/RemotePhysicalControls.kt').read_text()
 print('PASSOU: alpha.134 navegação, sirene PCM, dados autenticados, notificações opt-in e notificação compacta')
+
+# alpha.135: notificação só de novo evento selecionado e cursor isolado por credencial.
+policy135 = (root / 'app/src/main/java/br/dev/celularremoto/core/RemoteEventNoticePolicy.kt').read_text()
+settings135 = (root / 'app/src/main/java/br/dev/celularremoto/core/SettingsStore.kt').read_text()
+job135 = (root / 'app/src/main/java/br/dev/celularremoto/service/RemoteHealthJobService.kt').read_text()
+sms135 = (root / 'app/src/main/java/br/dev/celularremoto/core/SmsLiveJournal.kt').read_text()
+ui135 = (root / 'app/src/main/java/br/dev/celularremoto/ui/SettingsScreenUi.kt').read_text()
+assert '60 * 60_000L' in policy135 and 'fun recentArrival' in policy135 and 'fun ageLabel' in policy135
+assert 'fun pairingScope' in policy135 and 'digest.update(key)' in policy135
+assert 'RemoteEventNoticePolicy.pairingScope(host, key)' in remote_alerts
+assert 'RemoteEventNoticePolicy.enabled' in remote_alerts and 'RemoteEventNoticePolicy.ageLabel' in remote_alerts
+assert 'RemoteEventAlerts.resetCursors(context)' in settings135
+assert 'controllerSmsAlerts' in settings135 and 'controllerWhatsappAlerts' in settings135
+assert 'controllerOtherNotificationAlerts' in settings135 and '"remote_alert_others", false' in settings135
+assert '"WhatsApp e WhatsApp Business"' in ui135 and '"Novos SMS"' in ui135 and '"Outros aplicativos"' in ui135
+assert 'RecentDevices.key(applicationContext, host)?.let { MessageDigest.isEqual(it, key) } == true' in job135
+assert 'SettingsStore.getRemoteHost(applicationContext) == host' in job135
+assert 'it.arrivalMs' in sms135 and '"whenMs", it.whenMs' in sms135
+assert (root / 'app/src/test/java/br/dev/celularremoto/core/RemoteEventNoticePolicyTest.kt').is_file()
+assert (root / 'docs/VALIDATION_ALPHA135.md').is_file()
+print('PASSOU: alpha.135 filtros SMS/WhatsApp, janela de 60 min, linha de base e pareamento revistos')

@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.134
+# Celular Remoto v0.1.0-alpha.135
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,16 @@
 
 **Foto remota (alpha.131):** no monitorado, abra **Ativar + Foto** ou **Fotografia remota** e toque uma vez em **Ativar Monitorado e preparar câmera**; permissões Android continuam locais. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.134 / versionCode 134** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.135 / versionCode 135** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Avisos remotos mais confiáveis (alpha.135)
+
+- **Ajustes → Notificações:** o controlador pode escolher individualmente alertas de SMS, WhatsApp/Business e outros apps. As duas primeiras categorias vêm ligadas apenas dentro do alerta geral opt-in; outros apps ficam desativados por padrão. A coleta no monitorado ainda exige as permissões locais.
+- A consulta periódica pode ocorrer somente a cada 15 minutos ou sofrer atrasos do Android; eventos novos observados até **60 minutos** antes da consulta, enquanto ainda estiverem no buffer, podem gerar aviso genérico com a idade real. Não há push, aviso imediato garantido ou resgate de notificações descartadas.
+- Os cursores agora são isolados por host **e chave de pareamento**. Ao desligar e reativar os avisos, a primeira consulta estabelece nova linha de base para evitar notificações retroativas.
+- SMS recebidos em tempo real usam a hora de chegada ao Android para validade do aviso, sem mudar a hora da mensagem mostrada na conversa.
+- O JobScheduler revalida aparelho selecionado e chave **após** a resposta cifrada, evitando usar um retorno antigo após re-pareamento. Sem novos serviços, permissões ou portas.
+- Protocolo AES-GCM e `WIRE_COMPAT=0.1.0-alpha.111` preservados. **Compilação Android e testes em dois aparelhos seguem pendentes.**
 
 ## Interface, sirene e avisos remotos (alpha.134)
 

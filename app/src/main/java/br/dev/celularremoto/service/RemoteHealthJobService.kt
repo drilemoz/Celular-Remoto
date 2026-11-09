@@ -7,6 +7,7 @@ import br.dev.celularremoto.core.SettingsStore
 import br.dev.celularremoto.core.ControllerHealthAlerts
 import br.dev.celularremoto.transport.RemoteClient
 import kotlin.concurrent.thread
+import java.security.MessageDigest
 
 /** Poll somente de aparelho salvo escolhido, nunca tenta reiniciar monitoramento sem autorização. */
 class RemoteHealthJobService : JobService() {
@@ -20,7 +21,9 @@ class RemoteHealthJobService : JobService() {
                 val key = RecentDevices.key(applicationContext, host)
                 if (!stopped && host.isNotBlank() && key != null) {
                     runCatching { RemoteClient.snapshot(host, key, applicationContext) }
-                        .onSuccess { snap -> if (!stopped) {
+                        .onSuccess { snap -> if (!stopped &&
+                            SettingsStore.getRemoteHost(applicationContext) == host &&
+                            RecentDevices.key(applicationContext, host)?.let { MessageDigest.isEqual(it, key) } == true) {
                             ControllerHealthAlerts.onSnapshot(applicationContext, host, snap)
                             br.dev.celularremoto.core.ControllerBatteryEvents.onReport(applicationContext, host, snap)
                             br.dev.celularremoto.core.RemoteEventAlerts.onSnapshot(applicationContext, host, snap)

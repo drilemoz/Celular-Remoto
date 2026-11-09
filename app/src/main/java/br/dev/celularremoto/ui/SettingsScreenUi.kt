@@ -156,13 +156,13 @@ private fun MainActivity.fillNotificationSettings(layout: LinearLayout) {
     sectionGap(layout, 9)
     val remoteAlerts = SettingsStore.controllerNotificationAlerts(this)
     layout.addView(iconMenuRow(R.drawable.ic_bell, "Avisos de mensagens do aparelho remoto",
-        if (remoteAlerts) "Ativos · SMS e notificações autorizadas" else "Desligados · ativar neste controlador",
+        if (remoteAlerts) "Ativos · configure SMS, WhatsApp e outros avisos abaixo" else "Desligados · ativar neste controlador",
         badge = SettingsBadgeKind.forEnabled(remoteAlerts)) {
         if (remoteAlerts) {
             SettingsStore.setControllerNotificationAlerts(this, false)
             openSettingsSection("notifications")
         } else showAppConfirm("Avisar sobre mensagens remotas?",
-            "O controlador consulta a conexão pareada quando Controlar está visível e periodicamente em segundo plano (mínimo 15 minutos). Não garante entrega instantânea. Mostra apenas alertas genéricos, sem texto de SMS, WhatsApp ou remetentes. Exige autorização de notificações no Android controlador e permissões locais no monitorado.",
+            "O controlador consulta a conexão pareada quando Controlar está visível e periodicamente em segundo plano (mínimo 15 minutos, podendo atrasar). Mantém eventos recebidos até 60 minutos antes da consulta quando ainda estiverem no buffer. Não garante entrega instantânea. Mostra apenas alertas genéricos, sem texto de SMS, WhatsApp ou remetentes. Exige autorização de notificações no Android controlador e permissões locais no monitorado.",
             R.drawable.ic_bell, "Ativar avisos") {
             SettingsStore.setControllerNotificationAlerts(this, true)
             openSettingsSection("notifications")
@@ -170,6 +170,36 @@ private fun MainActivity.fillNotificationSettings(layout: LinearLayout) {
         }
     })
     sectionGap(layout, 8)
+    if (remoteAlerts) {
+        layout.addView(label("Tipos de avisos no controlador", 12.5f, strong = true))
+        sectionGap(layout, 6)
+        val smsAlerts = SettingsStore.controllerSmsAlerts(this)
+        layout.addView(iconMenuRow(R.drawable.ic_message, "Novos SMS",
+            if (smsAlerts) "Avisar quando chegar SMS autorizado" else "Não mostrar avisos de SMS",
+            badge = SettingsBadgeKind.forEnabled(smsAlerts)) {
+            SettingsStore.setControllerSmsAlerts(this, !smsAlerts)
+            openSettingsSection("notifications")
+        })
+        sectionGap(layout, 6)
+        val whatsappAlerts = SettingsStore.controllerWhatsappAlerts(this)
+        layout.addView(iconMenuRow(R.drawable.ic_message, "WhatsApp e WhatsApp Business",
+            if (whatsappAlerts) "Avisar sobre novas notificações autorizadas" else "Avisos do WhatsApp desativados",
+            badge = SettingsBadgeKind.forEnabled(whatsappAlerts)) {
+            SettingsStore.setControllerWhatsappAlerts(this, !whatsappAlerts)
+            openSettingsSection("notifications")
+        })
+        sectionGap(layout, 6)
+        val otherAlerts = SettingsStore.controllerOtherNotificationAlerts(this)
+        layout.addView(iconMenuRow(R.drawable.ic_bell, "Outros aplicativos",
+            if (otherAlerts) "Avisos genéricos habilitados" else "Desativados para reduzir interrupções",
+            badge = SettingsBadgeKind.forEnabled(otherAlerts)) {
+            SettingsStore.setControllerOtherNotificationAlerts(this, !otherAlerts)
+            openSettingsSection("notifications")
+        })
+        sectionGap(layout, 8)
+        layout.addView(label("Somente eventos novos observados depois do pareamento e autorizados no monitorado. O Android pode atrasar a consulta em segundo plano.", 11.5f, muted = true))
+        sectionGap(layout, 8)
+    }
 }
 
 private fun MainActivity.fillAppsSettings(layout: LinearLayout) {

@@ -1,3 +1,11 @@
+# Celular Remoto v0.1.0-alpha.135 — reforço de alertas remotos
+
+- Em Ajustes → Notificações, escolher quais alertas o controlador exibirá: SMS, WhatsApp e WhatsApp Business, ou outros aplicativos elegíveis. A função geral segue desligada inicialmente e depende de consentimento no monitorado.
+- Avisos que chegarem atrasados mostram a idade observada; consultas periódicas podem recuperar eventos com até 60 minutos ainda disponíveis em RAM, mas não garantem entregas imediatas.
+- Verificação da chave de pareamento no retorno da tarefa em segundo plano, sem usar resultados após troca de dispositivo/chave. Cursores são por pareamento e reiniciados quando o usuário desliga/reativa os avisos.
+- Para SMS recebidos, o alerta usa a hora local de chegada, sem confiar no relógio informado pela mensagem. Textos, remetentes e códigos continuam ausentes da notificação genérica.
+- Sem alterações no protocolo cifrado, permissões do monitorado, serviços de câmera/ADB ou novos serviços/portas. Build Android e testes físicos em dois aparelhos pendentes.
+
 # Celular Remoto v0.1.0-alpha.134 — interface, sirene e eventos remotos
 
 - Abre em Controlar com quatro abas, corrige áreas seguras no Android 16 e reúne os 12 comandos sob Funcionalidades.

@@ -30,6 +30,10 @@ object SettingsStore {
     fun controllerNotificationAlerts(context: Context) =
         prefs(context).getBoolean("controller_notifications_enabled", false)
     fun setControllerNotificationAlerts(context: Context, enabled: Boolean) {
+        if (controllerNotificationAlerts(context) != enabled) {
+            // Evita avisar eventos criados enquanto o controlador estava desativado.
+            RemoteEventAlerts.resetCursors(context)
+        }
         prefs(context).edit().putBoolean("controller_notifications_enabled", enabled).apply()
         br.dev.celularremoto.service.RemoteHealthScheduler.refresh(context)
     }
@@ -125,6 +129,20 @@ object SettingsStore {
         prefs(context).edit().putBoolean("allow_notification_replies", value).apply()
         if (!value) NotificationReplyActions.clear()
     }
+
+    /** Preferências de avisos do controlador; não alteram a captura autorizada no monitorado. */
+    fun controllerSmsAlerts(context: Context): Boolean =
+        prefs(context).getBoolean("remote_alert_sms", true)
+    fun setControllerSmsAlerts(context: Context, enabled: Boolean) =
+        prefs(context).edit().putBoolean("remote_alert_sms", enabled).apply()
+    fun controllerWhatsappAlerts(context: Context): Boolean =
+        prefs(context).getBoolean("remote_alert_whatsapp", true)
+    fun setControllerWhatsappAlerts(context: Context, enabled: Boolean) =
+        prefs(context).edit().putBoolean("remote_alert_whatsapp", enabled).apply()
+    fun controllerOtherNotificationAlerts(context: Context): Boolean =
+        prefs(context).getBoolean("remote_alert_others", false)
+    fun setControllerOtherNotificationAlerts(context: Context, enabled: Boolean) =
+        prefs(context).edit().putBoolean("remote_alert_others", enabled).apply()
 
     /** Opções locais para sessão de tela: OFF por padrão e independentes do pareamento. */
     fun allowRemoteTouch(context: Context) = prefs(context).getBoolean("remote_touch", false)

@@ -1,3 +1,11 @@
+# Celular Remoto v0.1.0-alpha.135 — alertas e pareamento (09/11/2026)
+
+- Base alpha.134; próxima versão alpha.136/versionCode 136. Toda edição sincroniza Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, Novidades, testes e validações.
+- Alertas remotos continuam opt-in e genéricos: filtros independentes SMS/WhatsApp/outros apps, com confirmação local do monitorado. Sem capturar aplicativos novos automaticamente e sem novo serviço push; Android pode adiar JobScheduler.
+- Janela de avisos = 60 minutos para recuperar eventos que continuem no buffer, usando data real de chegada ao sistema e exibindo atraso; nunca notificar um replay após reativação nem conteúdo de SMS/WhatsApp na notificação do sistema.
+- Cursores vinculados ao host+chave, e validação posterior à consulta no Job para ignorar resultado de pareamento removido/trocado. Não registrar segredos, remetentes ou mensagens em preferências.
+- Preservar WIRE_COMPAT alpha.111, canal AES-GCM, tela Controlar padrão, sirene, 12 comandos, espaços Android, ADB, controles locais e workflow único. Build Android e teste real em dois celulares ainda obrigatórios antes de distribuição.
+
 # Celular Remoto v0.1.0-alpha.134 — interface e avisos genéricos (09/11/2026)
 
 - Versão atual alpha.134, baseada na alpha.133. Próxima versão alpha.135/versionCode 135. Sincronizar Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, Novidades, testes e validações.

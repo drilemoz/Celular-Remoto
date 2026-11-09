@@ -14,11 +14,11 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Controlar é a entrada" to "Removida a aba Início; quatro destinos principais e barra Android com áreas seguras.",
-        "Funcionalidades unificadas" to "Doze comandos na mesma grade, painel Wi-Fi e Energia em três ações.",
-        "Sirene e segurança" to "Alerta sintetizado em dois tons com prazo; bloqueio com confirmação e telas mais claras.",
-        "Avisos e bateria" to "Notificações genéricas opt-in para eventos novos de SMS e apps autorizados; notificação permanente compacta local/remota.",
-        "Ajustes e ADB" to "Sobre com desenvolvedor, Pix e site, novidades e identificação mais clara do estado de pareamento ADB."
+        "Tipos de aviso" to "Escolha separadamente SMS, WhatsApp/Business e outros apps, sem transmitir o texto da mensagem na notificação.",
+        "Avisos atrasados" to "Consulta periódica pode recuperar até 60 minutos enquanto o evento estiver em RAM; o aviso mostra o atraso real.",
+        "Pareamento protegido" to "Ignora resposta antiga de segundo plano se o aparelho selecionado ou a chave mudar durante a consulta.",
+        "Sem replay ao reativar" to "A primeira consulta após ligar os alertas inicia nova linha de base; cursores separados por pareamento.",
+        "SMS mais preciso" to "Usa a hora local de chegada para validade do aviso e preserva o horário da mensagem na conversa."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -47,6 +47,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Interface e sirene (alpha.134)" to "Abre em Controlar, reúne as 12 funcionalidades, oferece sirene, painel Wi-Fi, Energia em grade, notificação enxuta e Sobre completo.",
         "Detalhes e cópia (alpha.133)" to "Detalhes copiáveis, relatório completo e número da linha somente com consentimento local.",
         "Atualizações locais e remotas (alpha.132)" to "Acompanhamento remoto de downloads, cancelamento e retentativa autenticados; instalação continua com autorização local no Android.",
         "Foto remota em um passo (alpha.131)" to "Preparação local da sessão de fotografia e consulta autenticada de prontidão no controlador, sem câmera aberta continuamente.",

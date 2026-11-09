@@ -1,3 +1,13 @@
+# Validação mais recente — alpha.135 (09/11/2026)
+
+- [x] `python3 tools/check_distribution.py`: verificações estruturais legadas até alpha.135 aprovadas.
+- [x] Parser PSI Kotlin em 279 arquivos da árvore app/src: nenhum erro de sintaxe.
+- [x] Smoke Kotlin/JVM de 13 afirmações da política de avisos aprovado.
+- [x] Estrutura XML/JSON/YAML, versão e integridade ZIP verificadas.
+- [ ] Build Android completo `:app:assembleDebug`, `:app:testDebugUnitTest` e `:app:lintDebug` pendente (sem Gradle/SDK Android no ambiente).
+- [ ] Testar em dois aparelhos SMS/WhatsApp, desativação de filtros, mudança da chave durante consulta, dados atrasados, Android 16 com barras/gestos, sirene e ADB Wi-Fi.
+- Detalhes: `docs/VALIDATION_ALPHA135.md`.
+
 # Validação mais recente — alpha.134 (09/11/2026)
 
 - [x] `python3 tools/check_distribution.py`: regressões estruturais até a alpha.134 aprovadas.
