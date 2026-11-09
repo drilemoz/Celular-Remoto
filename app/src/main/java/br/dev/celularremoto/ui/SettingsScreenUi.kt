@@ -47,6 +47,7 @@ internal fun MainActivity.renderSettingsModule() {
         "connection" to "Estabilidade da conexão",
         "health" to "Alertas e proteção",
         "battery_local" to "Bateria local contínua",
+        "battery_remote" to "Bateria remota contínua",
         "location" to "Localização",
         "news" to "Novidades",
         "about" to "Sobre"
@@ -85,6 +86,7 @@ internal fun MainActivity.renderSettingsModule() {
             "connection" -> fillConnectionHealthSettings(page)
             "health" -> fillHealthSettings(page)
             "battery_local" -> fillLocalBatterySettings(page)
+            "battery_remote" -> fillRemoteBatterySettings(page)
             "location" -> fillLocationSettings(page)
             "news" -> fillVersionNewsSettings(page)
             "about" -> fillAboutSettings(page)
@@ -973,7 +975,7 @@ private fun MainActivity.fillHealthSettings(layout: LinearLayout) {
     }
 }
 
-private fun MainActivity.requestHealthNotificationPermission() {
+internal fun MainActivity.requestHealthNotificationPermission() {
     if (Build.VERSION.SDK_INT >= 33 &&
         checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
         requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 9268)

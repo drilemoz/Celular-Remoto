@@ -14,6 +14,17 @@ class MonitorServiceModePolicyTest {
         assertEquals(MonitorServiceModePolicy.Mode.BATTERY_ONLY, MonitorServiceModePolicy.resolve(false, true))
         assertTrue(MonitorServiceModePolicy.shouldCollect(MonitorServiceModePolicy.Mode.BATTERY_ONLY))
     }
+    @Test fun controllerOnlyUsesNetworkButNotLocalBatteryHistory() {
+        val mode = MonitorServiceModePolicy.resolve(false, false, true)
+        assertEquals(MonitorServiceModePolicy.Mode.CONTROLLER_ONLY, mode)
+        assertFalse(MonitorServiceModePolicy.shouldCollect(mode))
+    }
+    @Test fun localAndRemoteTakePrecedenceOverControllerOnly() {
+        assertEquals(MonitorServiceModePolicy.Mode.BATTERY_ONLY,
+            MonitorServiceModePolicy.resolve(false, true, true))
+        assertEquals(MonitorServiceModePolicy.Mode.REMOTE,
+            MonitorServiceModePolicy.resolve(true, false, true))
+    }
     @Test fun remoteWinsWithoutDuplicatingSampling() {
         assertEquals(MonitorServiceModePolicy.Mode.REMOTE, MonitorServiceModePolicy.resolve(true, true))
         assertEquals(MonitorServiceModePolicy.Mode.REMOTE, MonitorServiceModePolicy.resolve(true, false))

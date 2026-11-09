@@ -1,3 +1,10 @@
+# Celular Remoto v0.1.0-alpha.140 — bateria remota em segundo plano
+
+- Ativação em Ajustes → Bateria remota contínua, desativada por padrão; usa o mesmo serviço e notificação já existentes, ou inicia o modo controlador conectado quando nenhum outro modo estiver ativo.
+- Requer os dois aparelhos na rede local e servidor Monitorado alpha.140. Consulta compacta por AES-GCM a cada ~60 segundos, com espera progressiva após falhas e sem captura de mensagens/localização.
+- Guarda localmente somente a última leitura mínima, vinculada ao pareamento. Após 3 minutos sem resposta, exibe explicitamente que está desatualizada. Corrente com sinal conflitante é ocultada.
+- Android pode interromper serviço; não há garantia de atualização contínua sob Doze. Compilação Gradle/Android e testes físicos pendentes.
+
 # Celular Remoto v0.1.0-alpha.139 — mensagens vinculadas ao pareamento
 
 - Central Mensagens identifica a sessão por aparelho e credencial: trocar/reparear no mesmo IP não reaproveita dados antigos, indicadores de leitura ou respostas assíncronas.

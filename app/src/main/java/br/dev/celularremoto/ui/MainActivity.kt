@@ -297,19 +297,20 @@ class MainActivity : Activity() {
             android.os.SystemClock.elapsedRealtime() < updatePollingUntilMs)
             handler.postDelayed(remoteUpdateStatusPoller, 15_000L)
     }
-    /** Recuperação conservadora somente com o app visível; nunca após parada explícita. */
+    /** Retomada somente com Activity visível: respeita as três autorizações independentes. */
     private fun recoverAuthorizedServiceIfStopped() {
-        if ((!SettingsStore.isMonitorEnabled(this) && !SettingsStore.localBatteryMonitoring(this)) ||
-            (SettingsStore.isMonitorEnabled(this) && MonitorService.isServiceActive) ||
-            (!SettingsStore.isMonitorEnabled(this) && MonitorService.isBatteryMonitoringActive)) return
+        fun needsRecovery(): Boolean = when {
+            SettingsStore.isMonitorEnabled(this) -> !MonitorService.isServiceActive
+            SettingsStore.localBatteryMonitoring(this) -> !MonitorService.isBatteryMonitoringActive
+            SettingsStore.controllerBatteryPolling(this) -> !MonitorService.isControllerBatteryPollingActive
+            else -> false
+        }
+        if (!needsRecovery()) return
         val now = SystemClock.elapsedRealtime()
         if (lastRecoveryAttemptMs != 0L && now - lastRecoveryAttemptMs < 60_000L) return
         lastRecoveryAttemptMs = now
         handler.postDelayed({
-            if (active && !isFinishing && !isDestroyed &&
-                (SettingsStore.isMonitorEnabled(this) || SettingsStore.localBatteryMonitoring(this)) &&
-                (if (SettingsStore.isMonitorEnabled(this)) !MonitorService.isServiceActive
-                    else !MonitorService.isBatteryMonitoringActive)) {
+            if (active && !isFinishing && !isDestroyed && needsRecovery()) {
                 runCatching { MonitorService.start(this) }.onFailure {
                     SettingsStore.recordRecoveryEvent(this, "Retomada negada pelo sistema")
                 }

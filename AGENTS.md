@@ -1,3 +1,12 @@
+# Celular Remoto v0.1.0-alpha.140 — bateria remota contínua opcional
+
+- Próxima versão: alpha.141/versionCode 141. Manter metadados, notas, novidades, validação e testes sincronizados a cada mudança.
+- `batteryProbe` usa a única porta e a chave AES-GCM pareada; retorna estritamente dados mínimos de bateria e exige servidor monitorado ativo. Não implementar fallback por snapshot completo em segundo plano.
+- `controllerBatteryPolling` desativado por padrão; a ativação explícita em Ajustes inicia/compartilha o serviço foreground conectado do controlador, sem ligar Monitorado, ADB, GPS, câmera, SMS ou histórico local.
+- Intervalo mínimo entre tentativas de sucesso: 60s; erros 120/180/300s. Nunca adquirir wake lock por esse recurso. Cancelar atividade ao desativar; revalidar host+chave depois de toda resposta.
+- Persistir apenas resumo de bateria e identificador derivado de pareamento, sem IP, nome ou chave. Valores são atuais por até três minutos; depois indicar leitura desatualizada, nunca apresentar como ao vivo.
+- Restrição Android: o serviço pode ser encerrado e não deve ser reiniciado de forma oculta quando o Android proibir FGS em background. Testar dois celulares e CI antes de considerar homologado.
+
 # Celular Remoto v0.1.0-alpha.139 — notificação e isolamento de telemetria
 
 - Próxima versão alpha.140/versionCode 140.

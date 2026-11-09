@@ -1610,7 +1610,7 @@ remote_preferences = (root / 'app/src/main/java/br/dev/celularremoto/updates/Upd
 remote_ui = (ui_root / 'UpdatesSettingsUi.kt').read_text()
 assert 'const val WIRE_COMPAT = "0.1.0-alpha.111"' in remote_version
 assert 'AppVersion.WIRE_COMPAT' in client and 'AppVersion.WIRE_COMPAT' in server
-assert '"appUpdate", "heartbeat", "eventWatch")) return' in server and 'UpdateController.remoteAction(context, action)' in server
+assert '"appUpdate", "heartbeat", "eventWatch", "batteryProbe")) return' in server and 'UpdateController.remoteAction(context, action)' in server
 assert 'fun appUpdate(' in client and '"checkDownload"' in client
 assert 'fun remoteAction(context: Context, action: String)' in update
 assert 'UpdatePreferences.remoteRequests(context)' in update and 'REMOTE_COOLDOWN_MS' in update
@@ -1865,7 +1865,7 @@ assert 'local_battery_monitoring_enabled", false' in settings130, 'Coleta local 
 assert 'Mode.BATTERY_ONLY' in mode130 and 'Mode.REMOTE' in mode130
 assert 'activateBatteryOnlyMode()' in svc130 and 'activateRemoteMode()' in svc130
 assert 'if (serviceActive) stopRemoteMode()' in svc130
-assert 'startBatteryLoops()' in svc130 and svc130.count('batteryExecutor.execute {') == 1
+assert 'startBatteryLoops()' in svc130 and 'Executors.newSingleThreadExecutor' in svc130 and 1 <= svc130.count('batteryExecutor.execute {') <= 3, 'Coleta deve usar executor serial único; controller-only pode atualizar a notificação sem criar histórico'
 assert 'FOREGROUND_SERVICE_TYPE_SPECIAL_USE' in svc130 and 'FOREGROUND_SERVICE_SPECIAL_USE' in manifest130
 assert 'foregroundServiceType="connectedDevice|specialUse"' in manifest130
 assert 'MonitorService.refreshModes(this)' in ui130
@@ -2020,3 +2020,27 @@ assert (root / 'app/src/test/java/br/dev/celularremoto/core/RemoteMessagePairing
 assert (root / 'app/src/main/java/br/dev/celularremoto/core/RemoteMessageSessionPolicy.kt').exists()
 assert (root / 'docs/VALIDATION_ALPHA138.md').exists()
 print('PASSOU: alpha.138 escopo de Mensagens, mDNS estrito e wake do servidor')
+
+# Alpha.140 — acompanhamento remoto opt-in, mínimo e sem elevar permissões.
+ui140 = (ui_root / 'RemoteBatterySettingsUi.kt').read_text()
+svc140 = (root / 'app/src/main/java/br/dev/celularremoto/service/MonitorService.kt').read_text()
+poll140 = (root / 'app/src/main/java/br/dev/celularremoto/service/ControllerBatteryBackgroundPoller.kt').read_text()
+tele140 = (root / 'app/src/main/java/br/dev/celularremoto/core/ControllerRemoteTelemetry.kt').read_text()
+mode140 = (root / 'app/src/main/java/br/dev/celularremoto/service/MonitorServiceModePolicy.kt').read_text()
+client140 = (root / 'app/src/main/java/br/dev/celularremoto/transport/RemoteClient.kt').read_text()
+assert 'getBoolean("controller_battery_polling_enabled", false)' in settings130, 'Acompanhamento deve iniciar OFF'
+assert 'batteryProbe' in client140 and 'fun batteryProbe(' in client140
+assert 'op", "batteryProbe"' in server and 'for (field in listOf("levelPercent", "temperatureC", "currentMa", "state", "updatedMs"))' in server
+assert 'return snapshot(' not in client140[client140.index('fun batteryProbe('):client140.index('fun watchEvents(')], 'Não reconsultar dados de SMS/GPS por fallback'
+assert 'FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE' in svc140 and 'Mode.CONTROLLER_ONLY' in mode140
+assert 'if (controllerOnlyActive && !isBatteryMonitoringActive)' in svc140
+assert 'RemoteClient.batteryProbe(host, key, app)' in poll140
+assert 'MessageDigest.isEqual(it, key)' in poll140 and 'SettingsStore.getRemoteHost(app) == host' in poll140
+assert 'RemoteBatteryPollingPolicy.nextDelayMs(failures)' in poll140 and 'handler.removeCallbacks(pulse)' in poll140
+assert 'FRESH_MS = 180_000L' in tele140 and 'KEEP_MS = 86_400_000L' in tele140
+assert 'Remoto: leitura desatualizada' in tele140 and 'getSharedPreferences(FILE, Context.MODE_PRIVATE)' in tele140
+assert 'SettingsStore.setControllerBatteryPolling(this, true)' in ui140 and 'showAppConfirm(' in ui140
+assert 'requestHealthNotificationPermission()' in ui140
+assert (root / 'app/src/test/java/br/dev/celularremoto/core/RemoteBatteryPollingPolicyTest.kt').is_file()
+assert (root / 'docs/VALIDATION_ALPHA140.md').is_file()
+print('PASSOU: alpha.140 opt-in, consulta mínima AES-GCM, FGS único, backoff, escopo, expiração e desligamento')

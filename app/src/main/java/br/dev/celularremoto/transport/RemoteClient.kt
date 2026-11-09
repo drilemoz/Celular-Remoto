@@ -45,6 +45,37 @@ object RemoteClient {
         }
     }
 
+    /** Resumo mínimo de bateria pelo canal AES-GCM existente. Requer alpha.140 no monitorado.
+     * Não faz fallback para snapshot completo: isso ampliaria dados consultados em segundo plano.
+     */
+    fun batteryProbe(host: String, key: ByteArray, context: Context): JSONObject {
+        require(host.isNotBlank() && host.length <= 253 &&
+            '/' !in host && ':' !in host && ' ' !in host) { "Host inválido." }
+        val request = JSONObject().put("v", WireProtocol.VERSION)
+            .put("op", "batteryProbe").put("appVersion", AppVersion.WIRE_COMPAT)
+            .put("ts", System.currentTimeMillis())
+            .put("clientId", SettingsStore.controllerId(context))
+            .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
+            .put("accessMethod", "Bateria remota contínua")
+        return Socket().use { socket ->
+            socket.connect(InetSocketAddress(host, WireProtocol.PORT), 3_500)
+            socket.soTimeout = 5_000
+            WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(key, request))
+            val response = WireProtocol.decode(key,
+                WireProtocol.receive(socket.getInputStream(), 8 * 1024))
+            if (response.optString("op") == "versionMismatch")
+                error(AppVersion.incompatibility(response.optString("appVersion")))
+            check(response.optString("op") == "batteryProbe" &&
+                response.optInt("v") == WireProtocol.VERSION &&
+                AppVersion.compatible(response.optString("appVersion"))) { "Resposta de bateria inválida." }
+            val battery = response.optJSONObject("battery") ?: error("Sem bateria autenticada.")
+            check(battery.has("updatedMs") && battery.has("levelPercent")) {
+                "Bateria remota incompleta."
+            }
+            response
+        }
+    }
+
     /** Consulta longa de metadados, opcional e somente enquanto o controlador está visível.
      * Um único socket por observador, prazo máximo e nenhum conteúdo de mensagens.
      */

@@ -50,6 +50,7 @@ private val settingGroups = listOf(
         SettingsDestination(R.drawable.ic_bell, "Notificações", "Acesso, seleção e respostas", "notifications"),
         SettingsDestination(R.drawable.ic_message, "SMS e telefonia", "Consulta, envio e chips", "sms"),
         SettingsDestination(R.drawable.ic_battery, "Bateria local contínua", "Coleta com tela apagada sem servidor remoto", "battery_local"),
+        SettingsDestination(R.drawable.ic_wifi, "Bateria remota contínua", "Consulta autenticada opcional com economia e reconexão", "battery_remote"),
         SettingsDestination(R.drawable.ic_thermometer, "Alertas e proteção", "Bateria, temperatura e saúde", "health"),
     )),
     SettingsGroup("APARÊNCIA E APLICATIVO", listOf(

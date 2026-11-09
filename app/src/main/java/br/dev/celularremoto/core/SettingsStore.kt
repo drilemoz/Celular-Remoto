@@ -16,6 +16,12 @@ object SettingsStore {
     fun setLocalBatteryMonitoring(context: Context, enabled: Boolean) =
         prefs(context).edit().putBoolean("local_battery_monitoring_enabled", enabled).apply()
 
+    /** Consulta de bateria do controlador em segundo plano, com notificação visível; OFF. */
+    fun controllerBatteryPolling(context: Context): Boolean =
+        prefs(context).getBoolean("controller_battery_polling_enabled", false)
+    fun setControllerBatteryPolling(context: Context, enabled: Boolean) =
+        prefs(context).edit().putBoolean("controller_battery_polling_enabled", enabled).apply()
+
     fun localHealthAlerts(context: Context) = prefs(context).getBoolean("health_alerts_local", true)
     fun setLocalHealthAlerts(context: Context, enabled: Boolean) = prefs(context).edit().putBoolean("health_alerts_local", enabled).apply()
     fun thermalProtection(context: Context) = prefs(context).getBoolean("thermal_protection", false)

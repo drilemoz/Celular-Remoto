@@ -1,3 +1,12 @@
+## 0.1.0-alpha.140 (versionCode 140) | 09/11/2026
+
+- Nova consulta autenticada `batteryProbe` na porta existente com apenas percentual, temperatura, corrente, estado e horário medido. Sem localização, apps ou mensagens; sem nova permissão ou quebra do WIRE_COMPAT.
+- Acompanhamento remoto contínuo **opt-in** em Ajustes, com único serviço foreground `connectedDevice` compartilhado com os modos anteriores e sem histórico local criado automaticamente.
+- Amostragem da rede a cada 60 s com espera progressiva de 120/180/300 s se houver falha, cancelamento no desligamento e revalidação do host+chave após a resposta.
+- Última bateria remota mínima preservada localmente por até 24 h, vinculada ao escopo do pareamento, com expiração da exibição de valores após 3 min e indicação de idade.
+- Corrente remota com sinal incoerente não é exibida como confiável. Monitoramento local e remoto continuam independentes e nenhuma captura/ADB é acionada pela telemetria.
+- Build Android, autonomia e recepção em dois aparelhos ainda sem validação real.
+
 ## 0.1.0-alpha.139 (versionCode 139) | 09/11/2026
 
 - Notificação: percentual, temperatura e corrente coerente na primeira linha; previsão por sessão na segunda.

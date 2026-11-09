@@ -14,10 +14,10 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Bateria mais clara" to "Percentual, temperatura e corrente coerente aparecem no título; previsão de término usa sessão observada.",
-        "Corrente incerta" to "Quando o sinal contradiz o estado de descarga ou carga, a corrente não é mostrada como confiável na notificação.",
-        "Telemetria por pareamento" to "Leitura remota recente vinculada ao host e chave, sem misturar dispositivos no mesmo IP.",
-        "Limite conhecido" to "Coleta remota contínua em segundo plano ainda depende de implementação e testes de consumo."
+        "Bateria remota contínua" to "Em Ajustes, habilite consultas opcionais em segundo plano com serviço visível, sem iniciar Monitorado ou ADB neste aparelho.",
+        "Consulta econômica e segura" to "Nova operação AES-GCM com dados mínimos, atualização aproximada a cada minuto e espera de até cinco minutos após falhas.",
+        "Medições identificadas" to "Última leitura é vinculada ao pareamento e preservada, mas após três minutos aparece como desatualizada.",
+        "Requisitos" to "Os dois aparelhos precisam da alpha.140 e estar na mesma rede local; o Android pode encerrar o serviço, sem garantia de tempo real."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -46,6 +46,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Notificação compacta (alpha.139)" to "Percentual, temperatura, corrente coerente e previsão no resumo; telemetria remota vinculada à chave.",
         "Segurança de mensagens (alpha.138)" to "Isolamento por host e chave, mDNS TLS estrito e encerramento de espera no servidor.",
         "ADB e sessões (alpha.137)" to "Correção de host opcional na descoberta ADB; avisos e abertura de Mensagens evitam respostas da sessão anterior.",
         "Eventos locais (alpha.136)" to "Consulta autenticada curta enquanto Controlar está visível, alertas por metadados e atualização da central Mensagens; Energia pode acender tela com consentimento local.",

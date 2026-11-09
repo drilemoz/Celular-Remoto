@@ -140,7 +140,7 @@ class MonitorServer(private val context: Context) {
                 val regular = runCatching { WireProtocol.decode(permanentKey, encrypted) }.getOrNull()
                 if (regular != null) {
                     if (regular.optInt("v") != WireProtocol.VERSION ||
-                        regular.optString("op") !in setOf("snapshot", "disconnect", "notificationReply", "smsReply", "screenFrame", "screenCapture", "remoteTouch", "audioChunk", "requestScreen", "videoFrame", "wakeScreen", "dataList", "dataChunk", "dataChunks", "dataHash", "dataRead", "dataStream", "dataManage", "dataUploadStart", "dataUploadChunk", "dataUploadFinish", "dataUploadAbort", "dataUploadStatus", "appsList", "appsIcons", "appLaunch", "deviceControl", "cameraFrame", "cameraSwitch", "photoTake", "thermalDiagnostics", "locationSnapshot", "batteryLab", "appUpdate", "heartbeat", "eventWatch")) return
+                        regular.optString("op") !in setOf("snapshot", "disconnect", "notificationReply", "smsReply", "screenFrame", "screenCapture", "remoteTouch", "audioChunk", "requestScreen", "videoFrame", "wakeScreen", "dataList", "dataChunk", "dataChunks", "dataHash", "dataRead", "dataStream", "dataManage", "dataUploadStart", "dataUploadChunk", "dataUploadFinish", "dataUploadAbort", "dataUploadStatus", "appsList", "appsIcons", "appLaunch", "deviceControl", "cameraFrame", "cameraSwitch", "photoTake", "thermalDiagnostics", "locationSnapshot", "batteryLab", "appUpdate", "heartbeat", "eventWatch", "batteryProbe")) return
                     if (abs(now - regular.optLong("ts")) > 5 * 60 * 1000L) return
                     synchronized(seenNonces) {
                         // Retenção compatível com ±5 minutos de validade do envelope.
@@ -203,6 +203,20 @@ class MonitorServer(private val context: Context) {
                                 regular.optString("clientId"), regular.optString("clientName"),
                                 regular.optString("accessMethod"))
                         } finally { eventWatchSlot.release() }
+                        return
+                    }
+                    if (regular.optString("op") == "batteryProbe") {
+                        // Dados mínimos de bateria pelo mesmo canal autenticado.
+                        // Não consulta SMS, localização, câmera, rede ou apps.
+                        val measured = BatteryReader.snapshot(context)
+                        val battery = JSONObject()
+                        for (field in listOf("levelPercent", "temperatureC", "currentMa", "state", "updatedMs")) {
+                            if (measured.has(field)) battery.put(field, measured.get(field))
+                        }
+                        val response = JSONObject().put("v", WireProtocol.VERSION)
+                            .put("op", "batteryProbe").put("appVersion", AppVersion.WIRE_COMPAT)
+                            .put("battery", battery)
+                        WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, response))
                         return
                     }
                     if (regular.optString("op") == "heartbeat") {
