@@ -1,3 +1,10 @@
+# Celular Remoto v0.1.0-alpha.142 — correção de compilação de testes
+
+- Próxima versão alpha.143/versionCode 143. Manter Gradle, AppVersion, README, CHANGELOG, docs/RELEASE_NOTES, arquitetura, AGENTS, Novidades e validação sincronizados.
+- O workflow `Gerar APK e Release 32` compilou o código principal da alpha.141, mas falhou em três comparações `Double?` vs `Double` nos testes `BatteryPresentationMathTest.kt`, corrigidas agora com `requireNotNull()`.
+- Lógica de leitura e apresentação de corrente permanece a da alpha.141. Não forçar sinal em dados persistidos, nem remover diagnósticos da leitura bruta.
+- Testes locais não comprovam build Android completo da alpha.142, que deverá ser verificado no GitHub Actions e nos aparelhos reais.
+
 # Celular Remoto v0.1.0-alpha.141 — bateria mais clara e corrente coerente
 
 - Próxima versão: alpha.142/versionCode 142. Manter metadados, notas, novidades, validação e testes sincronizados a cada mudança.

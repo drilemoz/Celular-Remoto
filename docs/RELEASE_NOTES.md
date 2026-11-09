@@ -1,4 +1,5 @@
-# Celular Remoto v0.1.0-alpha.141 — bateria mais clara e corrente coerente
+# Celular Remoto v0.1.0-alpha.142 — correção da compilação dos testes
+- Corrigida a incompatibilidade Double? / Double de três assertivas em BatteryPresentationMathTest após falha no workflow 32; sem mudança de funcionamento do aplicativo.
 
 - Ativação em Ajustes → Bateria remota contínua, desativada por padrão; usa o mesmo serviço e notificação já existentes, ou inicia o modo controlador conectado quando nenhum outro modo estiver ativo.
 - A tela Bateria separa leitura atual, ferramentas/alertas e resumos automáticos. Em descarga, valores positivos informados pelo Android passam a aparecer visualmente como saída da bateria, mantendo o valor bruto no diagnóstico.

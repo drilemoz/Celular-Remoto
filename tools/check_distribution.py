@@ -2043,4 +2043,9 @@ assert 'SettingsStore.setControllerBatteryPolling(this, true)' in ui140 and 'sho
 assert 'requestHealthNotificationPermission()' in ui140
 assert (root / 'app/src/test/java/br/dev/celularremoto/core/RemoteBatteryPollingPolicyTest.kt').is_file()
 assert (root / 'docs/VALIDATION_ALPHA140.md').is_file()
-print('PASSOU: alpha.141 UI de bateria reorganizada, sinal visual coerente, consulta mínima AES-GCM e desligamento seguro')
+print('PASSOU: alpha.142 correção de teste Double?, UI preservada, consulta mínima AES-GCM e desligamento seguro')
+
+# Regressão alpha.142: a sobrecarga numérica do JUnit não aceita Double? sob Kotlin 2.2.21.
+_presentation_test = (root / "app/src/test/java/br/dev/celularremoto/core/BatteryPresentationMathTest.kt").read_text()
+assert _presentation_test.count("requireNotNull(BatteryPresentationMath.visualCurrentMa(") == 3, "Alpha.142: testes numéricos devem exigir Double não nulo"
+print("PASSOU: alpha.142 testes numéricos da corrente usam Double não nulo")

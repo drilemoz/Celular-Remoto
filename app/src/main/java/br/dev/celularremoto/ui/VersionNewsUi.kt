@@ -14,10 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Tela Bateria reorganizada" to "Leitura atual, ferramentas/alertas e resumos ficaram separados para reduzir confusão visual sem esconder informações.",
-        "Corrente com sentido coerente" to "Em descarga, valores positivos do Android podem aparecer visualmente como saída da bateria; o diagnóstico continua exibindo a leitura bruta.",
-        "Taxas preservadas" to "Ritmo e previsão continuam baseados em variação de percentual por hora; corrente e potência seguem líquidas na bateria.",
-        "Requisitos" to "Os dois aparelhos precisam da alpha.141 e estar na mesma rede local; o Android pode encerrar o serviço, sem garantia de tempo real."
+        "Correção dos testes Kotlin" to "Corrigidos três erros de tipo Double? / Double detectados no workflow 32. O cálculo e a exibição de bateria permanecem os mesmos.",
+        "Visual da bateria preservado" to "A tela continua com leitura atual, ferramentas e resumo organizados; a leitura bruta Android permanece no diagnóstico.",
+        "Validação" to "Execute um novo workflow para confirmar a compilação completa e a geração do APK alpha.142."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -46,6 +45,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Bateria organizada (alpha.141)" to "Leitura atual e resumo separados, corrente com sinal visual de descarga e leitura bruta preservada no diagnóstico.",
         "Notificação compacta (alpha.139)" to "Percentual, temperatura, corrente coerente e previsão no resumo; telemetria remota vinculada à chave.",
         "Segurança de mensagens (alpha.138)" to "Isolamento por host e chave, mDNS TLS estrito e encerramento de espera no servidor.",
         "ADB e sessões (alpha.137)" to "Correção de host opcional na descoberta ADB; avisos e abertura de Mensagens evitam respostas da sessão anterior.",

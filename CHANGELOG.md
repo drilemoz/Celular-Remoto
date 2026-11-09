@@ -1,3 +1,10 @@
+## 0.1.0-alpha.142 (versionCode 142) | 09/11/2026
+
+- Corrigidos os três erros de tipo Kotlin (`Double?` em vez de `Double`) de `BatteryPresentationMathTest.kt` nas linhas 10, 15 e 21 da alpha.141, relatados pelo workflow `Gerar APK e Release 32`, etapa `:app:compileDebugUnitTestKotlin`.
+- O teste verifica explicitamente resultado não nulo com `requireNotNull()` antes de chamar `assertEquals` com tolerância numérica; permanecem as três condições originais testadas.
+- Código de execução, coleta de bateria, corrente bruta, sinal visual, persistência, comunicação AES-GCM e permissões permanecem idênticos à alpha.141.
+- Sincronizados versão, documentação, novidades e relatório de validação. Build Android completo da alpha.142 ainda requer um novo workflow.
+
 ## 0.1.0-alpha.141 (versionCode 141) | 09/11/2026
 
 - Reorganizada a tela Bateria para separar leitura atual, ferramentas/alertas e resumos automáticos, reduzindo a mistura visual entre status, ações e histórico.

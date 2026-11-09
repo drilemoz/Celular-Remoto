@@ -1,6 +1,6 @@
-# Estado atual — alpha.141
+# Estado atual — alpha.142
 
-No controlador há um opt-in independente em Ajustes → Bateria remota contínua. O único `MonitorService` aceita modo `CONTROLLER_ONLY` via FGS `connectedDevice` (sem listener local, histórico de bateria, câmera, GPS ou ADB), além dos modos existentes. `ControllerBatteryBackgroundPoller` faz no máximo uma consulta compacta AES-GCM por minuto, com reconexão 2/3/5 min e revalidação host+chave; não mantém wake lock. O monitorado expõe `batteryProbe` na porta 37842 somente com percentual, temperatura, corrente, estado e carimbo de observação, sem SMS/notificações ou fallback por snapshot completo. A notificação usa a última telemetria do par corrente, salvo só resumo mínimo/escopo hash em armazenamento privado. Exibição de medidas expira em 3 min, armazenamento histórico de última leitura expira em 24h. `WIRE_COMPAT` permanece na alpha.111. A alpha.141 também reorganiza a UI de Bateria e aplica normalização apenas visual do sinal em descarga, preservando o valor bruto no diagnóstico. A documentação desta versão corresponde a versionCode=141. Build Android real e testes em dois aparelhos pendentes.
+No controlador há um opt-in independente em Ajustes → Bateria remota contínua. O único `MonitorService` aceita modo `CONTROLLER_ONLY` via FGS `connectedDevice` (sem listener local, histórico de bateria, câmera, GPS ou ADB), além dos modos existentes. `ControllerBatteryBackgroundPoller` faz no máximo uma consulta compacta AES-GCM por minuto, com reconexão 2/3/5 min e revalidação host+chave; não mantém wake lock. O monitorado expõe `batteryProbe` na porta 37842 somente com percentual, temperatura, corrente, estado e carimbo de observação, sem SMS/notificações ou fallback por snapshot completo. A notificação usa a última telemetria do par corrente, salvo só resumo mínimo/escopo hash em armazenamento privado. Exibição de medidas expira em 3 min, armazenamento histórico de última leitura expira em 24h. `WIRE_COMPAT` permanece na alpha.111. A alpha.141 também reorganiza a UI de Bateria e aplica normalização apenas visual do sinal em descarga, preservando o valor bruto no diagnóstico. A documentação desta versão corresponde a versionCode=142. Build Android real e testes em dois aparelhos pendentes.
 
 # Estado atual — alpha.139
 
@@ -84,7 +84,7 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 O mesmo APK atende aos modos Monitorado, Bateria local contínua e Controle. MonitorService usa FGS connectedDevice no modo remoto e specialUse no modo bateria sem abrir o servidor TCP; as amostras são feitas pelo mesmo executor serial a cada 30 s, e apenas um ID de notificação é usado.
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.141` e `versionCode=141`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.142` e `versionCode=142`.
 
 - GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.139.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.
