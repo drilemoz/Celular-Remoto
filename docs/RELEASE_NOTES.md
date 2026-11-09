@@ -1,3 +1,11 @@
+# Celular Remoto v0.1.0-alpha.138 — mensagens vinculadas ao pareamento
+
+- Central Mensagens identifica a sessão por aparelho e credencial: trocar/reparear no mesmo IP não reaproveita dados antigos, indicadores de leitura ou respostas assíncronas.
+- Atualizações rápidas revalidam o vínculo exato da tela aberta; ao detectar troca, a consulta é descartada e solicita-se reabrir a página.
+- ADB Wi-Fi aceita apenas anúncios mDNS oficiais de conexão TLS do IP escolhido; nomes de serviço semelhantes são descartados.
+- Encerrar Monitorado libera imediatamente a espera do sistema de eventos, preservando bateria e trabalhadores de rede.
+- Código-fonte validado estaticamente e por JVM isolada; compilação Gradle/Android e teste real dos dois celulares ainda pendentes.
+
 # Celular Remoto v0.1.0-alpha.137 — correções ADB e central de mensagens
 
 - Corrigida a seleção de conexão ADB via mDNS quando o host ainda não estiver informado; somente o serviço real de conexão TLS e o mesmo IP pareado podem ser candidatos.

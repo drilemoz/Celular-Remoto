@@ -58,10 +58,11 @@ class MainActivity : Activity() {
     internal val handler = Handler(Looper.getMainLooper())
     internal val remoteConnection by lazy { RemoteConnectionManager(applicationContext) }
     internal val pairingController = PairingController()
-    internal val lastMessageViewedMs = mutableMapOf<String, Long>() // Apenas carimbo temporal em RAM
+    internal val lastMessageViewedMs = mutableMapOf<String, Long>() // Por escopo do pareamento, só em RAM
     // Dados temporários: não persistir mensagens em Bundle, preferências ou disco.
     internal var messagesData: org.json.JSONObject? = null
     internal var messagesHost = ""
+    internal var messagesPairingScope = "" // hash não reversível do host+chave, nunca a chave
     @Volatile internal var messagesAutoRefresh = true // Apenas enquanto a central estiver visível.
     internal var messagesRefreshPending = false // Coalescer eventos durante consulta em voo.
     internal val eventWatcher by lazy { makeForegroundEventWatcher() }
@@ -169,7 +170,8 @@ class MainActivity : Activity() {
         messagesTab = savedInstanceState?.getInt("messages_tab", 0)?.coerceIn(0, 1) ?: 0
         if (mode == 4) {
             messagesHost = SettingsStore.getRemoteHost(this)
-            messagesBaselineMs = lastMessageViewedMs[messagesHost] ?: 0L
+            messagesPairingScope = currentMessageScope(messagesHost)
+            messagesBaselineMs = lastMessageViewedMs[messagesPairingScope] ?: 0L
         }
         settingsReturnMode = savedInstanceState?.getInt("settings_return_mode", 1)?.takeIf { it in setOf(0, 1, 5) } ?: 1
         window.statusBarColor = bg

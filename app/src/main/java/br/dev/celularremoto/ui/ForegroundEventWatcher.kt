@@ -2,6 +2,7 @@ package br.dev.celularremoto.ui
 
 import android.content.Context
 import br.dev.celularremoto.core.RecentDevices
+import br.dev.celularremoto.core.RemoteMessageSessionPolicy
 import br.dev.celularremoto.core.RemoteEventAlerts
 import br.dev.celularremoto.core.SettingsStore
 import br.dev.celularremoto.transport.RemoteClient
@@ -111,7 +112,8 @@ internal fun MainActivity.makeForegroundEventWatcher() = ForegroundEventWatcher(
             val currentKey = RecentDevices.key(applicationContext, notifiedHost)
             val validSelection = currentKey != null &&
                 br.dev.celularremoto.core.RemoteEventNoticePolicy.pairingScope(notifiedHost, currentKey) == notifiedScope &&
-                SettingsStore.getRemoteHost(this) == notifiedHost && messagesHost == notifiedHost
+                RemoteMessageSessionPolicy.matches(messagesHost, messagesPairingScope,
+                    SettingsStore.getRemoteHost(this), notifiedScope) && messagesHost == notifiedHost
             if (active && mode == 4 && messagesAutoRefresh && validSelection) {
                 if (messagesLoading) messagesRefreshPending = true else loadRemoteMessages()
             }

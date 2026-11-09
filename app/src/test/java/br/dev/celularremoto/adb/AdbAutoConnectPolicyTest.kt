@@ -33,9 +33,11 @@ class AdbAutoConnectPolicyTest {
             endpoint(host, 41003, "_adb-tls-connect._tcp."),
             endpoint(host, 41003, "_adb-tls-connect._tcp."),
             endpoint(host, 41004, "_ADB-TLS-CONNECT._TCP."),
+            endpoint(host, 41006, "_adb-tls-connect._tcp.fake."),
+            endpoint(host, 41007, "_adb-tls-connect._tcp.local."),
             endpoint("192.168.1.11", 41005)
         )
-        assertEquals(listOf(41003, 41004),
+        assertEquals(listOf(41003, 41004, 41007),
             AdbAutoConnectPolicy.connectionServices(host, services).map { it.port })
     }
 }

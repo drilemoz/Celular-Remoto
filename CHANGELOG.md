@@ -1,3 +1,12 @@
+## 0.1.0-alpha.138 (versionCode 138) | 09/11/2026
+
+- Central Mensagens passa a usar escopo de host+chave do pareamento na sessão e no indicador de mensagens vistas, evitando misturar dados quando um IP é reutilizado por outro aparelho.
+- A reabertura de Mensagens invalida callbacks anteriores; respostas tardias, após uma mudança de chave, não preenchem a tela e limpam o estado de carregamento da sessão obsoleta.
+- O observador de eventos só solicita atualizar Mensagens se o escopo atualmente aberto corresponder à credencial que originou o aviso.
+- Filtro ADB mDNS restringido aos tipos TLS connect reconhecidos, com ou sem `.local` DNS, rejeitando anúncios parecidos sem ampliar acesso.
+- Ao encerrar Monitorado, o sinal de eventos acorda o worker de espera longa para liberar recursos sem aguardar o timeout completo.
+- Protocolo AES-GCM e WIRE_COMPAT preservados; sem novo serviço, permissão ou coleta. Build Android e testes físicos ainda pendentes.
+
 ## 0.1.0-alpha.137 (versionCode 137) | 09/11/2026
 
 - Corrigida incompatibilidade de nulidade no fluxo de descoberta ADB: o IP selecionado passa a ser não nulo antes de consultar portas mDNS ou tentar a conexão; callbacks antigos são descartados.

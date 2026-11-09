@@ -113,6 +113,8 @@ class MonitorServer(private val context: Context) {
 
     @Synchronized fun stop() {
         running = false
+        // Desperta long-poll imediatamente ao desligar em vez de reter worker por 11 s.
+        RemoteEventSignal.changed()
         PairingSession.revoke()
         br.dev.celularremoto.core.RemoteUploadStore.clear()
         try { server?.close() } catch (_: Exception) { }

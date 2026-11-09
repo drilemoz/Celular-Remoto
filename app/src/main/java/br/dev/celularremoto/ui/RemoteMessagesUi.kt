@@ -17,15 +17,29 @@ import android.widget.TextView
 import android.widget.Toast
 import br.dev.celularremoto.R
 import br.dev.celularremoto.core.MessagePolicy
+import br.dev.celularremoto.core.RecentDevices
+import br.dev.celularremoto.core.RemoteEventNoticePolicy
+import br.dev.celularremoto.core.RemoteMessageSessionPolicy
 import br.dev.celularremoto.core.SensitiveContent
 import br.dev.celularremoto.core.SettingsStore
 import org.json.JSONArray
 import org.json.JSONObject
 
+/** A identidade da sessão inclui a chave atual, mesmo que dois aparelhos reutilizem o IP. */
+internal fun MainActivity.currentMessageScope(host: String): String =
+    if (host.isBlank()) "" else RecentDevices.key(applicationContext, host)?.let {
+        RemoteEventNoticePolicy.pairingScope(host, it)
+    }.orEmpty()
+
 /** Central em página própria. O conteúdo fica SOMENTE na RAM durante esta visita. */
 internal fun MainActivity.openRemoteMessagesScreen() {
+    // Invalidar antes de renderizar: callbacks de uma sessão antiga não podem preencher a nova.
+    messagesRequestGeneration++
     messagesHost = SettingsStore.getRemoteHost(this)
-    messagesBaselineMs = lastMessageViewedMs[messagesHost] ?: 0L
+    messagesPairingScope = currentMessageScope(messagesHost)
+    messagesBaselineMs = lastMessageViewedMs[messagesPairingScope] ?: 0L
+    // Reabrir por notificação com a Activity já ativa não herda a data da sessão anterior.
+    messagesLatestShownMs = 0L
     messagesData = null
     messagesError = null
     messagesLoading = false
@@ -42,9 +56,10 @@ internal fun MainActivity.openRemoteMessagesScreen() {
 
 /** Sai da central, invalidando callbacks e removendo os textos do estado da Activity. */
 internal fun MainActivity.clearRemoteMessagesScreen() {
-    if (messagesHost.isNotBlank()) {
-        lastMessageViewedMs[messagesHost] = maxOf(
-            lastMessageViewedMs[messagesHost] ?: 0L, messagesLatestShownMs
+    if (RemoteMessageSessionPolicy.matches(messagesHost, messagesPairingScope,
+        SettingsStore.getRemoteHost(this), currentMessageScope(messagesHost))) {
+        lastMessageViewedMs[messagesPairingScope] = maxOf(
+            lastMessageViewedMs[messagesPairingScope] ?: 0L, messagesLatestShownMs
         )
     }
     messagesRequestGeneration++
@@ -53,6 +68,7 @@ internal fun MainActivity.clearRemoteMessagesScreen() {
     messagesLoading = false
     messagesRefreshPending = false
     messagesHost = ""
+    messagesPairingScope = ""
     messagesExpandedSender = null
     messagesLatestShownMs = 0L
 }
@@ -68,8 +84,16 @@ internal fun MainActivity.closeRemoteMessagesScreen() {
 internal fun MainActivity.loadRemoteMessages() {
     if (mode != 4 || messagesLoading) return
     val host = messagesHost
-    if (host.isBlank() || SettingsStore.getRemoteHost(this) != host) {
-        messagesError = "Escolha novamente o aparelho monitorado."
+    val scope = messagesPairingScope
+    if (!RemoteMessageSessionPolicy.matches(host, scope, SettingsStore.getRemoteHost(this),
+            currentMessageScope(host))) {
+        // A conexão ou o pareamento pode ter mudado com a página ainda aberta.
+        // Não conservar qualquer texto da identidade anterior na UI.
+        messagesRequestGeneration++
+        messagesData = null
+        messagesLoading = false
+        messagesRefreshPending = false
+        messagesError = "A sessão mudou. Volte e abra Mensagens novamente."
         render()
         return
     }
@@ -78,12 +102,23 @@ internal fun MainActivity.loadRemoteMessages() {
     val request = ++messagesRequestGeneration
     render()
     val validPage = {
-        mode == 4 && messagesHost == host && SettingsStore.getRemoteHost(this) == host &&
+        mode == 4 && messagesHost == host &&
+            RemoteMessageSessionPolicy.matches(host, scope, SettingsStore.getRemoteHost(this),
+                currentMessageScope(host)) &&
             request == messagesRequestGeneration && active && !isFinishing && !isDestroyed
     }
     val obtainMessages: () -> Unit = {
         remoteConnection.loadMessages(host) { result ->
-            if (validPage()) {
+            if (!validPage() && active && mode == 4 && messagesHost == host &&
+                request == messagesRequestGeneration && currentMessageScope(host) != scope) {
+                // A resposta chegou depois da troca da credencial. Nunca deixar a tela
+                // presa em carregando nem exibir dados capturados na sessão anterior.
+                messagesLoading = false
+                messagesData = null
+                messagesRefreshPending = false
+                messagesError = "Pareamento alterado. Reabra Mensagens."
+                render()
+            } else if (validPage()) {
                 messagesLoading = false
                 result.onSuccess { messagesData = it }
                     .onFailure { messagesError = it.message ?: "Consulta indisponível." }

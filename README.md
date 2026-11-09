@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.137
+# Celular Remoto v0.1.0-alpha.138
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,16 @@
 
 **Foto remota (alpha.131):** no monitorado, abra **Ativar + Foto** ou **Fotografia remota** e toque uma vez em **Ativar Monitorado e preparar câmera**; permissões Android continuam locais. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.137 / versionCode 137** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.138 / versionCode 138** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Mensagens isoladas por credencial (alpha.138)
+
+- **Repareamento no mesmo IP:** Mensagens associa sua sessão ativa ao host e ao resumo criptográfico da chave, de modo que o estado/última mensagem vista não passe para outro aparelho que receba o mesmo IP.
+- **Resposta atrasada:** quando a chave mudar durante a leitura, textos antigos são descartados e a página solicita reabertura. Abrir a página novamente invalida callbacks anteriores.
+- **Avisos com tela aberta:** só atualizam a central se o escopo de pareamento ainda for o mesmo; não envia conteúdo adicional.
+- **ADB mDNS:** anúncios devem ter o tipo exato `_adb-tls-connect._tcp` ou `_adb-tls-connect._tcp.local` e corresponder ao IP selecionado, sem varredura.
+- **Monitorado:** interromper o serviço acorda a espera `eventWatch` em vez de aguardar os 11 segundos totais. Não há serviço em segundo plano novo.
+- **Limite:** ainda é necessário confirmar `:app:assembleDebug`, testes completos no GitHub Actions e comportamento em dois aparelhos.
 
 ## Segurança de sessão e ADB (alpha.137)
 

@@ -1992,7 +1992,8 @@ messages137 = (ui_root / 'RemoteMessagesUi.kt').read_text()
 assert 'val selectedHost = host ?: return@found' in adb137
 assert 'connectCandidates(selectedHost)' in adb137
 assert 'discoveryHost == selectedHost' in adb137
-assert 'type.startsWith("_adb-tls-connect._tcp.")' in adb_policy137
+# alpha.138 restringe ainda mais a regra da alpha.137: somente DNS local real.
+assert 'type == "_adb-tls-connect._tcp"' in adb_policy137 and 'type == "_adb-tls-connect._tcp.local"' in adb_policy137
 assert 'openRemoteMessagesScreen()' in main_ui
 assert 'if (active) loadRemoteMessages()' in messages137
 assert 'onEventsChanged(host, scope)' in watch137
@@ -2000,3 +2001,22 @@ assert 'messagesHost == notifiedHost' in watch137
 assert 'validSelection' in watch137
 assert (root / 'docs/VALIDATION_ALPHA137.md').exists()
 print('PASSOU: alpha.137 ADB nullable e serviço exato, mensagens limpas, evento por escopo de sessão')
+
+# Alpha.138: mensagens não aceitam conteúdo ou marcador de lido de pareamento anterior.
+message138 = (ui_root / 'RemoteMessagesUi.kt').read_text()
+main138 = (ui_root / 'MainActivity.kt').read_text()
+adb138 = (root / 'app/src/main/java/br/dev/celularremoto/adb/AdbAutoConnectPolicy.kt').read_text()
+assert 'messagesPairingScope = currentMessageScope(messagesHost)' in message138
+assert 'lastMessageViewedMs[messagesPairingScope]' in message138
+assert 'messagesLatestShownMs = 0L' in message138
+assert 'currentMessageScope(host) != scope' in message138 and 'RemoteMessageSessionPolicy.matches(host, scope' in message138
+assert 'messagesData = null' in message138 and 'Pareamento alterado. Reabra Mensagens.' in message138
+assert 'RemoteMessageSessionPolicy.matches(messagesHost, messagesPairingScope' in (ui_root / 'ForegroundEventWatcher.kt').read_text()
+assert 'messagesPairingScope = currentMessageScope(messagesHost)' in main138
+assert 'type == "_adb-tls-connect._tcp.local"' in adb138
+assert 'type.startsWith("_adb-tls-connect._tcp.")' not in adb138
+assert 'RemoteEventSignal.changed()' in server
+assert (root / 'app/src/test/java/br/dev/celularremoto/core/RemoteMessagePairingTest.kt').exists()
+assert (root / 'app/src/main/java/br/dev/celularremoto/core/RemoteMessageSessionPolicy.kt').exists()
+assert (root / 'docs/VALIDATION_ALPHA138.md').exists()
+print('PASSOU: alpha.138 escopo de Mensagens, mDNS estrito e wake do servidor')

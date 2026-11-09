@@ -14,10 +14,10 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Conexão ADB mais segura" to "Corrigida a escolha de IP na descoberta. Somente portas de serviço TLS ADB no aparelho selecionado são candidatas; não há varredura da rede.",
-        "Mensagens por notificação" to "Abrir a central por aviso descarta textos da sessão anterior antes de carregar novos dados. Fora da tela visível, a consulta aguarda o retorno ao aplicativo.",
-        "Eventos sem mistura de aparelhos" to "Avisos atrasados não atualizam Mensagens se o controlador mudou de host ou chave de pareamento enquanto a resposta era entregue.",
-        "Autorização preservada" to "As permissões e confirmações do aparelho monitorado continuam obrigatórias. A compilação Android e os testes em dois celulares ainda precisam ser confirmados."
+        "Mensagens sem mistura de pareamentos" to "A central agora relaciona IP e chave do aparelho. Ao trocar o pareamento, descarta dados antigos e exige nova consulta.",
+        "Atualizações antigas ignoradas" to "Avisos e leituras atrasadas não modificam uma central aberta para outro pareamento, mesmo reutilizando o mesmo IP.",
+        "ADB Wi-Fi mais preciso" to "Descoberta usa somente anúncios mDNS reais de conexão TLS do aparelho selecionado; serviços parecidos são ignorados.",
+        "Monitorado libera a espera" to "Interromper monitoramento acorda as consultas de eventos pendentes. Build Android e testes em dois aparelhos ainda pendentes."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -46,6 +46,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "ADB e sessões (alpha.137)" to "Correção de host opcional na descoberta ADB; avisos e abertura de Mensagens evitam respostas da sessão anterior.",
         "Eventos locais (alpha.136)" to "Consulta autenticada curta enquanto Controlar está visível, alertas por metadados e atualização da central Mensagens; Energia pode acender tela com consentimento local.",
         "Alertas por categoria (alpha.135)" to "Filtros SMS, WhatsApp e outros aplicativos; janela de chegada de até 60 minutos, cursor por pareamento e identificação de atraso.",
         "Interface e sirene (alpha.134)" to "Abre em Controlar, reúne as 12 funcionalidades, oferece sirene, painel Wi-Fi, Energia em grade, notificação enxuta e Sobre completo.",

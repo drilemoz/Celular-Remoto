@@ -1,3 +1,12 @@
+# Celular Remoto v0.1.0-alpha.138 — vínculo de Mensagens por chave e encerramento rápido (09/11/2026)
+
+- Base alpha.137; próxima versão alpha.139/versionCode 139. Incrementar Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, novidades, testes e validação em todas as alterações.
+- A tela Mensagens vincula seu contexto a host+chave (escopo SHA-256 truncado), não somente IP. Mensagens, callbacks e marcos de leitura em RAM da credencial anterior nunca devem aparecer após re-pareamento com o mesmo endereço.
+- Cada reabertura da página invalida a geração anterior. Se a chave mudar durante a consulta, limpar conteúdo, cancelar atualização automática da sessão inválida e exigir nova abertura.
+- mDNS ADB só aceita `_adb-tls-connect._tcp` ou `_adb-tls-connect._tcp.local`, no host selecionado. Não ampliar varredura de portas nem autorizações.
+- `MonitorServer.stop` deve acordar `RemoteEventSignal.await` para liberar o worker sem 11 segundos adicionais; preservar porta única, WIRE_COMPAT alpha.111, AES-GCM e consentimento do monitorado.
+- Parser/JVM/validador estrutural não comprovam compilação Android nem entrega efetiva; CI/2 aparelhos pendentes.
+
 # Celular Remoto v0.1.0-alpha.137 — correções ADB e isolamento de sessões (09/11/2026)
 
 - Base alpha.136; próxima alteração alpha.138/versionCode 138. Sincronizar Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, novidades, testes e validações.
