@@ -21,23 +21,43 @@ internal object MonitorNotificationContent {
         it.observedAtMs > 0 && nowMs >= it.observedAtMs && nowMs - it.observedAtMs <= 180_000L
     }
 
-    /** Título recolhido sem o nome do aplicativo: percentual + estado observado. */
-    fun title(battery: Battery?): String {
-        if (battery == null) return "Bateria · sem leitura"
-        val percent = battery.percent?.takeIf { it in 0..100 }?.let { "$it%" } ?: "Bateria"
-        return "$percent · ${battery.state.ifBlank { "estado indisponível" }}"
+    /** Evita apresentar corrente com sinal conflitante como descarga confirmada. */
+    fun currentReliable(b: Battery): Boolean {
+        val ma = b.currentMa ?: return false
+        if (!ma.isFinite() || ma !in -30_000.0..30_000.0 || ma == 0.0) return false
+        return when (b.state) {
+            "Descarregando" -> ma < 0.0
+            "Carregando" -> ma > 0.0
+            else -> false
+        }
     }
 
-    /** Sem previsões ou histórico de rede na notificação permanente. */
-    fun batteryLine(battery: Battery?): String {
-        if (battery == null) return "Este aparelho: sem leitura"
-        val base = mutableListOf<String>()
-        battery.percent?.takeIf { it in 0..100 }?.let { base.add("$it%") }
+    fun title(battery: Battery?): String {
+        if (battery == null) return "Bateria · sem leitura"
+        val parts = mutableListOf<String>()
+        battery.percent?.takeIf { it in 0..100 }?.let { parts.add("$it%") }
         battery.temperatureC?.takeIf { it.isFinite() && it in -20.0..95.0 }
-            ?.let { base.add("${decimal(it)} °C") }
-        battery.currentMa?.takeIf { it.isFinite() && it in -30_000.0..30_000.0 }
-            ?.let { base.add("${if (it > 0.0) "+" else ""}${decimal(it, 0)} mA") }
-        return "Este aparelho: " + base.joinToString(" · ").ifBlank { "sem dados de bateria" }
+            ?.let { parts.add("${decimal(it)} °C") }
+        if (currentReliable(battery)) parts.add("${decimal(battery.currentMa!!, 0)} mA")
+        return parts.joinToString(" · ").ifBlank { "Bateria · sem dados" }
+    }
+
+    /** Previsão derivada da sessão observada, nunca de corrente instantânea. */
+    fun batteryLine(battery: Battery?, nowMs: Long = System.currentTimeMillis()): String {
+        if (battery == null) return "Aguardando leitura da bateria"
+        val minutes = battery.forecastMinutes?.takeIf { it in 1..10_080 }
+        val mode = battery.state
+        if (minutes != null && mode in setOf("Carregando", "Descarregando") &&
+            battery.observedAtMs in 1..nowMs && nowMs - battery.observedAtMs <= 180_000L) {
+            val predicted = java.util.Calendar.getInstance().apply { timeInMillis = nowMs + minutes * 60_000L }
+            val time = String.format(Locale.forLanguageTag("pt-BR"), "%02d:%02d",
+                predicted.get(java.util.Calendar.HOUR_OF_DAY), predicted.get(java.util.Calendar.MINUTE))
+            val day = if (java.text.SimpleDateFormat("yyyyMMdd", Locale.ROOT).format(java.util.Date(nowMs)) !=
+                java.text.SimpleDateFormat("yyyyMMdd", Locale.ROOT).format(java.util.Date(predicted.timeInMillis))) " (outro dia)" else ""
+            return if (mode == "Carregando") "100% previsto: ~$time$day"
+                else "Término previsto: ~$time$day"
+        }
+        return if (mode in setOf("Carregando", "Descarregando")) "Previsão indisponível" else mode.ifBlank { "Estado indisponível" }
     }
 
     /** 'Recente' significa somente resposta anterior válida, jamais socket permanente. */

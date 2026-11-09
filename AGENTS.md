@@ -1,3 +1,10 @@
+# Celular Remoto v0.1.0-alpha.139 — notificação e isolamento de telemetria
+
+- Próxima versão alpha.140/versionCode 140.
+- Não mostrar corrente de sinal conflitante; previsão somente de sessão observada e válida.
+- Telemetria remota permanece em RAM, expira em 3 minutos e é vinculada a host+chave. Não prometer coleta contínua em segundo plano.
+- Preservar AES-GCM, WIRE_COMPAT, consentimento e única porta. Build Android e testes físicos pendentes.
+
 # Celular Remoto v0.1.0-alpha.138 — vínculo de Mensagens por chave e encerramento rápido (09/11/2026)
 
 - Base alpha.137; próxima versão alpha.139/versionCode 139. Incrementar Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, novidades, testes e validação em todas as alterações.

@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.138 — mensagens vinculadas ao pareamento
+# Celular Remoto v0.1.0-alpha.139 — mensagens vinculadas ao pareamento
 
 - Central Mensagens identifica a sessão por aparelho e credencial: trocar/reparear no mesmo IP não reaproveita dados antigos, indicadores de leitura ou respostas assíncronas.
 - Atualizações rápidas revalidam o vínculo exato da tela aberta; ao detectar troca, a consulta é descartada e solicita-se reabrir a página.

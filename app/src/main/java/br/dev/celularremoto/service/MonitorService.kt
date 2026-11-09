@@ -380,7 +380,7 @@ class MonitorService : Service() {
             .setSmallIcon(br.dev.celularremoto.R.drawable.ic_stat_shield)
             .setContentTitle(MonitorNotificationContent.title(battery))
             .setContentText(text.removePrefix("Este aparelho: "))
-            .setStyle(Notification.BigTextStyle().bigText("$text\n${ControllerRemoteTelemetry.line(this)}"))
+            .setStyle(Notification.BigTextStyle().bigText("${MonitorNotificationContent.title(battery)}\n$text\n${ControllerRemoteTelemetry.line(this)}"))
             .setContentIntent(open)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -407,11 +407,11 @@ class MonitorService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         // Somente bateria local e remota. A última leitura remota expira após 3 minutos.
         val localLine = MonitorNotificationContent.batteryLine(battery)
-        val expanded = "$localLine\n${ControllerRemoteTelemetry.line(this)}"
+        val expanded = "${MonitorNotificationContent.title(battery)}\n$localLine\n${ControllerRemoteTelemetry.line(this)}"
         val privateNotification = Notification.Builder(this, CHANNEL)
             .setSmallIcon(br.dev.celularremoto.R.drawable.ic_stat_shield)
             .setContentTitle(MonitorNotificationContent.title(battery))
-            .setContentText(localLine.removePrefix("Este aparelho: "))
+            .setContentText(localLine)
             .setStyle(Notification.BigTextStyle().bigText(expanded))
             .setContentIntent(open)
             .setOngoing(true)

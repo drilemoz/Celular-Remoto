@@ -1,6 +1,6 @@
-# Estado atual — alpha.138
+# Estado atual — alpha.139
 
-A alpha.138 vincula a central Mensagens a um escopo derivado do host+chave do aparelho pareado, usado em callbacks e marcadores de leitura efêmeros. Reparear outro dispositivo no mesmo IP não permite reutilizar a sessão anterior: tela e mensagens são limpas ao detectar mudança. O watcher só atualiza essa central se ela ainda for da credencial original. O filtro mDNS ADB aceita tipos de serviço `_adb-tls-connect._tcp` ou `_adb-tls-connect._tcp.local`, correspondentes ao IP selecionado; servidor Monitorado sinaliza as esperas para liberá-las no stop. Sem alterações no protocolo, permissões ou dados compartilhados. Build real e testes físicos pendentes.
+A alpha.139 vincula a central Mensagens a um escopo derivado do host+chave do aparelho pareado, usado em callbacks e marcadores de leitura efêmeros. Reparear outro dispositivo no mesmo IP não permite reutilizar a sessão anterior: tela e mensagens são limpas ao detectar mudança. O watcher só atualiza essa central se ela ainda for da credencial original. O filtro mDNS ADB aceita tipos de serviço `_adb-tls-connect._tcp` ou `_adb-tls-connect._tcp.local`, correspondentes ao IP selecionado; servidor Monitorado sinaliza as esperas para liberá-las no stop. Sem alterações no protocolo, permissões ou dados compartilhados. Build real e testes físicos pendentes.
 
 # Estado atual — alpha.137
 
@@ -80,9 +80,9 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 O mesmo APK atende aos modos Monitorado, Bateria local contínua e Controle. MonitorService usa FGS connectedDevice no modo remoto e specialUse no modo bateria sem abrir o servidor TCP; as amostras são feitas pelo mesmo executor serial a cada 30 s, e apenas um ID de notificação é usado.
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.138` e `versionCode=138`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.139` e `versionCode=139`.
 
-- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.138.apk`.
+- GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.139.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.
 - Com quatro Secrets, Gradle gera APK Release assinado e AAB. Sem Secrets, o arquivo é Debug de teste e não preserva necessariamente a assinatura entre execuções.
 - Releases são prévias, não substituem a futura revisão da Google Play e nem os ensaios reais.

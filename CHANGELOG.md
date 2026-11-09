@@ -1,3 +1,10 @@
+## 0.1.0-alpha.139 (versionCode 139) | 09/11/2026
+
+- Notificação: percentual, temperatura e corrente coerente na primeira linha; previsão por sessão na segunda.
+- Corrente com sinal conflitante não é apresentada como medição confiável.
+- Telemetria remota em RAM isolada pelo escopo host+chave; idade da leitura exibida.
+- Consulta contínua em segundo plano permanece pendente de implementação e validação de consumo.
+
 ## 0.1.0-alpha.138 (versionCode 138) | 09/11/2026
 
 - Central Mensagens passa a usar escopo de host+chave do pareamento na sessão e no indicador de mensagens vistas, evitando misturar dados quando um IP é reutilizado por outro aparelho.

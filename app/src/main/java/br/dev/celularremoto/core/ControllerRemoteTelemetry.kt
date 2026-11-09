@@ -6,18 +6,23 @@ import java.util.Locale
 
 /** Última telemetria autenticada em RAM, sem guardar nome ou conteúdo de mensagens. */
 object ControllerRemoteTelemetry {
-    private data class Reading(val host: String, val receivedMs: Long, val battery: JSONObject)
+    private data class Reading(val scope: String, val receivedMs: Long, val battery: JSONObject)
     @Volatile private var reading: Reading? = null
 
     @Synchronized fun onSnapshot(context: Context, host: String, snapshot: JSONObject) {
         if (host.isBlank() || host != SettingsStore.getRemoteHost(context)) return
         val battery = snapshot.optJSONObject("battery") ?: return
-        reading = Reading(host, System.currentTimeMillis(), JSONObject(battery.toString()))
+        val key = RecentDevices.key(context, host) ?: return
+        val scope = RemoteEventNoticePolicy.pairingScope(host, key)
+        reading = Reading(scope, System.currentTimeMillis(), JSONObject(battery.toString()))
     }
 
     fun line(context: Context, nowMs: Long = System.currentTimeMillis()): String {
         val data = reading ?: return "Remoto: sem leitura recente"
-        if (data.host != SettingsStore.getRemoteHost(context) || data.receivedMs > nowMs ||
+        val host = SettingsStore.getRemoteHost(context)
+        val key = RecentDevices.key(context, host)
+        if (key == null || data.scope != RemoteEventNoticePolicy.pairingScope(host, key) ||
+            data.receivedMs > nowMs ||
             nowMs - data.receivedMs > 180_000L) return "Remoto: sem leitura recente"
         val b = data.battery
         val parts = mutableListOf<String>()
@@ -29,6 +34,7 @@ object ControllerRemoteTelemetry {
         if (b.has("currentMa") && !b.isNull("currentMa"))
             b.optDouble("currentMa", Double.NaN).takeIf { it.isFinite() && it in -30_000.0..30_000.0 }
                 ?.let { parts.add(String.format(Locale.forLanguageTag("pt-BR"), "%+.0f mA", it)) }
-        return "Remoto: " + parts.joinToString(" · ").ifBlank { "sem dados de bateria" }
+        val ageSeconds = (nowMs - data.receivedMs) / 1000L
+        return "Remoto: " + parts.joinToString(" · ").ifBlank { "sem dados de bateria" } + " · há ${ageSeconds}s"
     }
 }
