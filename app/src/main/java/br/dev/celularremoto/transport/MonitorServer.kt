@@ -652,6 +652,13 @@ class MonitorServer(private val context: Context) {
                             EventJournal.latestJson(SettingsStore.notificationAllowlist(context),
                                 SettingsStore.allowNotificationReplies(context), SettingsStore.allNotifications(context))
                             else org.json.JSONArray())
+                        // Apenas IDs e horários de SMS, sob as DUAS autorizações locais.
+                        // O conteúdo continua disponível somente no comando explícito includeSms.
+                        put("smsAlertEvents", if (SettingsStore.isMonitorEnabled(context) &&
+                            SettingsStore.shareSmsInbox(context) && SettingsStore.receiveSmsEvents(context) &&
+                            context.checkSelfPermission(android.Manifest.permission.RECEIVE_SMS) ==
+                                android.content.pm.PackageManager.PERMISSION_GRANTED)
+                            SmsLiveJournal.alerts() else org.json.JSONArray())
                         put("smsInbox", if (regular.optBoolean("includeSms")) SmsInboxReader.snapshot(context) else org.json.JSONArray())
                         put("smsLive", if (regular.optBoolean("includeSms") && SettingsStore.shareSmsInbox(context) &&
                             SettingsStore.receiveSmsEvents(context) && SettingsStore.isMonitorEnabled(context)) SmsLiveJournal.snapshot() else org.json.JSONArray())

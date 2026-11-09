@@ -12,7 +12,7 @@ import kotlin.concurrent.thread
 class RemoteHealthJobService : JobService() {
     @Volatile private var stopped = false
     override fun onStartJob(params: JobParameters): Boolean {
-        if (!SettingsStore.controllerHealthAlerts(this)) return false
+        if (!SettingsStore.controllerHealthAlerts(this) && !SettingsStore.controllerNotificationAlerts(this)) return false
         stopped = false
         thread(name = "CelularRemoto-health-job") {
             try {
@@ -23,6 +23,8 @@ class RemoteHealthJobService : JobService() {
                         .onSuccess { snap -> if (!stopped) {
                             ControllerHealthAlerts.onSnapshot(applicationContext, host, snap)
                             br.dev.celularremoto.core.ControllerBatteryEvents.onReport(applicationContext, host, snap)
+                            br.dev.celularremoto.core.RemoteEventAlerts.onSnapshot(applicationContext, host, snap)
+                            br.dev.celularremoto.core.ControllerRemoteTelemetry.onSnapshot(applicationContext, host, snap)
                         } }
                 }
             } finally { if (!stopped) jobFinished(params, false) }

@@ -6,7 +6,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import br.dev.celularremoto.R
 
-/** Estrutura mobile-first: cabeçalho simples e cinco destinos principais fixos.
+/** Estrutura mobile-first: cabeçalho simples e quatro destinos principais fixos.
  * Os botões apenas navegam; nenhum serviço ou operação remota é iniciado automaticamente.
  */
 internal fun MainActivity.renderMobileHeader() {
@@ -29,7 +29,7 @@ internal fun MainActivity.renderMobileHeader() {
         3 -> "Ajustes"
         else -> "Celular Remoto"
     }
-    headings.addView(label(mainTitle, if (mode == 2) 23f else 22f, strong = true).apply {
+    headings.addView(label(mainTitle, 22f, strong = true).apply {
         maxLines = 1
         ellipsize = android.text.TextUtils.TruncateAt.END
         setPadding(0, 0, 0, 0)
@@ -59,7 +59,6 @@ internal fun MainActivity.renderBottomNavigation() {
     bottomNavigation.visibility = if (mode == 4) View.GONE else View.VISIBLE
     if (mode == 4) return
     val entries = listOf(
-        Triple(2, R.drawable.ic_remote_home, "Início"),
         Triple(1, R.drawable.ic_monitor, "Controlar"),
         Triple(0, R.drawable.ic_shield, "Monitorado"),
         Triple(5, R.drawable.ic_battery, "Bateria"),

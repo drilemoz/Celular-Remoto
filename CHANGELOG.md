@@ -1,3 +1,13 @@
+## 0.1.0-alpha.134 (versionCode 134) | 09/11/2026
+
+- Navegação inicial diretamente em Controlar, remoção de Início, quatro destinos, retorno ao controle e proteção de barras/cutouts por WindowInsets.
+- Reorganizadas as 12 ações em Funcionalidades; painel Wi-Fi com campos observados e estados não disponíveis; menu Energia em grade.
+- Sirene PCM de dois tons com áudio em thread limitada pela duração; parada manual e no encerramento do serviço. Diálogo Bloquear reforçado, botão só habilitado com estado remoto e confirmação correta.
+- Alertas genéricos opt-in de notificações elegíveis e novos SMS autorizados a partir de snapshots cifrados. Deduplicação por epoch/ID, filtragem por idade e limite por consulta; nenhuma mensagem de SMS é enviada na consulta periódica, e não há garantia de entrega imediata.
+- Notificação de bateria compacta (local no título, local+remoto expandidos), telemetria remota volátil autenticada com validade de 3 min e sem informações de acessos/recursos.
+- Mensagens SMS recolhíveis por remetente, Sobre com autoria/Pix/site/histórico e estados de pareamento ADB mais claros. Preservados protocolo, assinatura, consentimentos, câmeras e atualizações.
+- Validações de fonte e integridade em `docs/VALIDATION_ALPHA134.md`. Gradle Android completo e testes em dois aparelhos ainda pendentes.
+
 ## 0.1.0-alpha.133 (versionCode 133) | 05/11/2026
 
 - Tela Detalhes do aparelho: tocar em qualquer valor disponível (incluindo Wi-Fi, IP, SSID, RSSI, armazenamento, apps, bateria, Android e operadoras) copia só esse valor. Ícones de cópia, alvos acessíveis e textos longos em até cinco linhas.

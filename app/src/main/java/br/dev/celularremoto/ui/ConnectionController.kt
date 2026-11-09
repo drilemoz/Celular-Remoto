@@ -9,7 +9,7 @@ internal fun MainActivity.disconnectCurrent() {
     SettingsStore.setRemoteHost(this, "")
     br.dev.celularremoto.service.ConnectionHealthScheduler.refresh(this)
     remoteConnection.clear()
-    mode = 2
+    mode = 1
     render()
 }
 

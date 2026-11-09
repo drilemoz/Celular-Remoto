@@ -3,8 +3,11 @@ package br.dev.celularremoto.core
 import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
-import android.media.AudioManager
-import android.media.ToneGenerator
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioTrack
+import kotlin.math.PI
+import kotlin.math.sin
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -13,7 +16,7 @@ import org.json.JSONObject
 /** Pertence ao serviço de monitoramento. Não grava estados em disco nem altera volume/silencioso. */
 object RemotePhysicalControls {
     private val main = Handler(Looper.getMainLooper())
-    private var tone: ToneGenerator? = null
+    private var sirenTrack: AudioTrack? = null
     private var soundUntilMs = 0L
     private var soundGeneration = 0
     private var torchManager: CameraManager? = null
@@ -61,42 +64,75 @@ object RemotePhysicalControls {
         }
     }
 
+    /** Sirene sintética original em dois tons alternados, sem alterar volume do Android.
+     * A thread de áudio existe somente durante o alerta e respeita DND e a sessão ativa.
+     */
     @Synchronized fun startSound(seconds: Int): String {
         check(seconds in DeviceControlPolicy.durations) { "Duração inválida." }
         stopSound()
-        val generator = ToneGenerator(AudioManager.STREAM_ALARM, 70)
-        // A API informa se iniciou, não se foi audível: DND, volume e políticas ainda se aplicam.
-        if (!generator.startTone(ToneGenerator.TONE_PROP_BEEP, 650)) {
-            generator.release()
-            error("O Android não iniciou o alerta sonoro.")
+        val sampleRate = 22_050
+        val blockFrames = 882 // 40 ms; escrita contínua, com fase para evitar estalos.
+        val track = AudioTrack.Builder()
+            .setAudioAttributes(AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+            .setAudioFormat(AudioFormat.Builder().setSampleRate(sampleRate)
+                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+            .setTransferMode(AudioTrack.MODE_STREAM)
+            .setBufferSizeInBytes(blockFrames * 2 * 4)
+            .build()
+        if (track.state != AudioTrack.STATE_INITIALIZED) {
+            track.release()
+            error("O Android não inicializou o alerta sonoro.")
         }
-        tone = generator
+        try { track.play() } catch (error: Exception) {
+            track.release()
+            throw IllegalStateException("Não foi possível iniciar a sirene.", error)
+        }
+        sirenTrack = track
         val generation = ++soundGeneration
         soundUntilMs = SystemClock.elapsedRealtime() + seconds * 1000L
-        fun scheduleBeep() {
-            main.postDelayed(object : Runnable {
-                override fun run() {
-                    synchronized(this@RemotePhysicalControls) {
-                        if (generation != soundGeneration || tone == null) return
-                        if (SystemClock.elapsedRealtime() >= soundUntilMs) { stopSound(); return }
-                        if (runCatching { tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 650) }.getOrNull() != true) {
-                            stopSound(); return
-                        }
-                        scheduleBeep()
+        Thread({
+            val pcm = ShortArray(blockFrames)
+            var sampleIndex = 0L
+            var phase = 0.0
+            try {
+                while (synchronized(this@RemotePhysicalControls) {
+                    generation == soundGeneration && sirenTrack === track &&
+                        SystemClock.elapsedRealtime() < soundUntilMs
+                }) {
+                    for (i in pcm.indices) {
+                        // Subida/descida a cada 0,8s: sirene distinguível dos bipes antigos.
+                        val cycle = (sampleIndex % (sampleRate * 2L)).toDouble() / (sampleRate * 2.0)
+                        val sweep = if (cycle < 0.5) cycle * 2 else (1.0 - cycle) * 2
+                        val frequency = 690.0 + 410.0 * sweep
+                        phase += 2.0 * PI * frequency / sampleRate
+                        if (phase > PI * 2) phase -= PI * 2
+                        pcm[i] = (sin(phase) * 0.32 * Short.MAX_VALUE).toInt().toShort()
+                        sampleIndex++
                     }
+                    val n = track.write(pcm, 0, pcm.size, AudioTrack.WRITE_BLOCKING)
+                    if (n <= 0) break
                 }
-            }, 1000L)
-        }
-        scheduleBeep()
-        return "Alerta solicitado por ${seconds}s. Volume e Não Perturbe podem impedir a audição."
+            } catch (_: IllegalStateException) {
+                // A parada pode liberar o AudioTrack enquanto a escrita termina.
+            } finally {
+                synchronized(this@RemotePhysicalControls) {
+                    if (generation == soundGeneration && sirenTrack === track) stopSound()
+                }
+            }
+        }, "CelularRemoto-sirene").apply { isDaemon = true }.start()
+        return "Sirene solicitada por ${seconds}s. Volume e Não Perturbe podem impedir a audição."
     }
 
     @Synchronized fun stopSound(): String {
         soundGeneration++
         soundUntilMs = 0L
-        runCatching { tone?.stopTone(); tone?.release() }
-        tone = null
-        return "Alerta interrompido."
+        val old = sirenTrack
+        sirenTrack = null
+        runCatching { old?.pause(); old?.flush(); old?.release() }
+        return "Sirene interrompida."
     }
 
     /** Desliga somente o flash ligado por este serviço, não o uso prévio por outro app. */
@@ -132,8 +168,8 @@ object RemotePhysicalControls {
         .put("lockAdminActive", RemoteScreenLock.adminActive(context))
         .put("lockSecure", RemoteScreenLock.secureLockConfigured(context))
         .put("lockSupported", RemoteScreenLock.supported(context))
-        .put("soundActive", tone != null && SystemClock.elapsedRealtime() < soundUntilMs)
-        .put("soundRemainingSeconds", if (tone == null) 0 else
+        .put("soundActive", sirenTrack != null && SystemClock.elapsedRealtime() < soundUntilMs)
+        .put("soundRemainingSeconds", if (sirenTrack == null) 0 else
             ((soundUntilMs - SystemClock.elapsedRealtime() + 999) / 1000).coerceAtLeast(0))
         .put("torchState", torchState)
 

@@ -191,11 +191,19 @@ class AdbActivity : Activity() {
             appTargetAction = action
         }
         window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        if (android.os.Build.VERSION.SDK_INT >= 30) window.setDecorFitsSystemWindows(false)
+        else window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
         val scroll = ScrollView(this).apply {
             isFillViewport = true
             setBackgroundColor(bg)
             setOnApplyWindowInsetsListener { v, ins ->
-                v.setPadding(ins.systemWindowInsetLeft, ins.systemWindowInsetTop, ins.systemWindowInsetRight, ins.systemWindowInsetBottom)
+                if (android.os.Build.VERSION.SDK_INT >= 30) {
+                    val safe = ins.getInsets(android.view.WindowInsets.Type.systemBars() or
+                        android.view.WindowInsets.Type.displayCutout())
+                    v.setPadding(safe.left, safe.top, safe.right, safe.bottom)
+                } else v.setPadding(ins.systemWindowInsetLeft, ins.systemWindowInsetTop,
+                    ins.systemWindowInsetRight, ins.systemWindowInsetBottom)
                 ins
             }
         }
@@ -207,8 +215,10 @@ class AdbActivity : Activity() {
             val flags = android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or
                 android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
             window.insetsController?.setSystemBarsAppearance(if (dark) 0 else flags, flags)
-        } else window.decorView.systemUiVisibility = if (dark) 0 else
-            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        } else window.decorView.systemUiVisibility =
+            (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION) or
+            (if (dark) 0 else View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR)
         // Cabeçalho comum às telas independentes. O retorno não altera a sessão ADB.
         root.addView(skin.header(R.drawable.ic_phone, "ADB sem fios", "Pareamento e dispositivos autorizados") { finish() })
         root.addView(View(this), LinearLayout.LayoutParams(1, dp(14)))
@@ -284,7 +294,13 @@ class AdbActivity : Activity() {
         if (!this::savedContainer.isInitialized) return
         val connected = client?.connected() == true
         val waiting = !connected && desiredTarget != null
-        chip.text = if (connected) "Conectado" else if (waiting) "Reconectando" else "Desconectado"
+        val known = AdbKnownDevices.load(this)
+        chip.text = when {
+            connected -> "Conectado"
+            waiting -> "Reconectando"
+            known.isNotEmpty() -> "Pareado · offline"
+            else -> "Não pareado"
+        }
         chip.setTextColor(if (connected) success else muted)
         chip.background = shape(if (connected) {
             if (dark) Color.rgb(36, 75, 56) else Color.rgb(227, 247, 235)
@@ -293,7 +309,8 @@ class AdbActivity : Activity() {
             else if (waiting) desiredTarget?.name ?: "Aguardando aparelho" else "Pronto para conectar"
         detail.text = if (connected) "Conexão ADB ativa • ${client?.endpoint.orEmpty()}"
             else if (waiting) "Aguardando Depuração sem fios ou rede Wi-Fi. Reconexão automática nesta tela."
-            else "Escolha um dispositivo salvo para reconectar."
+            else if (known.isNotEmpty()) "Dispositivo salvo não é conexão ativa. Verifique a mesma rede, Depuração sem fios e a porta atual."
+            else "Emparelhe um aparelho ou insira IP e porta nas opções avançadas."
         if (this::stopRetryButton.isInitialized) stopRetryButton.visibility = if (waiting) View.VISIBLE else View.GONE
         if (this::openViewerButton.isInitialized) openViewerButton.visibility = if (connected) View.VISIBLE else View.GONE
         if (this::appActionButton.isInitialized) {
@@ -307,7 +324,6 @@ class AdbActivity : Activity() {
         }
         if (this::activeActionsRow.isInitialized) activeActionsRow.visibility = if (connected) View.VISIBLE else View.GONE
         if (this::activeSettingsRow.isInitialized) activeSettingsRow.visibility = if (connected) View.VISIBLE else View.GONE
-        val known = AdbKnownDevices.load(this)
         val currentEndpoint = if (connected) client?.endpoint else null
         val signature = known.joinToString("|") { "${it.host}:${it.port}:${it.name}:${it.lastConnectedAt}" } +
             ":$currentEndpoint"

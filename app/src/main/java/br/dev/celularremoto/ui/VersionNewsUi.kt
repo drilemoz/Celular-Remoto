@@ -14,9 +14,11 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Detalhes copiáveis" to "Toque nos campos disponíveis, inclusive IP, Wi-Fi, armazenamento, bateria e modelo, para copiar apenas o valor selecionado.",
-        "Relatório completo" to "Copie os dados realmente informados por seção; o resumo técnico curto continua disponível. Campos não compartilhados não são incluídos.",
-        "Número com consentimento" to "Se o monitorado compartilhar o número e o Android fornecê-lo, ele poderá ser copiado; copiar relatório com número exige confirmação."
+        "Controlar é a entrada" to "Removida a aba Início; quatro destinos principais e barra Android com áreas seguras.",
+        "Funcionalidades unificadas" to "Doze comandos na mesma grade, painel Wi-Fi e Energia em três ações.",
+        "Sirene e segurança" to "Alerta sintetizado em dois tons com prazo; bloqueio com confirmação e telas mais claras.",
+        "Avisos e bateria" to "Notificações genéricas opt-in para eventos novos de SMS e apps autorizados; notificação permanente compacta local/remota.",
+        "Ajustes e ADB" to "Sobre com desenvolvedor, Pix e site, novidades e identificação mais clara do estado de pareamento ADB."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -45,6 +47,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Detalhes e cópia (alpha.133)" to "Detalhes copiáveis, relatório completo e número da linha somente com consentimento local.",
         "Atualizações locais e remotas (alpha.132)" to "Acompanhamento remoto de downloads, cancelamento e retentativa autenticados; instalação continua com autorização local no Android.",
         "Foto remota em um passo (alpha.131)" to "Preparação local da sessão de fotografia e consulta autenticada de prontidão no controlador, sem câmera aberta continuamente.",
         "Bateria local independente (alpha.130)" to "Coleta contínua local opt-in com a tela apagada, sem abrir servidor nem duplicar a rotina quando Monitorado está ativo.",

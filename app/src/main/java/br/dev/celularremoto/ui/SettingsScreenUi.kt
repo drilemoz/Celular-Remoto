@@ -153,6 +153,22 @@ private fun MainActivity.fillNotificationSettings(layout: LinearLayout) {
             message("Respostas ativadas para novas notificações elegíveis.")
         }
     })
+    sectionGap(layout, 9)
+    val remoteAlerts = SettingsStore.controllerNotificationAlerts(this)
+    layout.addView(iconMenuRow(R.drawable.ic_bell, "Avisos de mensagens do aparelho remoto",
+        if (remoteAlerts) "Ativos · SMS e notificações autorizadas" else "Desligados · ativar neste controlador",
+        badge = SettingsBadgeKind.forEnabled(remoteAlerts)) {
+        if (remoteAlerts) {
+            SettingsStore.setControllerNotificationAlerts(this, false)
+            openSettingsSection("notifications")
+        } else showAppConfirm("Avisar sobre mensagens remotas?",
+            "O controlador consulta a conexão pareada quando Controlar está visível e periodicamente em segundo plano (mínimo 15 minutos). Não garante entrega instantânea. Mostra apenas alertas genéricos, sem texto de SMS, WhatsApp ou remetentes. Exige autorização de notificações no Android controlador e permissões locais no monitorado.",
+            R.drawable.ic_bell, "Ativar avisos") {
+            SettingsStore.setControllerNotificationAlerts(this, true)
+            openSettingsSection("notifications")
+            requestHealthNotificationPermission()
+        }
+    })
     sectionGap(layout, 8)
 }
 
@@ -599,17 +615,58 @@ private fun MainActivity.fillDiagnosticsSettings(layout: LinearLayout) {
 
 internal fun MainActivity.showAboutDialog() { openSettingsModule(); openSettingsSection("about") }
 private fun MainActivity.fillAboutSettings(layout: LinearLayout) {
-
-    dialogIntro(layout, "Resumo rápido do foco atual do projeto.")
-    val card = panel(14)
-    card.addView(iconSectionHeader(R.drawable.ic_info, "Celular Remoto", "Uso particular e conexão privada"))
+    val card = panel(15)
+    card.addView(iconSectionHeader(R.drawable.ic_info, "Celular Remoto",
+        "Controle e monitoramento de aparelhos autorizados"))
     sectionGap(card, 9)
     card.addView(dialogMetricRow("Versão", AppVersion.NAME))
-    card.addView(dialogMetricRow("Tela inicial", "Home com escolha de aparelhos"))
-    card.addView(dialogMetricRow("Modo monitorado", "No mesmo APK"))
-    card.addView(dialogMetricRow("Segurança", "Pareamento e Android Keystore"))
+    card.addView(dialogMetricRow("Tela inicial", "Controlar"))
+    card.addView(dialogMetricRow("Comunicação", "Pareamento e dados autenticados"))
     layout.addView(card)
-    layout.addView(label("Privacidade, baixo consumo e permissões explícitas continuam como prioridades.", 12f, muted = true))
+    sectionGap(layout, 12)
+
+    layout.addView(settingsSubheading("Desenvolvedor"))
+    layout.addView(dialogCardRow("Adriedson Lemos", "Desenvolvimento e manutenção do projeto", ""))
+    sectionGap(layout, 7)
+    layout.addView(iconMenuRow(R.drawable.ic_info, "Site do desenvolvedor",
+        "adriedsonlemos.vercel.app") {
+        runCatching { startActivity(Intent(Intent.ACTION_VIEW,
+            android.net.Uri.parse("https://adriedsonlemos.vercel.app"))) }
+            .onFailure { message("Nenhum navegador disponível para abrir o site.") }
+    })
+    sectionGap(layout, 12)
+
+    layout.addView(settingsSubheading("Ajude o projeto"))
+    layout.addView(label("Contribuição voluntária por Pix. Confira o destinatário no aplicativo do banco antes de enviar.",
+        12f, muted = true))
+    layout.addView(dialogCardRow("Chave Pix (e-mail)", "drilemoz@gmail.com", ""))
+    sectionGap(layout, 6)
+    layout.addView(actionButton("Copiar chave Pix", emphasis = true) {
+        val clip = android.content.ClipData.newPlainText("Chave Pix", "drilemoz@gmail.com")
+        if (Build.VERSION.SDK_INT >= 33) clip.description.extras = android.os.PersistableBundle().apply {
+            putBoolean(android.content.ClipDescription.EXTRA_IS_SENSITIVE, true)
+        }
+        (getSystemService(android.content.Context.CLIPBOARD_SERVICE) as
+            android.content.ClipboardManager).setPrimaryClip(clip)
+        message("Chave Pix copiada.")
+    })
+    sectionGap(layout, 12)
+
+    layout.addView(settingsSubheading("Últimas alterações"))
+    listOf(
+        "alpha.134 · Interface e navegação" to "Abre em Controlar, organiza Funcionalidades, corrige barras e melhora os comandos.",
+        "alpha.133 · Detalhes do aparelho" to "Valores copiáveis e relatório completo sem compartilhar campos não autorizados.",
+        "alpha.132 · Atualizações remotas" to "Consulta protegida de status e instalação somente com confirmação no aparelho."
+    ).forEach { (name, description) ->
+        layout.addView(settingsSlimRow(R.drawable.ic_info, name, description, "") {
+            showAppNotice(name, description)
+        })
+        compactDivider(layout, 5)
+    }
+    layout.addView(actionButton("Ver histórico completo") { openSettingsSection("news") })
+    sectionGap(layout, 10)
+    layout.addView(label("As permissões permanecem locais e revogáveis. Dados sensíveis não devem ser compartilhados com controladores desconhecidos.",
+        12f, muted = true))
 }
 
 internal fun MainActivity.selectNotificationApps() {

@@ -68,8 +68,9 @@ class MainActivity : Activity() {
     internal var messagesLoading = false
     internal var messagesError: String? = null
     internal var messagesTechnicalExpanded = false
+    internal var messagesExpandedSender: String? = null
     internal var messagesRequestGeneration = 0
-    internal var mode = 2 // 2: início, 0: monitorado, 1: controle, 3: ajustes, 4: mensagens, 5: bateria
+    internal var mode = 1 // 1: controle (entrada), 0: monitorado, 3: ajustes, 4: mensagens, 5: bateria
     internal var batteryRemote = false
     internal var batteryData: org.json.JSONObject? = null
     internal var batteryDataHost = ""
@@ -83,7 +84,7 @@ class MainActivity : Activity() {
     internal var updatePollingUntilMs = 0L
     internal var updatePollingBusy = false
     internal val remoteUpdateStatusPoller = Runnable { pollRemoteUpdateOnce() }
-    private var settingsReturnMode = 2
+    private var settingsReturnMode = 1
     internal val cameraPermissionRequest = 4317
     internal val qrScanRequest = 4318
     internal val screenCaptureRequest = 4319
@@ -117,6 +118,7 @@ class MainActivity : Activity() {
         const val EXTRA_OPEN_MONITOR = "br.dev.celularremoto.OPEN_MONITOR"
         const val EXTRA_OPEN_BATTERY = "br.dev.celularremoto.OPEN_BATTERY"
         const val EXTRA_OPEN_UPDATES = "br.dev.celularremoto.OPEN_UPDATES"
+        const val EXTRA_OPEN_MESSAGES = "br.dev.celularremoto.OPEN_MESSAGES"
     }
     // Alpha.53: acesso autenticado permanece visível no cartão Monitorado e na
     // notificação do sistema; nunca abre Activity por cima das tarefas do usuário.
@@ -140,7 +142,8 @@ class MainActivity : Activity() {
         val firstPermissionWelcome = savedInstanceState == null && PermissionCenter.needsWelcome(this)
         mode = if (intent.getBooleanExtra(EXTRA_OPEN_BATTERY, false)) 5
             else if (intent.getBooleanExtra(EXTRA_OPEN_MONITOR, false)) 0
-            else savedInstanceState?.getInt("active_mode", 2)?.takeIf { it in 0..5 } ?: 2
+            else if (intent.getBooleanExtra(EXTRA_OPEN_MESSAGES, false)) 4
+            else savedInstanceState?.getInt("active_mode", 1)?.takeIf { it in setOf(0, 1, 3, 4, 5) } ?: 1
         settingsSection = savedInstanceState?.getString("settings_section", "home") ?: "home"
         permissionCenterQueue.addAll(savedInstanceState?.getStringArrayList("pending_permission_groups")
             ?.map { it.split('|') } ?: emptyList())
@@ -164,11 +167,10 @@ class MainActivity : Activity() {
             messagesHost = SettingsStore.getRemoteHost(this)
             messagesBaselineMs = lastMessageViewedMs[messagesHost] ?: 0L
         }
-        settingsReturnMode = savedInstanceState?.getInt("settings_return_mode", 2)?.takeIf { it in setOf(0, 1, 2, 5) } ?: 2
+        settingsReturnMode = savedInstanceState?.getInt("settings_return_mode", 1)?.takeIf { it in setOf(0, 1, 5) } ?: 1
         window.statusBarColor = bg
         window.navigationBarColor = bg
-        window.decorView.systemUiVisibility = if (darkTheme()) 0 else
-            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        configureSystemBars()
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(bg)
@@ -193,13 +195,16 @@ class MainActivity : Activity() {
             setPadding(dp(10), dp(6), dp(10), dp(6))
             elevation = dp(3).toFloat()
         }
-        root.addView(bottomNavigation, LinearLayout.LayoutParams(-1, dp(70)))
+        bottomNavigation.minimumHeight = dp(70)
+        root.addView(bottomNavigation, LinearLayout.LayoutParams(-1, -2))
+        installSafeInsets(root)
         setContentView(root)
+        root.requestApplyInsets()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val callback = android.window.OnBackInvokedCallback {
                 if (mode == 3) navigateBackFromSettings()
                 else if (mode == 4) closeRemoteMessagesScreen()
-                else if (mode == 2) finish() else navigateHome()
+                else if (mode == 1) finish() else navigateHome()
             }
             systemBackCallback = callback
             onBackInvokedDispatcher.registerOnBackInvokedCallback(
@@ -220,6 +225,13 @@ class MainActivity : Activity() {
                 mode = 5
                 batteryRemote = false
                 render()
+            }
+            intent.getBooleanExtra(EXTRA_OPEN_MESSAGES, false) -> {
+                messagesHost = SettingsStore.getRemoteHost(this)
+                messagesBaselineMs = lastMessageViewedMs[messagesHost] ?: 0L
+                mode = 4
+                render()
+                if (active) loadRemoteMessages()
             }
             intent.getBooleanExtra(EXTRA_OPEN_UPDATES, false) -> {
                 mode = 3
@@ -341,7 +353,7 @@ class MainActivity : Activity() {
                 renderController()
                 content.post { if (active && mode == 1) refreshRemote(silent = true) }
             }
-            else -> renderHome()
+            else -> renderController()
         }
         if (mode == 0 || mode == 3) {
             gap(17)
@@ -351,7 +363,7 @@ class MainActivity : Activity() {
     }
     /** Navegação principal: não toca em chaves, sockets ou permissões do Android. */
     internal fun navigateMainTab(destination: Int) {
-        if (destination !in listOf(0, 1, 2, 3, 5)) return
+        if (destination !in listOf(0, 1, 3, 5)) return
         if (mode == destination && (destination != 3 || settingsSection == "home")) return
         if (mode == 4) clearRemoteMessagesScreen()
         if (destination == 3) {
@@ -371,9 +383,9 @@ class MainActivity : Activity() {
         if (destination == 5 && active) handler.postDelayed(batteryPoller, 30_000L)
         (content.parent as? ScrollView)?.scrollTo(0, 0)
     }
-    /** Home retorna à escolha inicial, preservando serviço e chaves de pareamento. */
+    /** Retorna ao Controlar, sem desconectar, perder chaves ou recriar o serviço. */
     private fun navigateHome() {
-        if (mode != 2) { if (mode == 4) clearRemoteMessagesScreen(); mode = 2; settingsSection = "home"; render() }
+        if (mode != 1) { if (mode == 4) clearRemoteMessagesScreen(); mode = 1; settingsSection = "home"; render() }
     }
     internal fun openSettingsModule() {
         if (mode != 3) settingsReturnMode = if (mode == 4) 1 else mode
@@ -399,7 +411,7 @@ class MainActivity : Activity() {
     override fun onBackPressed() {
         if (mode == 3) navigateBackFromSettings()
         else if (mode == 4) closeRemoteMessagesScreen()
-        else if (mode != 2) navigateHome() else super.onBackPressed()
+        else if (mode != 1) navigateHome() else super.onBackPressed()
     }
     /** Resposta centralizada: cada permissão mantém o fluxo específico e independente. */
     override fun onRequestPermissionsResult(

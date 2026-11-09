@@ -30,6 +30,7 @@ internal fun MainActivity.openRemoteMessagesScreen() {
     messagesError = null
     messagesLoading = false
     messagesTechnicalExpanded = false
+    messagesExpandedSender = null
     messagesTab = 0
     mode = 4
     render()
@@ -48,6 +49,7 @@ internal fun MainActivity.clearRemoteMessagesScreen() {
     messagesError = null
     messagesLoading = false
     messagesHost = ""
+    messagesExpandedSender = null
     messagesLatestShownMs = 0L
 }
 
@@ -183,7 +185,7 @@ internal fun MainActivity.renderRemoteMessagesPage() {
         LinearLayout.LayoutParams(dp(48), dp(48)))
     val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(9), 0, 0, 0) }
     words.addView(label("Mensagens", 21f, strong = true))
-    words.addView(label("SMS e alertas autorizados", 11.5f, muted = true))
+    words.addView(label("Conversas e notificações do aparelho pareado", 11.5f, muted = true))
     top.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
     val refresh = headerIconButton(R.drawable.ic_refresh, "Atualizar mensagens") { loadRemoteMessages() }
     refresh.isEnabled = !messagesLoading
@@ -234,8 +236,11 @@ internal fun MainActivity.renderRemoteMessagesPage() {
     }
     content.addView(tabs)
     sectionGap(content, 11)
-    content.addView(label(if (messagesLoading) "Atualizando lista…" else
-        "Escolha SMS ou Notificações · toque em atualizar para consultar", 11f, muted = true))
+    content.addView(label(when {
+        messagesLoading -> "Consultando mensagens autorizadas…"
+        root == null -> "Sem consulta recente · toque no ícone Atualizar"
+        else -> "Consulta concluída · novas mensagens dependem de nova consulta"
+    }, 11f, muted = true))
     if (messagesError != null) {
         sectionGap(content, 9)
         content.addView(panel(12).apply {
@@ -307,22 +312,42 @@ private fun MainActivity.renderSmsMessages(root: JSONObject, state: JSONObject?,
         val head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val heading = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         heading.addView(label(address, 14f, strong = true))
-        heading.addView(label("${messages.size} mensagem(ns)", 11f, muted = true))
+        val expanded = messagesExpandedSender == address
+        heading.addView(label("${messages.size} mensagem(ns) · ${formatDate(messages.maxOf { it.optLong("whenMs") })}",
+            11f, muted = true))
         head.addView(heading, LinearLayout.LayoutParams(0, -2, 1f))
         if (state?.optBoolean("smsReply") == true && MessagePolicy.validReplyAddress(address)) {
             head.addView(messageTextAction("Responder SMS") {
                 showRemoteMessageEditor("smsReply", address, "SMS para $address", subscriptions)
             })
         }
+        head.addView(label(if (expanded) "⌃" else "⌄", 19f, muted = true))
+        head.isClickable = true
+        head.isFocusable = true
+        head.contentDescription = "${if (expanded) "Recolher" else "Expandir"} conversa com $address"
+        head.setOnClickListener {
+            messagesExpandedSender = if (expanded) null else address
+            render()
+        }
         card.addView(head)
         sectionGap(card, 6)
         messageDivider(card)
-        messages.sortedByDescending { it.optLong("whenMs") }.forEach { item ->
-            val at = item.optLong("whenMs")
-            messagesLatestShownMs = maxOf(messagesLatestShownMs, at)
-            val direction = if (item.optString("direction") == "enviado") "Enviado" else "Recebido"
-            messageRow(card, "$direction · ${formatDate(at)}", item.optString("text"), at > messagesBaselineMs)
-            messageDivider(card)
+        messages.forEach { messagesLatestShownMs = maxOf(messagesLatestShownMs, it.optLong("whenMs")) }
+        if (expanded) {
+            messages.sortedByDescending { it.optLong("whenMs") }.forEach { item ->
+                val at = item.optLong("whenMs")
+                val direction = if (item.optString("direction") == "enviado") "Enviado" else "Recebido"
+                messageRow(card, "$direction · ${formatDate(at)}", item.optString("text"), at > messagesBaselineMs)
+                messageDivider(card)
+            }
+        } else {
+            val recent = messages.maxByOrNull { it.optLong("whenMs") }
+            card.addView(label(recent?.optString("text").orEmpty(), 12.5f, muted = true).apply {
+                maxLines = 2
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                setPadding(0, dp(7), 0, dp(3))
+            })
+            card.addView(label("Toque no cabeçalho para ver a conversa", 10.5f, muted = true))
         }
         content.addView(card)
         sectionGap(content, 9)

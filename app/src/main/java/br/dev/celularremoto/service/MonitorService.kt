@@ -13,6 +13,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import br.dev.celularremoto.core.MonitorNotificationContent
+import br.dev.celularremoto.core.ControllerRemoteTelemetry
 import br.dev.celularremoto.core.BatteryReader
 import br.dev.celularremoto.core.BatterySessionStore
 import br.dev.celularremoto.core.RecentDevices
@@ -377,9 +378,9 @@ class MonitorService : Service() {
             .build()
         return Notification.Builder(this, CHANNEL)
             .setSmallIcon(br.dev.celularremoto.R.drawable.ic_stat_shield)
-            .setContentTitle("Bateria local · ${battery?.percent?.let { "$it%" } ?: "—"}")
-            .setContentText(text)
-            .setStyle(Notification.BigTextStyle().bigText("Somente este aparelho\n$text\nSem servidor remoto ativo"))
+            .setContentTitle(MonitorNotificationContent.title(battery))
+            .setContentText(text.removePrefix("Este aparelho: "))
+            .setStyle(Notification.BigTextStyle().bigText("$text\n${ControllerRemoteTelemetry.line(this)}"))
             .setContentIntent(open)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -404,15 +405,13 @@ class MonitorService : Service() {
         val stop = PendingIntent.getService(this, 1,
             Intent(this, MonitorService::class.java).setAction(ACTION_STOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val summary = MonitorNotificationPolicy.headline(state)
-        val modules = MonitorNotificationPolicy.modules(state)
+        // Somente bateria local e remota. A última leitura remota expira após 3 minutos.
         val localLine = MonitorNotificationContent.batteryLine(battery)
-        val expanded = listOf(localLine, remoteLine, "Monitorado: $summary", accessLine,
-            "Recursos: $modules").filter { it.isNotBlank() }.joinToString("\n")
+        val expanded = "$localLine\n${ControllerRemoteTelemetry.line(this)}"
         val privateNotification = Notification.Builder(this, CHANNEL)
             .setSmallIcon(br.dev.celularremoto.R.drawable.ic_stat_shield)
             .setContentTitle(MonitorNotificationContent.title(battery))
-            .setContentText("${battery?.state ?: "Monitorando"} · $summary")
+            .setContentText(localLine.removePrefix("Este aparelho: "))
             .setStyle(Notification.BigTextStyle().bigText(expanded))
             .setContentIntent(open)
             .setOngoing(true)
@@ -466,7 +465,7 @@ class MonitorService : Service() {
         val selected = SettingsStore.getRemoteHost(this)
         val peer = RecentDevices.list(this).firstOrNull { it.host == selected }
         val remoteLine = MonitorNotificationContent.remoteLine(peer?.name, peer?.lastSuccessMs ?: 0L, now)
-        val key = listOf(state, accessLine, battery, remoteLine).joinToString("|")
+        val key = listOf(state, battery, ControllerRemoteTelemetry.line(this)).joinToString("|")
         if (key == lastNotificationSignature) return
         // Falhas no gerenciador não devem derrubar o serviço; tentar novamente no próximo ciclo.
         runCatching {

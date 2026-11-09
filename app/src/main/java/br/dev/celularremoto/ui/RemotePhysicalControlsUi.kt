@@ -14,11 +14,11 @@ internal fun MainActivity.showRemotePhysicalDialog(sound: Boolean) {
     val host = SettingsStore.getRemoteHost(this)
     val (wrapper, content) = dialogWrapper()
     content.addView(iconSectionHeader(if (sound) R.drawable.ic_bell else R.drawable.ic_flashlight,
-        if (sound) "Tocar som remoto" else "Lanterna remota",
+        if (sound) "Sirene remota" else "Lanterna remota",
         "${currentDeviceTitle?.text?.toString().orEmpty().ifBlank { "Aparelho conectado" }}"))
     sectionGap(content, 8)
     content.addView(label(if (sound)
-        "Alerta temporário. Respeita o volume e o Não Perturbe do monitorado."
+        "Sirene de dois tons, por tempo limitado. O Android controla o volume e o Não Perturbe; não há alteração forçada dessas configurações."
         else "Flash traseiro, quando o Android permitir. Estado confirmado pela câmera.", 12f, muted = true))
     sectionGap(content, 5)
     val statusView = label("Consultando estado real…", 13f, strong = true)
@@ -36,7 +36,7 @@ internal fun MainActivity.showRemotePhysicalDialog(sound: Boolean) {
     var duration = 10
     val durationButtons = mutableListOf<Button>()
     if (sound) {
-        content.addView(label("Duração do alerta", 12f, muted = true))
+        content.addView(label("Duração da sirene", 12f, muted = true))
         val durations = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         listOf(5, 10, 20, 30).forEachIndexed { index, seconds ->
             val button = actionButton("${seconds}s", seconds == duration) {
@@ -56,7 +56,7 @@ internal fun MainActivity.showRemotePhysicalDialog(sound: Boolean) {
         sectionGap(content, 8)
     }
     val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-    val turnOn = actionButton(if (sound) "Iniciar som" else "Ligar flash", emphasis = true) { }
+    val turnOn = actionButton(if (sound) "Iniciar sirene" else "Ligar flash", emphasis = true) { }
     val turnOff = actionButton(if (sound) "Interromper" else "Desligar") { }
     controls.addView(turnOn, LinearLayout.LayoutParams(0, dp(48), 1f).apply { rightMargin = dp(8) })
     controls.addView(turnOff, LinearLayout.LayoutParams(0, dp(48), 1f))
@@ -78,8 +78,8 @@ internal fun MainActivity.showRemotePhysicalDialog(sound: Boolean) {
         authorized = state.optBoolean(if (sound) "soundAllowed" else "torchAllowed", false)
         val line = if (sound) {
             if (state.optBoolean("soundActive", false))
-                "Som solicitado · ${state.optInt("soundRemainingSeconds")}s restantes"
-            else "Alerta inativo"
+                "Sirene ativa · ${state.optInt("soundRemainingSeconds")}s restantes"
+            else "Sirene inativa"
         } else when (state.optString("torchState", "desconhecida")) {
             "ligada" -> "Lanterna ligada (confirmada)"
             "desligada" -> "Lanterna desligada (confirmada)"

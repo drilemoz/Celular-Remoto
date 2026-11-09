@@ -21,44 +21,23 @@ internal object MonitorNotificationContent {
         it.observedAtMs > 0 && nowMs >= it.observedAtMs && nowMs - it.observedAtMs <= 180_000L
     }
 
+    /** Título recolhido sem o nome do aplicativo: percentual + estado observado. */
     fun title(battery: Battery?): String {
-        if (battery == null) return "Celular Remoto · monitoramento"
-        val info = buildList {
-            battery.percent?.takeIf { it in 0..100 }?.let { add("$it%") }
-            battery.temperatureC?.takeIf { it.isFinite() && it in -20.0..95.0 }
-                ?.let { add("${decimal(it)} °C") }
-        }
-        return if (info.isEmpty()) "Celular Remoto · monitoramento"
-               else "Celular Remoto · ${info.joinToString(" · ")}"
+        if (battery == null) return "Bateria · sem leitura"
+        val percent = battery.percent?.takeIf { it in 0..100 }?.let { "$it%" } ?: "Bateria"
+        return "$percent · ${battery.state.ifBlank { "estado indisponível" }}"
     }
 
+    /** Sem previsões ou histórico de rede na notificação permanente. */
     fun batteryLine(battery: Battery?): String {
-        if (battery == null) return "Este aparelho: aguardando medição"
-        val base = mutableListOf<String>().apply {
-            battery.percent?.takeIf { it in 0..100 }?.let { add("$it%") }
-            battery.temperatureC?.takeIf { it.isFinite() && it in -20.0..95.0 }
-                ?.let { add("temp. bateria ${decimal(it)} °C") }
-            add(battery.state.ifBlank { "Estado desconhecido" })
-            battery.currentMa?.takeIf { it.isFinite() && it in -30_000.0..30_000.0 }
-                ?.let { add("${if (it > 0.0) "+" else ""}${decimal(it, 0)} mA líquidos") }
-        }
-        val forecast = battery.forecastMinutes?.takeIf { it in 1..10_080 }
-        if (forecast != null) {
-            val time = when {
-                forecast < 60L -> "~${forecast}min"
-                else -> "~${forecast / 60}h ${forecast % 60}min"
-            }
-            if (battery.state == "Carregando") base.add("100% em $time (estim.)")
-            if (battery.state == "Descarregando") base.add("autonomia $time (estim.)")
-        } else {
-            battery.ratePercentHour?.takeIf { it.isFinite() && it in 0.25..40.0 }
-                ?.let { rate ->
-                    val direction = if (battery.state == "Descarregando") "−" else "+"
-                    if (battery.state == "Carregando" || battery.state == "Descarregando")
-                        base.add("ritmo $direction${decimal(rate)} p.p./h (estim.)")
-                }
-        }
-        return "Este aparelho: ${base.joinToString(" · ")}"
+        if (battery == null) return "Este aparelho: sem leitura"
+        val base = mutableListOf<String>()
+        battery.percent?.takeIf { it in 0..100 }?.let { base.add("$it%") }
+        battery.temperatureC?.takeIf { it.isFinite() && it in -20.0..95.0 }
+            ?.let { base.add("${decimal(it)} °C") }
+        battery.currentMa?.takeIf { it.isFinite() && it in -30_000.0..30_000.0 }
+            ?.let { base.add("${if (it > 0.0) "+" else ""}${decimal(it, 0)} mA") }
+        return "Este aparelho: " + base.joinToString(" · ").ifBlank { "sem dados de bateria" }
     }
 
     /** 'Recente' significa somente resposta anterior válida, jamais socket permanente. */

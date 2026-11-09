@@ -1,3 +1,12 @@
+# Celular Remoto v0.1.0-alpha.134 — interface e avisos genéricos (09/11/2026)
+
+- Versão atual alpha.134, baseada na alpha.133. Próxima versão alpha.135/versionCode 135. Sincronizar Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, Novidades, testes e validações.
+- Controlar substitui Início como tela inicial; quatro destinos e WindowInsets reais; não reativar Home ou elementos sob as barras do Android.
+- Manter os 12 comandos em Funcionalidades; sirene sintetizada deve parar após prazo, comando Parar ou encerramento do serviço, sem mexer no volume/DND.
+- Avisos remotos separados são opt-in no controlador; monitorado exige autorizações locais, filtragem de conteúdo, canal AES-GCM e dados somente mínimos do SMS. Sem serviços adicionais, push oculto, novas permissões ou prometer instantaneidade.
+- Notificação foreground simples: local no título, local+remoto quando expandida, apenas bateria/temperatura/corrente. Leitura remota em RAM expira após 3 min; nunca inventar valores nem estado online.
+- Preservar WIRE_COMPAT alpha.111, sequência de versões, autenticação, permissões de câmera, ADB, atualizador e workflows. Compilação Gradle/Android e teste físico em dois aparelhos ainda pendentes.
+
 # Celular Remoto v0.1.0-alpha.133 — cópia individual e relatório completo em Detalhes (05/11/2026)
 
 - Base alpha.132. Próxima versão alpha.134/versionCode 134. Toda alteração sincroniza Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, arquitetura, Novidades, testes e validações.

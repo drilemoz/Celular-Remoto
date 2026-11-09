@@ -1,3 +1,12 @@
+# Celular Remoto v0.1.0-alpha.134 — interface, sirene e eventos remotos
+
+- Abre em Controlar com quatro abas, corrige áreas seguras no Android 16 e reúne os 12 comandos sob Funcionalidades.
+- Substitui bipes por sirene de dois tons com tempo limitado; reorganiza Wi-Fi, Energia e Bloquear com confirmações preservadas.
+- Notificações genéricas separadas para novos SMS e apps autorizados, opt-in no controlador, deduplicadas e sem textos sensíveis na notificação; entrega depende da conexão, consulta e restrições do Android.
+- Notificação foreground enxuta: bateria local recolhida e bateria local/remota expandida, sem nome do aplicativo. Telemetria do remoto só aparece se recente.
+- Mensagens por conversa recolhível; ADB diferencia pareado/desconectado e reconectando; Sobre traz Adriedson Lemos, Pix e site e histórico de versões.
+- Mesma criptografia AES-GCM, WIRE_COMPAT alpha.111 e permissões locais; não adiciona novo serviço ou porta. Build/CI e teste em dispositivos pendentes.
+
 # Celular Remoto v0.1.0-alpha.133 — cópia de detalhes e número da linha
 
 - Toque no valor com ícone de cópia em Detalhes do aparelho para copiar informações disponíveis individualmente; campos não informados ou não compartilhados permanecem não copiáveis.

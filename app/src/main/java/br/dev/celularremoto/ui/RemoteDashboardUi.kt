@@ -56,9 +56,7 @@ internal fun MainActivity.displayResult(root: JSONObject, fromCache: Boolean = f
             showRemoteThermalDialog(battery, fromCache)
         },
         compactTelemetryTile(R.drawable.ic_wifi, "Rede", networkType, wifiLabel) {
-            showAppNotice("Rede do monitorado", if (ssid == null && network?.optBoolean("wifiPermission") == false)
-                "No celular monitorado: Configurações → Diagnóstico → Nome e sinal do Wi-Fi. Autorize Localização precisa e ative a localização. A permissão não pode ser concedida remotamente."
-                else "Tipo: $networkType\n${ssid ?: "SSID indisponível"}\n${signal ?: "RSSI indisponível"}")
+            showRemoteNetworkDetails(network, fromCache)
         }
     )
     compactActionGrid(container, metrics)
@@ -243,7 +241,7 @@ private fun MainActivity.renderRemoteActions(container: LinearLayout, snapshot: 
                 putExtra(RemoteCameraActivity.EXTRA_METHOD, remoteConnection.method)
             })
         },
-        actionTile(R.drawable.ic_bell, "Som", "Localizar · até 30 s", enabled = true) {
+        actionTile(R.drawable.ic_bell, "Sirene", "Alerta sonoro · até 30 s", enabled = true) {
             showRemotePhysicalDialog(sound = true)
         },
         actionTile(R.drawable.ic_flashlight, "Lanterna", "Ligar e desligar", enabled = true) {
@@ -271,17 +269,52 @@ private fun MainActivity.renderRemoteActions(container: LinearLayout, snapshot: 
         }
     }
     guarded(cards)
-    val shortcuts = listOf(cards[4], cards[0], cards[6], cards[11]) // Tela, Arquivos, Câmeras, Localização
-    val others = cards.filterNot { it in shortcuts }
-    mobileDashboardHeader(actionsPanel, "Acesso rápido", "4 atalhos")
-    mobileActionGrid(actionsPanel, shortcuts)
-    sectionGap(actionsPanel, 8)
-    mobileDashboardHeader(actionsPanel, "Outras funções", "8 comandos")
-    // Os oito comandos não são recolhíveis: sempre acessíveis sem toque adicional.
-    mobileActionGrid(actionsPanel, others)
+    // Uma única grade: todos os comandos permanecem visíveis, sem separar atalhos arbitrariamente.
+    val ordered = listOf(cards[4], cards[0], cards[6], cards[11], cards[3], cards[1],
+        cards[2], cards[5], cards[7], cards[8], cards[9], cards[10])
+    mobileDashboardHeader(actionsPanel, "Funcionalidades", "12 recursos")
+    mobileActionGrid(actionsPanel, ordered)
     sectionGap(actionsPanel, 9)
     remoteActionsUiCache = cacheKey to actionsPanel
     container.addView(actionsPanel)
+}
+
+/** Informações de rede da última resposta autenticada. Nenhuma medição nova é presumida. */
+private fun MainActivity.showRemoteNetworkDetails(network: JSONObject?, fromCache: Boolean) {
+    val (wrapper, body) = visualDialogContainer()
+    body.addView(visualHeader(R.drawable.ic_wifi, "Rede do monitorado",
+        if (fromCache) "Leitura armazenada · não é conexão em tempo real" else "Última consulta autenticada"))
+    sectionGap(body, 9)
+    fun value(key: String): String = if (network == null || !network.has(key) || network.isNull(key))
+        "Indisponível" else network.optString(key).ifBlank { "Indisponível" }
+    fun flag(key: String): String = if (network == null || !network.has(key) || network.isNull(key))
+        "Não informado" else if (network.optBoolean(key)) "Sim" else "Não"
+    val items = listOf(
+        "Tipo de conexão" to value("type"),
+        "Nome do Wi-Fi (SSID)" to value("wifiSsid"),
+        "RSSI medido" to (network?.optInt("wifiRssiDbm", 0)?.takeIf { it in -110..-10 }
+            ?.let { "$it dBm" } ?: "Sem leitura"),
+        "IP local informado" to value("localIpv4"),
+        "Internet validada pelo Android" to flag("internetValidated"),
+        "Rede tarifada" to flag("metered"),
+        "Wi-Fi detectado" to flag("wifiDetected"),
+        "Dados móveis detectados" to flag("cellularDetected")
+    )
+    items.forEachIndexed { index, pair ->
+        body.addView(dialogCardRow(pair.first, pair.second, ""))
+        if (index < items.lastIndex) sectionGap(body, 4)
+    }
+    if (value("wifiSsid") == "Indisponível") {
+        sectionGap(body, 9)
+        body.addView(visualInfoPanel(R.drawable.ic_info, "Permissões de Wi-Fi",
+            "O SSID e o sinal podem exigir Localização precisa autorizada e localização ligada no monitorado. Nenhuma permissão será concedida remotamente."))
+    }
+    sectionGap(body, 10)
+    body.addView(actionButton("Fechar") { activeUiDialog?.dismiss() })
+    val dialog = themedPopup(this).setView(wrapper).create()
+    showManagedDialog(dialog)
+    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+    dialog.window?.setLayout((resources.displayMetrics.widthPixels * .92f).toInt().coerceAtMost(dp(520)), -2)
 }
 
 private fun MainActivity.mobileActionGrid(parent: LinearLayout, tiles: List<LinearLayout>) {
@@ -311,28 +344,27 @@ private fun MainActivity.showRemoteMaintenance() {
     layout.addView(device)
     sectionGap(layout, 9)
 
-    layout.addView(label("AÇÕES DISPONÍVEIS", 10.5f, strong = true, muted = true).apply {
-        letterSpacing = .10f; setPadding(0,0,0,dp(7))
-    })
-    layout.addView(visualActionRow(R.drawable.ic_shield, "Bloquear tela",
-        "Exige autorização e bloqueio seguro", "Confirmar") {
-        activeUiDialog?.dismiss()
-        showRemoteLockDialog()
-    })
-    sectionGap(layout, 5)
-    layout.addView(visualActionRow(R.drawable.ic_remote_wake, "Acender tela",
-        "Sem desbloquear o Android", "Ver tela") {
-        activeUiDialog?.dismiss()
-        showAppNotice("Acender tela", "A opção está em Ver tela. Precisa de autorização local no aparelho monitorado e não remove PIN nem desbloqueia o Android.")
-    })
-    sectionGap(layout, 5)
-    layout.addView(visualActionRow(R.drawable.ic_power, "Reiniciar normalmente",
-        "ADB pareado · confirmação obrigatória", "ADB", dangerous = true) {
-        activeUiDialog?.dismiss()
-        startActivity(Intent(this, AdbActivity::class.java).apply {
-            putExtra(AdbActivity.EXTRA_MAINTENANCE_HOST, selectedHost)
-        })
-    })
+    layout.addView(label("AÇÕES DISPONÍVEIS", 10.5f, strong = true, muted = true))
+    sectionGap(layout, 8)
+    // Menu de energia compacto em três colunas, como as ações de um aparelho.
+    val powerTiles = listOf(
+        compactActionTile(R.drawable.ic_shield, "Bloquear", "Solicita confirmação") {
+            activeUiDialog?.dismiss()
+            showRemoteLockDialog()
+        },
+        compactActionTile(R.drawable.ic_remote_wake, "Acender tela", "Não desbloqueia") {
+            activeUiDialog?.dismiss()
+            showAppNotice("Acender tela", "A função de visualização está disponível em Tela e exige autorização local. O comando de despertar isolado ainda não é oferecido por esta conexão.")
+        },
+        compactActionTile(R.drawable.ic_power, "Reiniciar", "ADB autorizado") {
+            activeUiDialog?.dismiss()
+            startActivity(Intent(this, AdbActivity::class.java).apply {
+                putExtra(AdbActivity.EXTRA_MAINTENANCE_HOST, selectedHost)
+            })
+        }
+    )
+    compactActionGrid(layout, powerTiles, preferredColumns =
+        if (resources.configuration.fontScale > 1.6f || resources.configuration.screenWidthDp < 320) 1 else 3)
     sectionGap(layout, 9)
 
     val notice = visualInfoPanel(R.drawable.ic_info, "Antes de reiniciar",

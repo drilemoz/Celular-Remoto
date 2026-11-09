@@ -21,6 +21,7 @@ object AlertDelivery {
         "monitor_health_safety" to "Saúde local",
         "celular_battery_goals" to "Metas locais",
         "monitor_health_remote" to "Saúde remota",
+        "remote_messages_notice" to "Mensagens do aparelho remoto",
         "celular_battery_remote_events" to "Metas remotas",
         "connection_diagnostics" to "Estabilidade da conexão",
         "celular_alert_test" to "Testes manuais",

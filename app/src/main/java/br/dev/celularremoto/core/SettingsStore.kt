@@ -26,6 +26,14 @@ object SettingsStore {
         br.dev.celularremoto.service.RemoteHealthScheduler.refresh(context)
     }
 
+    /** Alertas de chegada de mensagens no controlador; opt-in separado dos alertas de saúde. */
+    fun controllerNotificationAlerts(context: Context) =
+        prefs(context).getBoolean("controller_notifications_enabled", false)
+    fun setControllerNotificationAlerts(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean("controller_notifications_enabled", enabled).apply()
+        br.dev.celularremoto.service.RemoteHealthScheduler.refresh(context)
+    }
+
     /** Owner-enabled recovery location: configured locally, never by a remote command. */
     fun locationRecoveryEnabled(context: Context) = prefs(context).getBoolean("location_recovery_enabled", false)
     fun setLocationRecoveryEnabled(context: Context, enabled: Boolean) =

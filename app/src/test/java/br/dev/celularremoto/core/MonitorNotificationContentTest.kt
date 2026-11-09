@@ -8,11 +8,11 @@ class MonitorNotificationContentTest {
         152L, 12.0, 100_000L)
 
     @Test fun batteryAndTemperatureAreVisible() {
-        assertEquals("Celular Remoto · 32% · 39,9 °C", MonitorNotificationContent.title(battery))
+        assertEquals("32% · Carregando", MonitorNotificationContent.title(battery))
     }
 
     @Test fun negativeCurrentStaysNegativeAndForecastIsClearlyEstimate() {
-        assertEquals("Este aparelho: 32% · temp. bateria 39,9 °C · Carregando · -658 mA líquidos · 100% em ~2h 32min (estim.)",
+        assertEquals("Este aparelho: 32% · 39,9 °C · -658 mA",
             MonitorNotificationContent.batteryLine(battery))
     }
 
@@ -30,12 +30,12 @@ class MonitorNotificationContentTest {
 
     @Test fun invalidUnknownMeasurementsAreOmitted() {
         val unknown = MonitorNotificationContent.Battery(null, "", Double.NaN, null, null, null, 1L)
-        assertEquals("Celular Remoto · monitoramento", MonitorNotificationContent.title(unknown))
-        assertEquals("Este aparelho: Estado desconhecido", MonitorNotificationContent.batteryLine(unknown))
+        assertEquals("Bateria · estado indisponível", MonitorNotificationContent.title(unknown))
+        assertEquals("Este aparelho: sem dados de bateria", MonitorNotificationContent.batteryLine(unknown))
     }
 
     @Test fun dischargeForecastNotLabeledAsCharge() {
-        assertEquals("Este aparelho: 32% · temp. bateria 39,9 °C · Descarregando · autonomia ~1h 5min (estim.)",
+        assertEquals("Este aparelho: 32% · 39,9 °C",
             MonitorNotificationContent.batteryLine(battery.copy(state="Descarregando", currentMa=null, forecastMinutes=65)))
     }
 }

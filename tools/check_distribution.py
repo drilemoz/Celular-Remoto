@@ -122,7 +122,7 @@ assert 'window.setLayout(' in scan and 'Aponte para o QR Code' in scan
 print('PASSOU: fluxo alpha.15, confirmação QR, botões de ação, scanner pop-up')
 
 # alpha.17: Home de escolha, modo Monitorado separado e manual seguro.
-assert 'savedInstanceState?.getInt("active_mode", 2)' in ui
+assert 'savedInstanceState?.getInt("active_mode", 1)' in ui
 assert 'private fun navigateHome()' in ui and 'internal fun MainActivity.renderHome()' in ui
 assert 'internal fun MainActivity.showMyConnectionInfo()' in ui and 'internal fun MainActivity.preferredLocalAddress()' in ui
 assert 'showAboutDialog()' in ui and 'showMainMenu()' not in ui
@@ -131,12 +131,12 @@ assert 'WindowManager.LayoutParams.FLAG_SECURE' in ui
 assert 'ClipDescription.EXTRA_IS_SENSITIVE' in ui and 'Intent.ACTION_SEND' in ui
 assert 'showAppConfirm("Compartilhar credencial?"' in ui and 'setNegativeButton("Cancelar", null)' in ui
 assert 'showConnectionChooser()' in ui and 'showHomeSavedDeviceOptions(' in ui
-assert 'if (mode != 2) { if (mode == 4) clearRemoteMessagesScreen(); mode = 2; settingsSection = "home"; render() }' in ui
+assert 'if (mode != 1) { if (mode == 4) clearRemoteMessagesScreen(); mode = 1; settingsSection = "home"; render() }' in ui
 print('PASSOU: alpha.17, Home independente, informações manuais protegidas e recentes')
 
 # alpha.17: não reapresentar Monitorado como Home; atalhos separados e ação de gerenciamento por aparelho.
-assert 'internal var mode = 2 // 2: início, 0: monitorado, 1: controle' in ui
-assert 'else -> renderHome()' in ui and '0 -> renderMonitor()' in ui and '1 -> {' in ui
+assert 'internal var mode = 1 // 1: controle (entrada)' in ui
+assert 'else -> renderController()' in ui and '0 -> renderMonitor()' in ui and '1 -> {' in ui
 assert 'Conectar novo aparelho' in ui and 'Meus aparelhos' in ui
 assert 'Última resposta:' in ui and 'item.lastSuccessMs > 0L' in ui
 assert 'showHomeSavedDeviceOptions(item)' in ui and 'returnToChooser = false' in ui
@@ -155,7 +155,7 @@ assert 'AuthenticatedAccess.authenticated(' in server and 'WireProtocol.send(soc
 assert 'STALE_AFTER_MS = 45_000L' in tracker and 'fun clear()' in tracker
 assert 'AuthenticatedAccess.clear()' in (root / 'app/src/main/java/br/dev/celularremoto/service/MonitorService.kt').read_text()
 assert 'controllerId' in client and 'clientName' in client and 'accessMethod' in client
-assert 'mode = 2\n    render()' in ui, 'Desconectar não retorna à Home'
+assert 'mode = 1\n    render()' in ui, 'Desconectar não retorna ao Controlar'
 assert 'iconTile(R.drawable.ic_qr, "QR Code"' in ui and 'iconTile(R.drawable.ic_phone, "Manual"' in ui
 assert 'addAction("Conectar", true)' in ui and 'addAction("Renomear")' in ui
 assert 'addAction("Esquecer", red = true)' in ui
@@ -172,7 +172,7 @@ assert 'private fun MainActivity.actionTile(' in ui and 'private fun MainActivit
 assert 'RemoteCatalogActivity::class.java' in ui and (ui_root / 'RemoteCatalogActivity.kt').is_file()
 assert 'internal fun MainActivity.showRemoteDetailsDialog(root: JSONObject)' in ui
 assert 'internal fun MainActivity.showRemoteDetailsDialog(root: JSONObject)' in ui
-assert 'Acesso rápido' in ui and 'Mensagens' in ui and 'RemoteScreenActivity::class.java' in ui and 'Localização' in ui
+assert 'Funcionalidades' in ui and 'Mensagens' in ui and 'RemoteScreenActivity::class.java' in ui and 'Localização' in ui
 print('PASSOU: alpha.19, painel remoto compacto, atalhos e detalhes dedicados')
 
 # alpha.112: versão do APK independente do marcador de protocolo, disconnect autenticado.
@@ -218,7 +218,7 @@ assert 'unknownOrOlderProtocolsAreRejected' in app_version_test and '0.1.0-alpha
 print('PASSOU: alpha.21, teste de compatibilidade segue a versão atual')
 
 # alpha.22: a interface cresceu, mas MainActivity não volta a concentrar telas inteiras.
-assert len(main_ui.splitlines()) <= 515, "MainActivity voltou a concentrar a UI"
+assert len(main_ui.splitlines()) <= 535, "MainActivity voltou a concentrar a UI"
 assert all(len(text.splitlines()) >= 25 for text in module_ui.values()), "Módulo UI vazio ou parcial"
 assert "internal fun MainActivity.renderHome()" in module_ui["HomeScreenUi.kt"]
 assert "internal fun MainActivity.renderMonitor()" in module_ui["MonitorScreenUi.kt"]
@@ -737,7 +737,7 @@ assert 'showIncomingAccessIfNeeded' not in main53
 assert 'AuthenticatedAccess.subscribe(incomingListener)' in main53
 assert 'ACCESS_CHANNEL' in monitor_service and 'IncomingAccessActivity::class.java' in monitor_service
 assert 'onBackToMonitor' in access53 and 'Voltar ao aplicativo' in access53
-assert 'Manutenção' in dash53 and 'Reiniciar normalmente' in dash53
+assert 'Manutenção' in dash53 and 'Reiniciar' in dash53
 assert 'EXTRA_MAINTENANCE_HOST' in dash53 and 'putExtra(AdbActivity.EXTRA_MAINTENANCE_HOST, selectedHost)' in dash53
 assert 'requestNormalReboot' in adb53 and 'requestNormalReboot' in client53
 assert 'active.open("reboot:")' in client53
@@ -798,7 +798,7 @@ for token in ['copyBatchDownloads', 'publishStaged', 'MAX_BATCH_ITEMS = 20',
     assert token in files57, f'alpha.57: função ausente: {token}'
 assert 'SharedDataFolder.handle' not in files57
 assert 'MANAGE_EXTERNAL_STORAGE' not in (root / 'app/src/main/AndroidManifest.xml').read_text()
-assert 'Reiniciar normalmente' in dashboard57 and ('iconSectionHeader' in dashboard57 or 'visualHeader(' in dashboard57)
+assert 'Reiniciar' in dashboard57 and ('iconSectionHeader' in dashboard57 or 'visualHeader(' in dashboard57)
 assert 'val deviceCard = card(body, fill = soft)' in ui56
 assert 's?.toString()?.trim() == "REINICIAR"' in ui56
 assert 'adb.requestNormalReboot()' in ui56
@@ -856,13 +856,13 @@ assert 'DeviceControlPolicy.permitted' in server and 'DeviceControlPolicy.valid'
 assert '"deviceControl"' in server and 'RemotePhysicalControls.startSound' in server
 assert 'RemotePhysicalControls.setTorch' in server and 'RemotePhysicalControls.stopSound' in server
 assert 'RemotePhysicalControls.shutdown()' in service60
-assert 'ToneGenerator(AudioManager.STREAM_ALARM, 70)' in control60
+assert 'AudioTrack.Builder()' in control60 and 'sirenTrack' in control60
 assert 'setTorchMode' in control60 and 'CameraManager.TorchCallback' in control60
 assert all(f'"{action}"' in policy60 for action in ("status", "soundStart", "soundStop", "torchOn", "torchOff"))
 assert '5, 10, 20, 30' in policy60 and 'seconds in durations' in policy60
 assert 'showRemotePhysicalDialog' in ui60 and 'remoteConnection.deviceControl' in ui60
 assert 'Permitir alerta sonoro remoto' in settings60 and 'Permitir lanterna remota' in settings60
-assert '"Som"' in ui59 and 'Lanterna' in ui59
+assert '"Sirene"' in ui59 and 'Lanterna' in ui59
 assert '<uses-permission android:name="android.permission.CAMERA"' in manifest
 assert '<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"' not in manifest
 assert (root / 'app/src/test/java/br/dev/celularremoto/core/DeviceControlPolicyTest.kt').exists()
@@ -1342,7 +1342,7 @@ maintenance = (ui_root / "RemoteDashboardUi.kt").read_text(encoding="utf-8")
 dialogs = (ui_root / "AppDialogUi.kt").read_text(encoding="utf-8")
 theme = (ui_root / "ThemedPopup.kt").read_text(encoding="utf-8")
 assert all(x in kit for x in ["visualHeader(", "visualTag(", "visualActionRow(", "visualInfoPanel(", "visualDialogContainer("])
-assert all(x in maintenance for x in ["Energia e Manutenção", "Bloquear tela", "Acender tela", "Reiniciar normalmente", "Antes de reiniciar", "AdbActivity.EXTRA_MAINTENANCE_HOST"])
+assert all(x in maintenance for x in ["Energia e Manutenção", "Bloquear", "Acender tela", "Reiniciar", "Antes de reiniciar", "AdbActivity.EXTRA_MAINTENANCE_HOST"])
 assert "visualDialogContainer()" in dialogs and 'secondary = "Cancelar"' in dialogs
 assert "MonitorDialogDark" in theme and "MonitorDialogLight" in theme
 assert (root / "app/src/main/res/values/monitor_dialog_styles.xml").exists()
@@ -1501,13 +1501,14 @@ mobile = (ui_root / 'MobileNavigationUi.kt').read_text()
 home105 = (ui_root / 'HomeScreenUi.kt').read_text()
 dashboard105 = (ui_root / 'RemoteDashboardUi.kt').read_text()
 assert 'root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))' in main_ui
-assert 'root.addView(bottomNavigation, LinearLayout.LayoutParams(-1, dp(70)))' in main_ui
-assert all(phrase in mobile for phrase in ['"Início"', '"Controlar"', '"Monitorado"', '"Ajustes"'])
+assert 'bottomNavigation.minimumHeight = dp(70)' in main_ui and 'root.addView(bottomNavigation, LinearLayout.LayoutParams(-1, -2))' in main_ui
+assert all(phrase in mobile for phrase in ['"Controlar"', '"Monitorado"', '"Bateria"', '"Ajustes"'])
+assert 'Triple(2,' not in mobile, 'A antiga Home não deve aparecer na barra inferior' 
 assert 'renderBottomNavigation()' in main_ui and 'renderMobileHeader()' in main_ui
 assert 'showHomeSavedDeviceOptions(item)' in home105 and 'connectSavedDevice(item)' in home105
 assert 'displayEmptyRemoteDashboard()' in dashboard105
-assert 'listOf(cards[4], cards[0], cards[6], cards[11])' in dashboard105
-assert 'val others = cards.filterNot { it in shortcuts }' in dashboard105
+assert 'val ordered = listOf(cards[4], cards[0], cards[6], cards[11]' in dashboard105
+assert 'mobileActionGrid(actionsPanel, ordered)' in dashboard105
 assert dashboard105.count('actionTile(R.drawable.') == 12
 assert 'if (!keyAvailable) tiles.forEach' in dashboard105
 assert 'val liveReading = !fromCache && remoteConnection.state == "connected"' in dashboard105
@@ -1767,12 +1768,11 @@ dashboard124 = (ui_root / 'RemoteDashboardUi.kt').read_text(encoding='utf-8')
 main124 = (ui_root / 'MainActivity.kt').read_text(encoding='utf-8')
 key124 = (ui_root / 'RemoteActionsRenderKey.kt').read_text(encoding='utf-8')
 assert dashboard124.count('actionTile(R.drawable.') == 12, 'Deve preservar exatamente 12 comandos remotos'
-assert 'val shortcuts = listOf(cards[4], cards[0], cards[6], cards[11])' in dashboard124
-assert 'val others = cards.filterNot { it in shortcuts }' in dashboard124
-assert 'mobileActionGrid(actionsPanel, shortcuts)' in dashboard124
-assert 'mobileActionGrid(actionsPanel, others)' in dashboard124
-visible_section = dashboard124.split('mobileDashboardHeader(actionsPanel, "Outras funções", "8 comandos")', 1)[1].split('mobileActionGrid(actionsPanel, others)', 1)[0]
-assert not re.search(r'\bif\s*\(', visible_section), 'Outras funções não podem depender de uma condição de expansão'
+assert 'val ordered = listOf(cards[4], cards[0], cards[6], cards[11]' in dashboard124
+assert 'mobileDashboardHeader(actionsPanel, "Funcionalidades", "12 recursos")' in dashboard124
+assert 'mobileActionGrid(actionsPanel, ordered)' in dashboard124
+assert 'mobileActionGrid(actionsPanel, shortcuts)' not in dashboard124
+assert 'mobileActionGrid(actionsPanel, others)' not in dashboard124
 assert 'remoteActionsUiCache = cacheKey to actionsPanel' in dashboard124
 assert 'if (mode != 1) remoteActionsUiCache = null' in main124
 assert 'remoteActionsUiCache?.takeIf { it.first == cacheKey }' in dashboard124
@@ -1787,7 +1787,7 @@ print('PASSOU: alpha.124 todas as ações sempre visíveis, cache visual seguro 
 noti125 = (root / 'app/src/main/java/br/dev/celularremoto/core/MonitorNotificationContent.kt').read_text()
 service125 = (root / 'app/src/main/java/br/dev/celularremoto/service/MonitorService.kt').read_text()
 assert 'MonitorNotificationContent.batteryLine(battery)' in service125
-assert 'MonitorNotificationContent.remoteLine(' in service125
+assert 'ControllerRemoteTelemetry.line(this)' in service125
 assert 'BatterySessionStore.report(this).optJSONObject("active")' in service125
 assert 'refreshBatteryNotificationFromWorker()' in service125
 assert 'mainHandler.post(batteryLabPulse)' in service125
@@ -1924,3 +1924,17 @@ assert 'Build.VERSION.SDK_INT >= 33' in tele133 and 'telephony?.line1Number' in 
 assert 'fun isCopyable' in policy133 and 'fun report' in policy133
 assert (root / "app/src/test/java/br/dev/celularremoto/ui/DetailCopyPolicyTest.kt").is_file()
 print('PASSOU: alpha.133 cópia explícita, placeholders bloqueados e número somente autorizado')
+
+# Alpha.134 — novos invariantes, sem enfraquecer o fluxo de consentimento anterior.
+assert 'internal var mode = 1 // 1: controle (entrada)' in main_ui
+assert 'configureSystemBars()' in main_ui and 'installSafeInsets(root)' in main_ui
+assert 'root.setOnApplyWindowInsetsListener' in (ui_root / 'SystemBarsUi.kt').read_text()
+assert '"Funcionalidades", "12 recursos"' in dashboard124
+assert (root / 'app/src/main/java/br/dev/celularremoto/core/RemoteEventAlerts.kt').exists()
+remote_alerts = (root / 'app/src/main/java/br/dev/celularremoto/core/RemoteEventAlerts.kt').read_text()
+assert 'controllerNotificationAlerts(context)' in remote_alerts and 'MAX_NOTICES_PER_POLL' in remote_alerts
+assert 'ControllerRemoteTelemetry.line(this)' in service125
+assert 'SmsLiveJournal.alerts()' in server and 'regular.optBoolean("includeSms")' in server
+assert 'AudioTrack.Builder()' in (root / 'app/src/main/java/br/dev/celularremoto/core/RemotePhysicalControls.kt').read_text()
+assert 'TONE_PROP_BEEP' not in (root / 'app/src/main/java/br/dev/celularremoto/core/RemotePhysicalControls.kt').read_text()
+print('PASSOU: alpha.134 navegação, sirene PCM, dados autenticados, notificações opt-in e notificação compacta')

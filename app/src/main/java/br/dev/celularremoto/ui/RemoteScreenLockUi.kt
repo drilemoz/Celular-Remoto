@@ -12,10 +12,11 @@ import br.dev.celularremoto.core.SettingsStore
 internal fun MainActivity.showRemoteLockDialog() {
     val host = SettingsStore.getRemoteHost(this)
     val (wrapper, layout) = dialogWrapper()
-    layout.addView(iconSectionHeader(R.drawable.ic_shield, "Bloquear aparelho remoto",
+    layout.addView(visualHeader(R.drawable.ic_shield, "Bloquear aparelho remoto",
         currentDeviceTitle?.text?.toString().orEmpty().ifBlank { "Aparelho conectado" }))
     sectionGap(layout, 10)
-    layout.addView(label("Requer a autorização de bloqueio no monitorado, administrador Android ativado e PIN, padrão ou senha. O bloqueio pode impedir o acesso se o botão Power estiver quebrado.", 12.5f, muted = true))
+    layout.addView(visualInfoPanel(R.drawable.ic_info, "Atenção antes de bloquear",
+        "O monitorado precisa de administrador Android e bloqueio seguro (PIN, padrão ou senha). Com o botão Power quebrado, talvez seja difícil voltar a acessar a tela."))
     sectionGap(layout, 10)
     val status = label("Consultando permissão do monitorado…", 12.5f, strong = true)
     val feedback = label("", 12f, muted = true)
@@ -33,7 +34,9 @@ internal fun MainActivity.showRemoteLockDialog() {
         setTextColor(ink)
         setHintTextColor(dim)
     }
-    layout.addView(confirm, LinearLayout.LayoutParams(-1, dp(48)))
+    confirm.background = shape(fieldColor, 14, true)
+    confirm.setPadding(dp(13), 0, dp(13), 0)
+    layout.addView(confirm, LinearLayout.LayoutParams(-1, dp(52)))
     sectionGap(layout, 9)
     val sendButton = actionButton("Bloquear agora", emphasis = true) { }
     layout.addView(sendButton)
@@ -44,7 +47,8 @@ internal fun MainActivity.showRemoteLockDialog() {
     var busy = false
     var permissionReady = false
     fun setEnabled() {
-        sendButton.isEnabled = !busy && permissionReady
+        sendButton.isEnabled = !busy && permissionReady &&
+            confirm.text.toString().trim() == DeviceControlPolicy.LOCK_CONFIRMATION
         sendButton.alpha = if (sendButton.isEnabled) 1f else 0.5f
         refreshButton.isEnabled = !busy
     }
@@ -79,6 +83,11 @@ internal fun MainActivity.showRemoteLockDialog() {
             setEnabled()
         }
     }
+    confirm.addTextChangedListener(object : android.text.TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { setEnabled() }
+        override fun afterTextChanged(s: android.text.Editable?) = Unit
+    })
     sendButton.setOnClickListener {
         if (confirm.text.toString().trim() != DeviceControlPolicy.LOCK_CONFIRMATION) {
             feedback.text = "Digite exatamente BLOQUEAR (maiúsculas) para confirmar."

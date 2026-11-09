@@ -11,7 +11,7 @@ object RemoteHealthScheduler {
     const val JOB_ID = 2753
     fun refresh(context: Context) {
         val scheduler = context.getSystemService(JobScheduler::class.java) ?: return
-        if (!SettingsStore.controllerHealthAlerts(context)) {
+        if (!SettingsStore.controllerHealthAlerts(context) && !SettingsStore.controllerNotificationAlerts(context)) {
             scheduler.cancel(JOB_ID)
             return
         }

@@ -1,4 +1,13 @@
-# Validação mais recente — alpha.133 (05/11/2026)
+# Validação mais recente — alpha.134 (09/11/2026)
+
+- [x] `python3 tools/check_distribution.py`: regressões estruturais até a alpha.134 aprovadas.
+- [x] Parser PSI do compilador Kotlin: 277 arquivos de fontes e testes, nenhum erro sintático.
+- [x] Validação estrutural XML, YAML e integridade do ZIP (registradas no relatório alpha.134).
+- [ ] Build real `:app:assembleDebug`, testes Gradle e lint Android pendentes neste ambiente.
+- [ ] Testar as barras do sistema, a sirene, eventos novos SMS/WhatsApp, conexão ADB e notificação em dois aparelhos físicos.
+- Consulte `docs/VALIDATION_ALPHA134.md`.
+
+## Alpha.133 — cópia de detalhes e número autorizado
 
 - [x] Verificador estrutural completo, incluindo consentimento do número e cópia por campo.
 - [x] 274 fontes Kotlin analisadas por parser PSI, sem erros de sintaxe.

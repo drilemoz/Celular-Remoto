@@ -1,4 +1,4 @@
-# Celular Remoto v0.1.0-alpha.132
+# Celular Remoto v0.1.0-alpha.134
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,17 @@
 
 **Foto remota (alpha.131):** no monitorado, abra **Ativar + Foto** ou **Fotografia remota** e toque uma vez em **Ativar Monitorado e preparar câmera**; permissões Android continuam locais. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.133 / versionCode 133** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.134 / versionCode 134** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Interface, sirene e avisos remotos (alpha.134)
+
+- **Controlar** é a tela de entrada. Início foi removida e a barra inferior tem quatro destinos: Controlar, Monitorado, Bateria e Ajustes. A tela principal trata os Insets reais de barras/recortes, inclusive Android 16.
+- Os **12 comandos** ficam em **Funcionalidades**, sem separar acesso rápido e outras funções. Rede abre painel de Wi-Fi com SSID, RSSI, IPv4, validação de internet e permissões; Energia usa três ícones lado a lado.
+- **Sirene** sintética de dois tons em vez de bipes: 5/10/20/30 segundos, parada manual/automática, sem elevar volume nem ignorar Não Perturbe. Bloquear exige todas as permissões locais e digitar BLOQUEAR.
+- Em **Ajustes → Notificações**, habilite **Avisos de mensagens do aparelho remoto** no controlador. O monitorado continua exigindo suas permissões e allowlist; o canal AES-GCM envia eventos autorizados, sem conteúdo de SMS no polling. Notificações genéricas só são emitidas para eventos novos após a primeira leitura. Com Controlar visível, consultas acontecem aproximadamente a cada 15 segundos; no segundo plano o Android pode atrasar a tarefa de mínimo 15 minutos. **Não há entrega instantânea garantida.**
+- A notificação permanente apresenta percentual e estado da bateria local, com expansão para temperatura/corrente e última telemetria remota autenticada em RAM (até 3 minutos). Dados remotos antigos são marcados como indisponíveis, sem nome do aplicativo no título.
+- A central Mensagens mostra conversas SMS recolhíveis; ADB indica não pareado, pareado sem conexão, reconectando e conectado. Sobre inclui Adriedson Lemos, site, Pix para contribuições e acesso ao histórico de alterações.
+- Criptografia, permissões locais, proteção de dados sensíveis, ADB autorizado, fluxo de atualizações e `WIRE_COMPAT=0.1.0-alpha.111` preservados. **Build Android e testes físicos ainda pendentes.**
 
 ## Copiar detalhes do aparelho e número da linha (alpha.133)
 
