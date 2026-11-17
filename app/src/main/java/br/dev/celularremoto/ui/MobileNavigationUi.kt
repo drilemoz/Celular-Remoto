@@ -9,7 +9,7 @@ import br.dev.celularremoto.R
 /** Estrutura mobile-first: cabeçalho simples e quatro destinos principais fixos.
  * Os botões apenas navegam; nenhum serviço ou operação remota é iniciado automaticamente.
  */
-internal fun MainActivity.renderMobileHeader() {
+internal fun MainActivity.renderMobileHeader(batteryMenu: ((View) -> Unit)? = null) {
     val header = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
@@ -45,7 +45,11 @@ internal fun MainActivity.renderMobileHeader() {
         setPadding(0, dp(3), 0, 0)
     })
     header.addView(headings, LinearLayout.LayoutParams(0, -2, 1f))
-    if (mode != 3) {
+    if (batteryMenu != null) {
+        header.addView(headerIconButton(R.drawable.ic_more_vertical, "Opções da bateria") {}.apply {
+            setOnClickListener { batteryMenu(it) }
+        }, LinearLayout.LayoutParams(dp(48), dp(48)).apply { leftMargin = dp(8) })
+    } else if (mode != 3) {
         header.addView(View(this), LinearLayout.LayoutParams(dp(8), 1))
         header.addView(headerIconButton(R.drawable.ic_settings, "Abrir ajustes") { openSettingsModule() },
             LinearLayout.LayoutParams(dp(48), dp(48)))

@@ -1,4 +1,8 @@
-# Validação mais recente — alpha.136 (09/11/2026)
+# Validação mais recente — alpha.143 (17/11/2026)
+
+- Base alpha.142. Plano, resultados e verificações em `docs/VALIDATION_ALPHA143.md`.
+
+# Validação histórica — alpha.136 (09/11/2026)
 
 - Fonte alpha.135 como base, atualização de código e documentação para alpha.136/versionCode 136.
 - Verificações e pendências detalhadas em `docs/VALIDATION_ALPHA136.md`.

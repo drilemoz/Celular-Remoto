@@ -1,67 +1,55 @@
 package br.dev.celularremoto.ui
 
 import android.content.res.ColorStateList
-import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import br.dev.celularremoto.R
 
-/** Alpha.120: apresentação apenas. A coleta, a autenticação e os cálculos permanecem nos módulos existentes. */
-internal fun MainActivity.batteryHero(level: Int, status: String, source: String): LinearLayout = panel(12).apply {
-    background = shape(fieldColor, 17)
+/** Cartão único de bateria. A fonte aparece somente quando o Android a identifica. */
+internal fun MainActivity.batteryHero(
+    level: Int, status: String, source: String?, charging: Boolean, forecast: String?
+): LinearLayout = panel(12).apply {
     val top = LinearLayout(this@batteryHero).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
     }
-    val charging = status.contains("carreg", ignoreCase = true) || status.contains("full", ignoreCase = true)
     val main = LinearLayout(this@batteryHero).apply { orientation = LinearLayout.VERTICAL }
-    main.addView(label(if (level in 0..100) "$level%" else "—", 30f, strong = true).apply {
+    main.addView(label(if (level in 0..100) "$level%" else "—", 28f, strong = true).apply {
         setPadding(0, 0, 0, 0)
         contentDescription = if (level in 0..100) "Nível da bateria: $level por cento" else "Nível da bateria indisponível"
     })
-    main.addView(label(status, 12.5f, muted = true).apply { setPadding(0, dp(2), 0, 0) })
+    val statusAndSource = listOfNotNull(status, source).joinToString(" · ")
+    main.addView(label(statusAndSource, 12.5f, muted = true).apply { setPadding(0, dp(2), 0, 0) })
     top.addView(main, LinearLayout.LayoutParams(0, -2, 1f))
-    top.addView(vectorIcon(if (charging) R.drawable.ic_battery_charging else R.drawable.ic_battery, 29, highlight),
-        LinearLayout.LayoutParams(dp(29), dp(29)))
+    top.addView(vectorIcon(if (charging) R.drawable.ic_battery_charging else R.drawable.ic_battery, 26, highlight),
+        LinearLayout.LayoutParams(dp(26), dp(26)))
     addView(top)
-    val bar = ProgressBar(this@batteryHero, null, android.R.attr.progressBarStyleHorizontal).apply {
-        max = 100
-        progress = level.coerceIn(0, 100)
-        progressTintList = ColorStateList.valueOf(highlight)
-        progressBackgroundTintList = ColorStateList.valueOf(lineColor)
-        contentDescription = if (level in 0..100) "Bateria em $level por cento" else "Bateria sem leitura válida"
+    if (level in 0..100) {
+        val bar = ProgressBar(this@batteryHero, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100
+            progress = level
+            progressTintList = ColorStateList.valueOf(highlight)
+            progressBackgroundTintList = ColorStateList.valueOf(lineColor)
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        addView(bar, LinearLayout.LayoutParams(-1, dp(6)).apply { topMargin = dp(6) })
     }
-    addView(bar, LinearLayout.LayoutParams(-1, dp(8)).apply { topMargin = dp(11) })
-    addView(label("Fonte: $source", 10.5f, muted = true).apply { setPadding(0, dp(5), 0, 0) })
+    if (forecast != null) {
+        addView(label(forecast, 14f, strong = true).apply { setPadding(0, dp(6), 0, 0) })
+    }
+    sectionGap(this, 7)
+    compactDivider(this)
+    sectionGap(this, 6)
 }
 
-internal fun MainActivity.batteryQuickMetric(icon: Int, heading: String, value: String, detail: String): LinearLayout =
+/** Métricas sem subcartões. Quebram linha com fonte grande em vez de cortar valores. */
+internal fun MainActivity.batteryQuickMetric(heading: String, value: String): LinearLayout =
     LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        minimumHeight = dp(78)
-        background = shape(fieldColor, 13)
-        setPadding(dp(8), dp(9), dp(6), dp(8))
-        contentDescription = "$heading: $value. $detail"
-        val row = LinearLayout(this@batteryQuickMetric).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        row.addView(vectorIcon(icon, 15, highlight), LinearLayout.LayoutParams(dp(15), dp(15)))
-        row.addView(label(heading, 10.5f, muted = true).apply {
-            setPadding(dp(3), 0, 0, 0)
-            maxLines = 1
-            ellipsize = TextUtils.TruncateAt.END
-        }, LinearLayout.LayoutParams(0, -2, 1f))
-        addView(row)
-        addView(label(value, 16f, strong = true).apply {
-            setPadding(0, dp(5), 0, 0)
-            maxLines = 1
-            ellipsize = TextUtils.TruncateAt.END
-        })
-        addView(label(detail, 10f, muted = true).apply {
-            setPadding(0, dp(2), 0, 0)
-            maxLines = 1
-            ellipsize = TextUtils.TruncateAt.END
-        })
+        addView(label(heading, 11f, muted = true).apply { setPadding(0, 0, 0, 0) })
+        addView(label(value, 14f, strong = true).apply { setPadding(0, dp(2), 0, 0) })
     }
 
 /** Três colunas em larguras usuais, duas quando a fonte ou a tela exigirem mais espaço. */

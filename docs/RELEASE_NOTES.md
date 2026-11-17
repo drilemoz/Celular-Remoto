@@ -1,3 +1,11 @@
+# Celular Remoto v0.1.0-alpha.143 — bateria mais enxuta
+
+- Um cartão reúne percentual, estado, previsão e temperatura/corrente/potência líquidas da bateria. Horário e atualização remota estão numa linha.
+- Ações secundárias no menu da bateria. Teste ativo tem atalho. Demais registros continuam no Histórico, com os filtros e a comparação existentes.
+- Relatórios alternam Nível, Corrente e Temperatura em um gráfico e preservam detalhes e texto compartilhável. Leituras Android em unidades brutas continuam no diagnóstico.
+- Previsões de descarga identificam 0% como destino. Sem leituras recentes ou coerentes, não se exibe previsão atual. Algoritmo, coleta e protocolo inalterados.
+- Build Android e teste em dois aparelhos pendentes.
+
 # Celular Remoto v0.1.0-alpha.142 — correção da compilação dos testes
 - Corrigida a incompatibilidade Double? / Double de três assertivas em BatteryPresentationMathTest após falha no workflow 32; sem mudança de funcionamento do aplicativo.
 

@@ -1,8 +1,9 @@
-<!-- alpha.142 -->
+<!-- alpha.143 -->
+**Bateria compacta (alpha.143):** o Resumo reúne percentual, estado, previsão e métricas da bateria em um cartão. Testes e Histórico ficam em abas próprias. Use **Ver sessão** para alternar Nível, Corrente e Temperatura no mesmo gráfico, ou **⋮** para Metas e alertas, Diagnóstico elétrico e Coleta contínua local. A previsão de descarga indica explicitamente que o cálculo vai até 0%, separado do alerta de bateria baixa. Leituras remotas antigas são identificadas e não mostram previsão atual.
 **Correção de compilação (alpha.142):** corrigidos três testes Kotlin em `BatteryPresentationMathTest.kt` usando `requireNotNull()` antes de `assertEquals(Double, Double, delta)`, conforme falha do workflow 32. Coleta, armazenamento e exibição de corrente permanecem os mesmos da alpha.141. A execução integral do build da alpha.142 em GitHub Actions continua pendente.
 **Bateria mais clara (alpha.141):** a aba Bateria separa leitura atual, ferramentas/alertas e resumos automáticos para reduzir confusão visual. Corrente e potência continuam líquidas na bateria; quando o Android reportar valor positivo durante descarga, a interface mostra visualmente o sentido de saída, enquanto o diagnóstico preserva a leitura bruta. As taxas de ritmo/autonomia permanecem calculadas por variação de percentual ao longo do tempo. Build e testes físicos pendentes.
 
-# Celular Remoto v0.1.0-alpha.142
+# Celular Remoto v0.1.0-alpha.143
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -12,7 +13,7 @@
 
 **Foto remota (alpha.131):** no monitorado, abra **Ativar + Foto** ou **Fotografia remota** e toque uma vez em **Ativar Monitorado e preparar câmera**; permissões Android continuam locais. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.142 / versionCode 142** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.143 / versionCode 143** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
 
 ## Bateria mais clara e coerente (alpha.141)
 

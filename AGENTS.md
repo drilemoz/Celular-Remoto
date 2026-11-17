@@ -1,3 +1,10 @@
+# Celular Remoto v0.1.0-alpha.143 — aba Bateria compacta
+
+- Próxima versão alpha.144/versionCode 144. Manter Gradle, AppVersion, README, CHANGELOG, notas, arquitetura, Novidades e validação sincronizados.
+- Resumo tem um cartão e não duplica o Histórico. Previsão de descarga vai até 0%, separada do alerta de bateria baixa. Leitura antiga ou sessão incompatível não é apresentada como previsão atual.
+- Preservar dados e condições de alerta, diagnóstico bruto, compartilhamento completo e lacunas no gráfico. Esta versão não altera coleta, protocolos, permissões ou algoritmo de previsão.
+- Validação estrutural e casos JVM não substituem build Android e teste em dois aparelhos.
+
 # Celular Remoto v0.1.0-alpha.142 — correção de compilação de testes
 
 - Próxima versão alpha.143/versionCode 143. Manter Gradle, AppVersion, README, CHANGELOG, docs/RELEASE_NOTES, arquitetura, AGENTS, Novidades e validação sincronizados.

@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Correção dos testes Kotlin" to "Corrigidos três erros de tipo Double? / Double detectados no workflow 32. O cálculo e a exibição de bateria permanecem os mesmos.",
-        "Visual da bateria preservado" to "A tela continua com leitura atual, ferramentas e resumo organizados; a leitura bruta Android permanece no diagnóstico.",
-        "Validação" to "Execute um novo workflow para confirmar a compilação completa e a geração do APK alpha.142."
+        "Resumo da bateria em um cartão" to "Percentual, previsão e métricas juntos. Agora está claro quando a autonomia estimada vai até 0%.",
+        "Aba mais curta" to "Abra Testes ou Histórico para consultar os registros. Use o menu da bateria para metas, diagnóstico ou coleta contínua local.",
+        "Um gráfico por vez" to "Nos relatórios, alterne entre nível, corrente e temperatura. Os detalhes e o compartilhamento completo continuam disponíveis."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))

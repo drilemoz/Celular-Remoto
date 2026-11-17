@@ -351,7 +351,7 @@ class MainActivity : Activity() {
         if (active && mode == 0) handler.postDelayed(monitorStatusPoll, 5_000L)
         renderBottomNavigation()
         refreshPermissionsNotice()
-        renderMobileHeader()
+        if (mode != 5) renderMobileHeader()
         when (mode) {
             0 -> renderMonitor()
             5 -> renderBatteryScreen()

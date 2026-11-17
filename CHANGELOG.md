@@ -1,3 +1,9 @@
+## 0.1.0-alpha.143 (versionCode 143) | 17/11/2026
+- Resumo da bateria em um cartão, com previsão até 0% em descarga e até 100% em carga. O remoto indica o horário da leitura e distingue dados anteriores.
+- Testes e Histórico em abas próprias. Atalho para teste em andamento e menu de metas, diagnóstico e coleta local.
+- Relatórios concisos com um gráfico por vez, eixo de tempo decorrido, detalhes recolhidos e compartilhamento do relatório completo. Diagnóstico preserva leituras brutas e médias.
+- Mantidos o cálculo de previsão, a coleta, os alertas existentes, o formato de telemetria e o protocolo de comunicação. Compilação Android e teste físico pendentes.
+
 ## 0.1.0-alpha.142 (versionCode 142) | 09/11/2026
 
 - Corrigidos os três erros de tipo Kotlin (`Double?` em vez de `Double`) de `BatteryPresentationMathTest.kt` nas linhas 10, 15 e 21 da alpha.141, relatados pelo workflow `Gerar APK e Release 32`, etapa `:app:compileDebugUnitTestKotlin`.

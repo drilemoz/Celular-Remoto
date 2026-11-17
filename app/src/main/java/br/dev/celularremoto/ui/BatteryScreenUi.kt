@@ -4,17 +4,21 @@ import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.content.Context
+import android.view.Gravity
 import android.view.View
+import android.widget.AdapterView
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.ArrayAdapter
 import android.widget.HorizontalScrollView
+import android.widget.PopupMenu
 import android.text.InputType
 import br.dev.celularremoto.R
 import br.dev.celularremoto.core.BatteryLabStore
 import br.dev.celularremoto.core.BatteryHistoryMath
 import br.dev.celularremoto.core.BatteryGoalAlerts
 import br.dev.celularremoto.core.BatteryPresentationMath
+import br.dev.celularremoto.core.BatteryTelemetry
 import br.dev.celularremoto.core.ControllerBatteryEvents
 import br.dev.celularremoto.core.RecentDevices
 import br.dev.celularremoto.core.SettingsStore
@@ -26,7 +30,9 @@ import java.security.MessageDigest
 import kotlin.concurrent.thread
 import java.util.Locale
 
-/** Quinta aba: um único app coleta no celular monitorado e mostra os dados em ambos. */
+private const val SESSION_RECENT_MS = 150_000L
+private const val REMOTE_REPORT_RECENT_MS = 180_000L
+
 internal fun MainActivity.renderBatteryScreen() {
     val host = SettingsStore.getRemoteHost(this)
     val paired = host.isNotBlank() && RecentDevices.key(this, host) != null
@@ -35,16 +41,6 @@ internal fun MainActivity.renderBatteryScreen() {
         batteryData = null
         batteryError = null
     }
-    // Seleção compacta, mantendo o modo duplo e sem misturar dados de aparelhos diferentes.
-    val switchRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-    switchRow.addView(actionButton("Este aparelho", !batteryRemote) { selectBatteryDevice(false) },
-        LinearLayout.LayoutParams(0, dp(43), 1f).apply { rightMargin = dp(6) })
-    switchRow.addView(actionButton("Remoto", batteryRemote) { selectBatteryDevice(true) }.apply {
-        isEnabled = paired
-        alpha = if (paired) 1f else 0.5f
-    }, LinearLayout.LayoutParams(0, dp(43), 1f))
-    content.addView(switchRow)
-    gap(8)
     if (!batteryRemote) {
         batteryData = BatteryLabStore.report(this)
         batteryDataHost = ""
@@ -54,166 +50,195 @@ internal fun MainActivity.renderBatteryScreen() {
         batteryError = null
         batteryLoading = false
     }
+
     val data = batteryData
-    if (paired && MonitorService.isServiceActive) {
-        content.addView(label("Modo duplo · monitoramento local ativo", 11f, muted = true).apply {
-            setPadding(0, dp(1), 0, dp(3))
-        })
-    }
-    val status = when {
-        !batteryRemote -> "Dados medidos neste aparelho"
-        batteryLoading -> "Consultando aparelho pareado…"
-        batteryError != null -> "Sem resposta recente"
-        data != null -> "Resposta autenticada: ${formatDate(data.optLong("reportedAt"))}"
-        else -> "Aguardando consulta autenticada"
-    }
-    val info = LinearLayout(this).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = android.view.Gravity.CENTER_VERTICAL
-    }
-    info.addView(label(status, 10.5f, muted = true).apply { maxLines = 2 },
-        LinearLayout.LayoutParams(0, -2, 1f))
+    val battery = data?.optJSONObject("battery")
+    val goals = data?.optJSONObject("goalAlerts")
+    val automatic = data?.optJSONObject("automatic")
+    val running = data?.optJSONObject("active")
+    renderMobileHeader { anchor -> showBatteryMenu(anchor, battery, goals) }
+
+    val switchRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+    switchRow.addView(actionButton("Este aparelho", !batteryRemote) { selectBatteryDevice(false) }.apply {
+        isSelected = !batteryRemote
+        minimumHeight = dp(48)
+    }, LinearLayout.LayoutParams(0, -2, 1f).apply { rightMargin = dp(6) })
+    switchRow.addView(actionButton("Remoto", batteryRemote) { selectBatteryDevice(true) }.apply {
+        isEnabled = paired
+        isSelected = batteryRemote
+        minimumHeight = dp(48)
+        alpha = if (paired) 1f else 0.5f
+    }, LinearLayout.LayoutParams(0, -2, 1f))
+    content.addView(switchRow)
+
+    val now = System.currentTimeMillis()
+    val reportedAt = data?.optLong("reportedAt", 0L) ?: 0L
+    val remoteRecent = BatteryDashboardPolicy.isRecent(now, reportedAt, REMOTE_REPORT_RECENT_MS)
     if (batteryRemote) {
-        info.addView(actionButton(if (batteryLoading) "Aguarde…" else "Atualizar") {
-            if (!batteryLoading) queryBatteryReport()
-        }.apply { isEnabled = !batteryLoading }, LinearLayout.LayoutParams(dp(102), dp(43)).apply {
-            leftMargin = dp(7)
-        })
+        gap(4)
+        renderBatteryRemoteStatus(reportedAt, remoteRecent)
         if (data == null && !batteryLoading && batteryError == null)
             content.post { if (active && mode == 5 && batteryRemote) queryBatteryReport() }
     }
-    content.addView(info)
-    if (batteryRemote && batteryError != null)
-        content.addView(statePill(batteryError.orEmpty(), "warning"))
-    if (!batteryRemote) {
-        val localEnabled = SettingsStore.localBatteryMonitoring(this)
-        content.addView(batteryInlineAction(R.drawable.ic_battery,
-            if (localEnabled) "Pausar coleta contínua local" else "Ativar coleta contínua local",
-            when {
-                localEnabled && MonitorService.isBatteryMonitoringActive -> "Amostragem ativa · mesmo coletor usado pelo Monitorado"
-                localEnabled -> "Autorizada · aguardando retomada do Android"
-                MonitorService.isServiceActive -> "Monitorado já coleta; opção local é independente"
-                else -> "Tela apagada · sem compartilhar dados na rede"
-            }) {
-            val enable = !SettingsStore.localBatteryMonitoring(this)
-            SettingsStore.setLocalBatteryMonitoring(this, enable)
-            runCatching { MonitorService.refreshModes(this) }.onFailure {
-                SettingsStore.setLocalBatteryMonitoring(this, !enable)
-                message("Não foi possível ajustar a coleta contínua: ${it.message}")
-            }
-            render()
-        })
-    }
+    batteryError?.let { content.addView(statePill(it, "warning")) }
 
-    val battery = data?.optJSONObject("battery")
-    if (battery != null) {
-        gap(7)
-        val level = battery.optInt("levelPercent", -1)
-        val state = battery.optString("state", "Desconhecido")
-        val source = battery.optString("powerSource", "")
-            .takeUnless { it.isBlank() || it == "null" } ?: "não identificada"
-        content.addView(batteryHero(level, state, source))
-        gap(7)
-        val statusCode = battery.optInt("statusCode", -1).takeIf { it >= 0 }
-        val current = battery.safeDouble("currentMa")
-        val displayCurrent = BatteryPresentationMath.visualCurrentMa(current, statusCode)
-        val temp = battery.safeDouble("temperatureC")
-        val mv = battery.optInt("voltageMv", -1)
-        val displayPower = BatteryPresentationMath.visualPowerW(mv, current, statusCode)
-        val currentDetail = buildString {
-            append(BatteryPresentationMath.directionLabel(current, statusCode))
-            append(" · ")
-            append(BatteryPresentationMath.sourceLabel(battery.optString("currentSource")))
-            if (BatteryPresentationMath.isVisuallyAdjusted(current, statusCode)) append(" · ajuste visual")
-        }
-        content.addView(compactSectionTitle("Leitura atual"))
-        batteryMetricGrid(content, listOf(
-            batteryQuickMetric(R.drawable.ic_activity, "Corrente líquida",
-                BatteryPresentationMath.currentText(current, statusCode), currentDetail),
-            batteryQuickMetric(R.drawable.ic_thermometer, "Temperatura",
-                temp?.let { "%.1f °C".format(Locale.getDefault(), it) } ?: "—", "Bateria"),
-            batteryQuickMetric(R.drawable.ic_power, "Potência líquida",
-                displayPower?.let { "%+.2f W".format(Locale.getDefault(), it) } ?: "—",
-                buildString {
-                    append(if (mv > 0) "$mv mV" else "Sem tensão")
-                    if (BatteryPresentationMath.isVisuallyAdjusted(current, statusCode)) append(" · sinal ajustado")
-                })
-        ))
-        val warning = battery.optString("currentWarning", "")
-            .takeUnless { it.isBlank() || it == "null" }
-        if (warning != null) {
-            gap(5)
-            val message = if (BatteryPresentationMath.isVisuallyAdjusted(current, statusCode)) {
-                "$warning. No painel, a corrente aparece com sinal de saída para combinar com o estado descarregando; o valor bruto Android continua no diagnóstico."
-            } else warning
-            content.addView(statePill(message, "warning"))
-        }
-        gap(7)
-        content.addView(compactSectionTitle("Ferramentas e alertas"))
-        content.addView(batteryInlineAction(R.drawable.ic_activity, "Diagnóstico elétrico",
-            "Origem das leituras, valores brutos e média observada") { showBatteryCurrentDiagnostic(battery) })
-        content.addView(label("Corrente e potência exibidas são líquidas na bateria. O painel prioriza a leitura compreensível; o diagnóstico mantém os valores brutos reportados pelo Android.", 10.5f, muted = true).apply {
-            setPadding(0, dp(3), 0, 0)
-        })
-    }
-    val goals = data?.optJSONObject("goalAlerts")
-    if (goals != null) {
-        gap(6)
-        content.addView(batteryInlineAction(R.drawable.ic_info, "Metas e alertas",
-            "Carga ${goals.optInt("goalPercent", 80)}% · baixa ${goals.optInt("lowPercent", 20)}% · ${goals.optInt("hotC", 43)} °C") {
-            showBatteryAlertDialog(goals)
-        })
-        if (batteryRemote && !SettingsStore.controllerHealthAlerts(this))
-            content.addView(batteryInlineAction(R.drawable.ic_info, "Alertas deste controlador desativados",
-                "Ativar notificações dos eventos remotos") {
-                SettingsStore.setControllerHealthAlerts(this, true)
-                render()
-            })
-    }
-    gap(12)
+    gap(8)
     val sections = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
     listOf("resumo" to "Resumo", "testes" to "Testes", "historico" to "Histórico").forEachIndexed { index, (id, caption) ->
         sections.addView(actionButton(caption, batterySection == id) {
             batterySection = id
             render()
-        }, LinearLayout.LayoutParams(0, dp(42), 1f).apply { if (index < 2) rightMargin = dp(5) })
+        }.apply {
+            isSelected = batterySection == id
+            minimumHeight = dp(48)
+        }, LinearLayout.LayoutParams(0, -2, 1f).apply {
+            if (index < 2) rightMargin = dp(5)
+        })
     }
     content.addView(sections)
-    gap(11)
-    val running = data?.optJSONObject("active")
-    if (running != null && !batteryRemote && !MonitorService.isBatteryMonitoringActive)
-        content.addView(statePill("Coleta contínua pausada: ative Monitorado ou coleta local", "warning"))
-    val history = data?.optJSONArray("history") ?: JSONArray()
+    gap(8)
+
     when (batterySection) {
-        "testes" -> renderBatteryTests(running)
-        "historico" -> renderBatteryHistory(history, data?.optJSONObject("automatic"))
+        "testes" -> {
+            if (running != null && !batteryRemote && !MonitorService.isBatteryMonitoringActive)
+                content.addView(statePill("Coleta pausada. Ative o Monitorado ou a coleta contínua local.", "warning"))
+            renderBatteryTests(running)
+        }
+        "historico" -> renderBatteryHistory(data?.optJSONArray("history") ?: JSONArray(), automatic)
         else -> {
-            renderAutomaticBatterySummary(data?.optJSONObject("automatic"))
-            if (running != null) {
-                gap(8)
-                renderBatteryActive(running)
-            } else if (data?.optJSONObject("automatic")?.optJSONObject("active") == null) {
-                content.addView(label("Nenhum teste ou sessão em andamento.", 11.5f, muted = true))
+            val session = automatic?.optJSONObject("active")
+            if (battery != null) {
+                val fresh = !batteryRemote || (remoteRecent && batteryError == null)
+                renderBatteryOverview(battery, session, goals, now, fresh)
+            } else if (!batteryRemote) {
+                content.addView(label("Leitura da bateria indisponível.", 12f, muted = true))
             }
-            if (history.length() > 0) {
-                gap(10)
-                content.addView(compactSectionTitle("Testes recentes"))
-                val recent = panel(9)
-                for (i in 0 until minOf(history.length(), 2)) {
-                    val item = history.optJSONObject(i) ?: continue
-                    batterySessionListRow(recent, R.drawable.ic_battery,
-                        "${batteryKind(item.optString("kind"))} · ${formatDate(item.optLong("startedAt"))}",
-                        "${item.batteryPercent("initialPercent")} → ${item.batteryPercent("finalPercent")} · ${batteryDuration(item.optLong("durationMs"))}") {
-                        showBatteryReportDialog(item)
-                    }
-                }
-                content.addView(recent)
+            if (running != null) {
+                gap(6)
+                val paused = !batteryRemote && !MonitorService.isBatteryMonitoringActive
+                content.addView(batteryInlineAction(R.drawable.ic_activity,
+                    if (paused) "Teste com coleta pausada" else "Ver teste em andamento",
+                    batteryKind(running.optString("kind"))) {
+                    batterySection = "testes"
+                    render()
+                })
             }
         }
     }
-    gap(10)
-    content.addView(label("Coleta no próprio aparelho. Períodos sem leitura permanecem desconhecidos.", 10.5f, muted = true))
 }
+
+private fun MainActivity.renderBatteryRemoteStatus(reportedAt: Long, recent: Boolean) {
+    val row = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+    }
+    val status = when {
+        batteryLoading -> "Consultando aparelho remoto…"
+        reportedAt <= 0 -> "Nenhuma leitura remota"
+        batteryError != null || !recent -> "Última leitura às ${formatBatteryTime(reportedAt)} · anterior"
+        else -> "Atualizado às ${formatBatteryTime(reportedAt)}"
+    }
+    row.addView(label(status, 11.5f, muted = true), LinearLayout.LayoutParams(0, -2, 1f))
+    row.addView(headerIconButton(R.drawable.ic_refresh, "Atualizar leitura remota") {
+        if (!batteryLoading) {
+            queryBatteryReport()
+            render()
+        }
+    }.apply {
+        isEnabled = !batteryLoading
+        alpha = if (batteryLoading) 0.5f else 1f
+    }, LinearLayout.LayoutParams(dp(48), dp(48)).apply { leftMargin = dp(6) })
+    content.addView(row)
+}
+
+private fun MainActivity.showBatteryMenu(anchor: View, battery: JSONObject?, goals: JSONObject?) {
+    val popup = PopupMenu(themedPopup(this).context, anchor, Gravity.END)
+    fun option(title: String, action: () -> Unit) {
+        popup.menu.add(title).setOnMenuItemClickListener { action(); true }
+    }
+    if (goals != null) option("Metas e alertas") { showBatteryAlertDialog(goals) }
+    if (battery != null) option("Diagnóstico elétrico") { showBatteryCurrentDiagnostic(battery) }
+    if (!batteryRemote) {
+        val enabled = SettingsStore.localBatteryMonitoring(this)
+        option(if (enabled) "Pausar coleta contínua local" else "Ativar coleta contínua local") {
+            val next = !SettingsStore.localBatteryMonitoring(this)
+            SettingsStore.setLocalBatteryMonitoring(this, next)
+            runCatching { MonitorService.refreshModes(this) }.onFailure {
+                SettingsStore.setLocalBatteryMonitoring(this, !next)
+                message("Não foi possível ajustar a coleta contínua: ${it.message}")
+            }
+            render()
+        }
+    }
+    if (batteryRemote && !SettingsStore.controllerHealthAlerts(this)) {
+        option("Ativar alertas neste controlador") {
+            SettingsStore.setControllerHealthAlerts(this, true)
+            render()
+        }
+    }
+    if (popup.menu.size() == 0) popup.menu.add("Aguardando leitura remota").isEnabled = false
+    popup.show()
+}
+
+private fun MainActivity.renderBatteryOverview(battery: JSONObject, session: JSONObject?, goals: JSONObject?,
+    now: Long, fresh: Boolean) {
+    val level = battery.optInt("levelPercent", -1)
+    val status = battery.optInt("statusCode", -1)
+    val plugged = battery.optInt("pluggedCode", -1)
+    val current = battery.safeDouble("currentMa")
+    val temp = battery.safeDouble("temperatureC")
+    val power = BatteryPresentationMath.visualPowerW(battery.optInt("voltageMv", -1), current, status)
+    val source = battery.optString("powerSource", "").takeUnless { it.isBlank() || it == "null" }
+    val kind = session?.optString("kind").orEmpty()
+    val sessionMatches = session != null &&
+        BatteryDashboardPolicy.matchesSession(status, plugged, level, kind, session.optInt("finalPercent", -1))
+    val forecast = if (session != null && fresh) {
+        when {
+            !BatteryDashboardPolicy.isRecent(now, session.optLong("lastWall"), SESSION_RECENT_MS) ->
+                "Sessão sem leituras recentes"
+            !sessionMatches ->
+                "Aguardando nova leitura da sessão"
+            else -> BatteryDashboardPolicy.forecastLabel(kind, session.optLong("forecastMinutes", -1L))
+                ?: "Sem dados suficientes para estimar"
+        }
+    } else null
+    val summary = batteryHero(level, battery.optString("state", "Desconhecido"), source,
+        BatteryTelemetry.showChargingIndicator(status, plugged), forecast)
+    batteryMetricGrid(summary, listOf(
+        batteryQuickMetric("Temperatura", temp?.let { "%.1f °C".format(Locale.getDefault(), it) } ?: "—"),
+        batteryQuickMetric("Corrente líquida", BatteryPresentationMath.currentText(current, status)),
+        batteryQuickMetric("Potência líquida", power?.let { "%+.2f W".format(Locale.getDefault(), it) } ?: "—")
+    ))
+    battery.optString("currentWarning", "").takeUnless { it.isBlank() || it == "null" }?.let { warning ->
+        val compactWarning = when {
+            BatteryPresentationMath.isVisuallyAdjusted(current, status) -> "Sinal de corrente ajustado na tela. Veja o diagnóstico."
+            status == 2 && current != null && current < 0 -> "Android indica carga, mas a corrente líquida está negativa."
+            else -> warning
+        }
+        sectionGap(summary, 4)
+        summary.addView(statePill(compactWarning, "warning"))
+    }
+    if (fresh && goals != null) {
+        val low = goals.optInt("lowPercent", -1)
+        val hot = goals.optInt("hotC", -1)
+        val warnings = listOfNotNull(
+            "Bateria no alerta de carga baixa".takeIf { status != 2 && low in 5..40 && level in 0..low },
+            "Temperatura no limite de alerta ou acima".takeIf { temp != null && hot in 38..55 && temp >= hot }
+        )
+        if (warnings.isNotEmpty()) {
+            sectionGap(summary, 4)
+            summary.addView(statePill(warnings.joinToString(" · "), "warning"))
+        }
+    }
+    if (session != null) {
+        summary.addView(actionButton("Ver sessão") { showBatteryAutomaticReport(session, allowForecast = fresh && sessionMatches) },
+            LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(5) })
+    }
+    content.addView(summary)
+}
+
+private fun formatBatteryTime(timestamp: Long): String =
+    java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(java.util.Date(timestamp))
 
 private fun MainActivity.selectBatteryDevice(remote: Boolean) {
     if (remote == batteryRemote) return
@@ -276,19 +301,6 @@ internal fun MainActivity.queryBatteryReport(action: String = "status", kind: St
     }
 }
 
-private fun MainActivity.batteryMetric(title: String, value: String, subtitle: String, icon: Int): LinearLayout = panel(9).apply {
-    minimumHeight = dp(88)
-    val heading = LinearLayout(this@batteryMetric).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = android.view.Gravity.CENTER_VERTICAL
-    }
-    heading.addView(vectorIcon(icon, 17, dim), LinearLayout.LayoutParams(dp(17), dp(17)))
-    heading.addView(label(title, 11.5f, muted = true), LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(6) })
-    addView(heading)
-    addView(label(value, 19f, strong = true))
-    addView(label(subtitle, 10.5f, muted = true).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
-}
-
 private fun MainActivity.showBatteryCurrentDiagnostic(battery: JSONObject) {
     val rawNow = battery.optInt("rawNowMicroA", Int.MIN_VALUE).takeIf { it != Int.MIN_VALUE }
     val rawAverage = battery.optInt("rawAverageMicroA", Int.MIN_VALUE).takeIf { it != Int.MIN_VALUE }
@@ -299,35 +311,61 @@ private fun MainActivity.showBatteryCurrentDiagnostic(battery: JSONObject) {
     val statusCode = battery.optInt("statusCode", -1).takeIf { it >= 0 }
     val visualCurrent = BatteryPresentationMath.visualCurrentMa(selected, statusCode)
     val voltageMv = battery.optInt("voltageMv", -1)
-    body.addView(label("Diagnóstico das propriedades BatteryManager", 14f, strong = true))
-    body.addView(dialogMetricRow("Corrente exibida no painel", visualCurrent?.let {
+    val origin = battery.optString("currentSource", "NONE")
+    body.addView(batteryKeyValue("Corrente líquida", visualCurrent?.let {
         "%+.1f mA".format(Locale.getDefault(), it)
     } ?: "Indisponível"))
-    body.addView(dialogMetricRow("Potência exibida no painel", BatteryPresentationMath.visualPowerW(voltageMv, selected, statusCode)?.let {
+    body.addView(batteryKeyValue("Potência líquida", BatteryPresentationMath.visualPowerW(voltageMv, selected, statusCode)?.let {
         "%+.2f W".format(Locale.getDefault(), it)
     } ?: "Indisponível"))
-    body.addView(dialogMetricRow("Corrente instantânea Android", battery.safeDouble("instantMa")?.let {
-        "%+.1f mA".format(Locale.getDefault(), it)
-    } ?: "Indisponível"))
-    body.addView(dialogMetricRow("Corrente média Android", battery.safeDouble("averageMa")?.let {
-        "%+.1f mA".format(Locale.getDefault(), it)
-    } ?: "Indisponível"))
-    body.addView(dialogMetricRow("Média pelo contador de carga", battery.safeDouble("counterMeanMa")?.let {
-        "%+.1f mA".format(Locale.getDefault(), it) + (counterWindow?.let { window -> " · janela ${window / 1000} s" } ?: "")
-    } ?: "Aguardando ≥90 s de amostras válidas"))
-    body.addView(dialogMetricRow("CURRENT_NOW bruto", rawNow?.let { "$it µA" } ?: "Indisponível"))
-    body.addView(dialogMetricRow("CURRENT_AVERAGE bruto", rawAverage?.let { "$it µA" } ?: "Indisponível"))
-    body.addView(dialogMetricRow("CHARGE_COUNTER bruto", counter?.let { "$it µAh" } ?: "Indisponível"))
-    body.addView(dialogMetricRow("Origem selecionada", battery.optString("currentSource", "NONE")))
-    body.addView(label(battery.optString("currentDiagnostic", "Leitura indisponível"), 12f, muted = true))
-    if (BatteryPresentationMath.isVisuallyAdjusted(selected, statusCode)) {
-        body.addView(label("Painel ajustado visualmente para descarga: o Android informou valor positivo, mas a tela mostra saída líquida para combinar com o estado atual.", 12f, muted = true))
+    body.addView(batteryKeyValue("Origem da corrente", BatteryPresentationMath.sourceLabel(origin)))
+    battery.optString("currentWarning", "").takeUnless { it.isBlank() || it == "null" }?.let { warning ->
+        body.addView(label(warning, 12f, muted = true))
     }
-    val warning = battery.optString("currentWarning", "").takeUnless { it.isBlank() || it == "null" }
-    if (warning != null) body.addView(label("Atenção: $warning", 12f, muted = true))
-    body.addView(label("Sinais e unidades são reportados pelo Android. O contador exige observação contínua; não há correção automática de unidades do fabricante sem evidência suficiente. Potência líquida da bateria ≠ potência do painel solar.", 11.5f, muted = true))
+    body.addView(label("São medidas da bateria, não da geração do painel solar.", 11.5f, muted = true))
+
+    batteryDisclosure(body, "Valores brutos e médias", "Ocultar valores brutos") {
+        addView(batteryKeyValue("Tensão da bateria", voltageMv.takeIf { it > 0 }?.let { "$it mV" } ?: "Indisponível"))
+        addView(batteryKeyValue("Corrente instantânea Android", battery.safeDouble("instantMa")?.let {
+            "%+.1f mA".format(Locale.getDefault(), it)
+        } ?: "Indisponível"))
+        addView(batteryKeyValue("Corrente média Android", battery.safeDouble("averageMa")?.let {
+            "%+.1f mA".format(Locale.getDefault(), it)
+        } ?: "Indisponível"))
+        addView(batteryKeyValue("Média pelo contador de carga", battery.safeDouble("counterMeanMa")?.let {
+            "%+.1f mA".format(Locale.getDefault(), it)
+        } ?: "Indisponível"))
+        if (counterWindow != null) addView(batteryKeyValue("Janela do contador", batteryDuration(counterWindow)))
+        else addView(label("O contador precisa de ≥90 s de amostras válidas.", 11.5f, muted = true))
+        addView(batteryKeyValue("CURRENT_NOW bruto", rawNow?.let { "$it µA" } ?: "Indisponível"))
+        addView(batteryKeyValue("CURRENT_AVERAGE bruto", rawAverage?.let { "$it µA" } ?: "Indisponível"))
+        addView(batteryKeyValue("CHARGE_COUNTER bruto", counter?.let { "$it µAh" } ?: "Indisponível"))
+        addView(batteryKeyValue("Origem selecionada", origin))
+        addView(label(battery.optString("currentDiagnostic", "Leitura indisponível"), 12f, muted = true))
+        if (BatteryPresentationMath.isVisuallyAdjusted(selected, statusCode)) {
+            addView(label("O painel ajusta apenas o sinal exibido na descarga. O valor bruto do Android não é alterado.", 12f, muted = true))
+        }
+        addView(label("Sinais e unidades vêm do Android. Não há correção automática de unidades do fabricante.", 11.5f, muted = true))
+    }
     showManagedDialog(themedPopup(this).setTitle("Diagnóstico elétrico").setView(wrapper)
         .setPositiveButton("Fechar", null).create())
+}
+
+private fun MainActivity.batteryDisclosure(parent: LinearLayout, title: String, hideTitle: String, build: LinearLayout.() -> Unit) {
+    val details = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        visibility = View.GONE
+        build()
+    }
+    val toggle = actionButton("$title ▾") {}
+    toggle.setOnClickListener {
+        val expand = details.visibility != View.VISIBLE
+        details.visibility = if (expand) View.VISIBLE else View.GONE
+        toggle.text = if (expand) "$hideTitle ▴" else "$title ▾"
+        toggle.isSelected = expand
+    }
+    parent.addView(toggle, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6) })
+    parent.addView(details)
 }
 
 private fun JSONObject.safeDouble(name: String): Double? =
@@ -409,8 +447,13 @@ private fun MainActivity.showBatteryStartDialog(kind: String) {
 }
 
 private fun MainActivity.renderBatteryActive(session: JSONObject) {
-    content.addView(statePill("Teste em andamento · ${batteryKind(session.optString("kind"))}", "active"))
-    renderBatterySessionCard(session, compact = false)
+    val box = panel(12)
+    batterySessionHeader(box, session, batteryKind(session.optString("kind")))
+    box.addView(label("Valores até a última leitura salva.", 11.5f, muted = true))
+    box.addView(actionButton("Ver relatório do teste") { showBatteryReportDialog(session) },
+        LinearLayout.LayoutParams(-2, -2))
+    content.addView(box)
+    gap(6)
     content.addView(button("Finalizar teste", emphasis = false) {
         showAppConfirm("Finalizar teste?", "As medições acumuladas serão preservadas no aparelho selecionado.",
             confirmText = "Finalizar") { queryBatteryReport("stop") }
@@ -425,49 +468,10 @@ private fun batteryKind(kind: String): String = when (kind) {
     else -> "Não identificado"
 }
 
-private fun batteryDuration(ms: Long): String {
-    val sec = (ms.coerceAtLeast(0) / 1000)
-    return "${sec / 3600}h ${(sec % 3600) / 60}min ${sec % 60}s"
-}
+private fun batteryDuration(ms: Long): String = BatteryDashboardPolicy.durationLabel(ms)
 
 private fun JSONObject.batteryPercent(field: String): String =
     optInt(field, -1).takeIf { it in 0..100 }?.let { "$it%" } ?: "—"
-
-private fun MainActivity.renderBatterySessionCard(session: JSONObject, compact: Boolean) {
-    val box = panel()
-    box.addView(label("${batteryKind(session.optString("kind"))} · ${formatDate(session.optLong("startedAt"))}", 14f, strong = true))
-    box.addView(label("${session.batteryPercent("initialPercent")} → ${session.batteryPercent("finalPercent")} · ${batteryDuration(session.optLong("durationMs"))}", 13.5f))
-    val observed = session.batteryHistorySession()
-    if (session.optLong("durationMs") > 0L) box.addView(label("${session.batteryProgress()} · cobertura ${"%.0f".format(Locale.getDefault(), BatteryHistoryMath.coverage(observed.observedMs, observed.durationMs) * 100)}%", 11.5f, muted = true))
-    if (!compact) {
-        box.addView(dialogMetricRow("Carregando confirmado", batteryDuration(session.optLong("chargingMs"))))
-        box.addView(dialogMetricRow("Sem carregar confirmado", batteryDuration(session.optLong("notChargingMs"))))
-        box.addView(dialogMetricRow("Sem dados suficientes", batteryDuration(session.optLong("unknownMs"))))
-        box.addView(dialogMetricRow("Corrente média durante carga", session.safeDouble("meanChargeMa")?.let {
-            "%.0f mA".format(Locale.getDefault(), it)
-        } ?: "Indisponível"))
-        box.addView(dialogMetricRow("Temperatura máxima", session.safeDouble("maxTemperatureC")?.let {
-            "%.1f °C".format(Locale.getDefault(), it)
-        } ?: "Indisponível"))
-        if (session.optString("kind") == "SOLAR") box.addView(dialogMetricRow("Céu / painel declarado",
-            "${session.optString("sky")} · ${session.optInt("panelWatts").takeIf { it > 0 }?.let { "$it W (nominal)" } ?: "potência não informada"}"))
-    }
-    val points = session.optJSONArray("points")
-    if (!compact && points != null && points.length() >= 2) {
-        listOf(
-            Triple("percent", "Bateria (%)", 0),
-            Triple("ma", "Corrente líquida (mA)", 1),
-            Triple("temp", "Temperatura (°C)", 2)
-        ).forEach { (metric, title, _) ->
-            box.addView(label("$title · amostras reais recentes", 11f, muted = true))
-            box.addView(BatteryLabChart(this, points, metric, ink, highlight), LinearLayout.LayoutParams(-1, dp(112)))
-        }
-    }
-    if (session.optBoolean("active")) box.addView(label("Em andamento · valores apenas até a última leitura salva", 11f, muted = true))
-    else box.addView(label(session.optString("stopReason", "Concluído"), 11.5f, muted = true))
-    if (compact) box.setOnClickListener { showBatteryReportDialog(session) }
-    content.addView(box)
-}
 
 private fun JSONObject.batteryHistorySession(): BatteryHistoryMath.Session {
     val duration = optLong("durationMs", 0L).coerceAtLeast(0L)
@@ -566,7 +570,8 @@ private fun MainActivity.renderBatteryHistory(history: JSONArray, automatic: JSO
         }
         batterySessionListRow(historyList, icon,
             "$labelKind · ${formatDate(item.optLong("startedAt"))}",
-            "${item.batteryPercent("initialPercent")} → ${item.batteryPercent("finalPercent")}$note") {
+            listOf("${item.batteryPercent("initialPercent")} → ${item.batteryPercent("finalPercent")}", note)
+                .filter { it.isNotBlank() }.joinToString(" · ")) {
             if (isAuto) showBatteryAutomaticReport(item) else showBatteryReportDialog(item)
         }
     }
@@ -630,31 +635,25 @@ private fun MainActivity.showBatteryCompareResult(first: JSONObject, second: JSO
 }
 
 private fun MainActivity.showBatteryReportDialog(session: JSONObject) {
-    val text = batteryReportText(session)
-    val (scroll, body) = dialogWrapper()
-    body.addView(label(text, 13f))
     val coverage = BatteryHistoryMath.coverage(session.batteryHistorySession().observedMs,
         session.optLong("durationMs"))
-    body.addView(dialogMetricRow("Cobertura confirmada", "%.0f%%".format(Locale.getDefault(), coverage * 100)))
-    body.addView(dialogMetricRow("Variação observada", session.batteryProgress()))
-    BatteryHistoryMath.rate(session.batteryHistorySession())?.let {
-        body.addView(dialogMetricRow("Ritmo observado", "%+.2f p.p./h".format(Locale.getDefault(), it)))
+    val coverageText = "%.0f%%".format(Locale.getDefault(), coverage * 100)
+    val rate = BatteryHistoryMath.rate(session.batteryHistorySession())?.let {
+        "%+.2f p.p./h".format(Locale.getDefault(), it)
     }
-    val points = session.optJSONArray("points")
-    if (points != null && points.length() >= 2) {
-        listOf("percent" to "Bateria (%)", "ma" to "Corrente líquida (mA)", "temp" to "Temperatura (°C)").forEach { (metric, title) ->
-            body.addView(label(title, 12f, strong = true))
-            body.addView(BatteryLabChart(this, points, metric, ink, highlight), LinearLayout.LayoutParams(-1, dp(150)))
-        }
-    } else body.addView(label("Gráficos não incluídos neste resumo remoto. Consulte as sessões mais recentes ou o aparelho de origem.", 11f, muted = true))
+    val text = batteryReportText(session) + buildString {
+        appendLine()
+        appendLine("Cobertura confirmada: $coverageText")
+        appendLine("Variação observada: ${session.batteryProgress()}")
+        if (rate != null) appendLine("Ritmo observado: $rate")
+    }
+    val (scroll, body) = dialogWrapper()
+    batterySessionHeader(body, session, batteryKind(session.optString("kind")))
+    showBatteryChartSelector(body, session)
+    batteryDisclosure(body, "Mais detalhes", "Ocultar detalhes") { addView(label(text, 12.5f)) }
     showManagedDialog(themedPopup(this).setTitle("Relatório de bateria").setView(scroll)
         .setNegativeButton("Fechar", null)
-        .setPositiveButton("Compartilhar") { _, _ ->
-            startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, text)
-            }, "Compartilhar relatório"))
-        })
+        .setPositiveButton("Compartilhar") { _, _ -> shareBatteryReport(text, "Compartilhar relatório") })
 }
 
 private fun MainActivity.batteryReportText(item: JSONObject): String = buildString {
@@ -674,18 +673,29 @@ private fun MainActivity.batteryReportText(item: JSONObject): String = buildStri
 
 private fun MainActivity.showBatteryAlertDialog(current: JSONObject) {
     val (wrapper, body) = dialogWrapper()
-    body.addView(label("Configurar metas e alertas", 17f, strong = true))
-    body.addView(label("As alterações são salvas no aparelho escolhido. O limite de segurança térmica do Android continua independente.", 12f, muted = true))
+    val destination = if (batteryRemote) "Aparelho remoto" else "Este aparelho"
+    body.addView(label(destination, 12f, muted = true))
     fun numberField(caption: String, initial: Int): android.widget.EditText {
-        body.addView(label(caption, 12f, strong = true))
-        return field(caption, initial.toString()).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            body.addView(this)
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
         }
+        val entry = field(caption, initial.toString()).apply {
+            id = View.generateViewId()
+            inputType = InputType.TYPE_CLASS_NUMBER
+        }
+        row.addView(label(caption, 12f, strong = true).apply {
+            labelFor = entry.id
+            setPadding(0, dp(4), dp(8), dp(4))
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        row.addView(entry, LinearLayout.LayoutParams(dp(90), -2))
+        body.addView(row)
+        return entry
     }
     val goal = numberField("Meta de carga (50–100%)", current.optInt("goalPercent", 80))
     val low = numberField("Bateria baixa (5–40%)", current.optInt("lowPercent", 20))
     val hot = numberField("Temperatura de alerta (38–55 °C)", current.optInt("hotC", 43))
+    body.addView(label("O alerta não altera a proteção térmica do Android.", 11.5f, muted = true))
     val dialog = themedPopup(this).setTitle("Alertas da bateria").setView(wrapper)
         .setNegativeButton("Cancelar", null).setPositiveButton("Salvar", null).create()
     showManagedDialog(dialog)
@@ -694,7 +704,9 @@ private fun MainActivity.showBatteryAlertDialog(current: JSONObject) {
         val l = low.text.toString().toIntOrNull()
         val t = hot.text.toString().toIntOrNull()
         if (g == null || l == null || t == null || g !in 50..100 || l !in 5..40 || t !in 38..55) {
-            showAppNotice("Limites inválidos", "Meta 50–100%, bateria baixa 5–40% e temperatura 38–55 °C.")
+            if (g == null || g !in 50..100) goal.error = "Digite de 50 a 100%"
+            if (l == null || l !in 5..40) low.error = "Digite de 5 a 40%"
+            if (t == null || t !in 38..55) hot.error = "Digite de 38 a 55 °C"
             return@setOnClickListener
         }
         dialog.dismiss()
@@ -702,114 +714,14 @@ private fun MainActivity.showBatteryAlertDialog(current: JSONObject) {
     }
 }
 
-private fun MainActivity.renderAutomaticBatterySummary(data: JSONObject?) {
-    content.addView(compactSectionTitle("Acompanhamento automático"))
-    val active = data?.optJSONObject("active")
-    if (active == null) {
-        content.addView(label("Nenhuma sessão automática ativa. Ative Monitorado para registrar carga e descarga.",
-            11.5f, muted = true))
-    } else {
-        val charging = active.optString("kind") == "CHARGE"
-        val name = if (charging) "Carregamento" else "Descarga"
-        val paused = System.currentTimeMillis() - active.optLong("lastWall") > 150_000L
-        val forecast = active.optLong("forecastMinutes", -1L)
-        val forecastText = if (!paused && forecast >= 0) {
-            if (forecast == 0L) "Meta alcançada" else "~${forecast / 60}h ${forecast % 60}min"
-        } else if (paused) "Coleta pausada" else "Calculando…"
-        val summary = panel(12)
-        val heroRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER_VERTICAL
-        }
-        val caption = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        caption.addView(label(if (paused) "Sem leituras recentes" else "$name em andamento", 11.5f, muted = true).apply {
-            setPadding(0, 0, 0, 0)
-        })
-        caption.addView(label(forecastText, 21f, strong = true).apply {
-            setPadding(0, dp(3), 0, 0)
-        })
-        caption.addView(label(if (charging) "Previsão até 100%" else "Autonomia aproximada", 10.5f, muted = true).apply {
-            setPadding(0, dp(2), 0, 0)
-        })
-        heroRow.addView(caption, LinearLayout.LayoutParams(0, -2, 1f))
-        heroRow.addView(vectorIcon(if (charging) R.drawable.ic_battery_charging else R.drawable.ic_battery,
-            28, highlight), LinearLayout.LayoutParams(dp(28), dp(28)))
-        summary.addView(heroRow)
-        if (!paused && forecast > 0L) {
-            summary.addView(label("Horário aprox.: ${formatDate(System.currentTimeMillis() + forecast * 60_000L)}",
-                10.5f, muted = true))
-        }
-        if (!paused && charging) {
-            listOf("80%" to "forecast80Minutes", "90%" to "forecast90Minutes").forEach { (goal, key) ->
-                val remaining = active.optLong(key, -1L)
-                if (remaining >= 0) summary.addView(batteryKeyValue("Até $goal",
-                    if (remaining == 0L) "Alcançado" else "~${remaining / 60}h ${remaining % 60}min"))
-            }
-        }
-        compactDivider(summary)
-        summary.addView(batteryKeyValue("Bateria observada",
-            "${active.batteryPercent("initialPercent")} → ${active.batteryPercent("finalPercent")}"))
-        val coverage = active.safeDouble("coveragePercent")?.let {
-            "%.0f%%".format(Locale.getDefault(), it)
-        } ?: "—"
-        summary.addView(batteryKeyValue("Janela observada",
-            batteryDuration(active.optLong("observedMs"))))
-        summary.addView(batteryKeyValue("Cobertura das leituras", coverage))
-        val rate = active.safeDouble("forecastRatePercentHour")
-        if (!paused && rate != null) summary.addView(batteryKeyValue("Ritmo observado", "%.1f p.p./h".format(Locale.getDefault(), rate)))
-        summary.addView(batteryKeyValue("Corrente média da sessão",
-            BatteryPresentationMath.currentText(active.safeDouble("meanCurrentMa"), kind = active.optString("kind"))))
-        val basis = active.optString("forecastBasis", "")
-        if (!paused && basis.isNotBlank()) summary.addView(label("Estimativa: $basis. Não é garantia de horário.",
-            10.5f, muted = true))
-        content.addView(summary)
-        val points = active.optJSONArray("points")
-        if (points != null && points.length() >= 2) {
-            gap(8)
-            content.addView(label("Evolução medida (%)", 11.5f, strong = true))
-            content.addView(BatteryLabChart(this, points, "percent", ink, highlight),
-                LinearLayout.LayoutParams(-1, dp(125)))
-        }
-    }
-    val recent = data?.optJSONArray("history") ?: JSONArray()
-    if (recent.length() > 0) {
-        gap(10)
-        content.addView(compactSectionTitle("Últimas cargas e descargas"))
-        val list = panel(9)
-        for (i in 0 until minOf(3, recent.length())) {
-            val item = recent.optJSONObject(i) ?: continue
-            val charge = item.optString("kind") == "CHARGE"
-            batterySessionListRow(list,
-                if (charge) R.drawable.ic_battery_charging else R.drawable.ic_battery,
-                "${if (charge) "Carga" else "Descarga"} · ${formatDate(item.optLong("startedAt"))}",
-                "${item.batteryPercent("initialPercent")} → ${item.batteryPercent("finalPercent")} · ${batteryDuration(item.optLong("durationMs"))}") {
-                showBatteryAutomaticReport(item)
-            }
-        }
-        content.addView(list)
-    }
-    gap(4)
-}
-
-private fun MainActivity.renderAutoSessionList(sessions: JSONArray) {
-    if (sessions.length() == 0) {
-        content.addView(label("Nenhuma sessão automática registrada.", 12.5f, muted = true))
-        return
-    }
-    for (i in 0 until sessions.length()) {
-        val record = sessions.optJSONObject(i) ?: continue
-        val kind = if (record.optString("kind") == "CHARGE") "Carregamento" else "Descarga"
-        content.addView(dialogCardRow("${if (kind == "Carregamento") "⚡" else "▾"} $kind · ${formatDate(record.optLong("startedAt"))}",
-            "${record.batteryPercent("initialPercent")} → ${record.batteryPercent("finalPercent")} · ${batteryDuration(record.optLong("durationMs"))}") {
-            showBatteryAutomaticReport(record)
-        })
-        gap(6)
-    }
-    content.addView(label("Até 12 sessões recentes são exibidas; o aparelho conserva até 120. Leituras são limitadas para economizar armazenamento.", 11f, muted = true))
-}
-
-private fun MainActivity.showBatteryAutomaticReport(session: JSONObject) {
-    val type = if (session.optString("kind") == "CHARGE") "Carregamento" else "Descarga"
+private fun MainActivity.showBatteryAutomaticReport(session: JSONObject, allowForecast: Boolean = false) {
+    val kind = session.optString("kind")
+    val type = if (kind == "CHARGE") "Carregamento" else "Descarga"
+    val observedAt = session.optLong("lastWall")
+    val now = System.currentTimeMillis()
+    val validForecast = allowForecast && BatteryDashboardPolicy.isRecent(now, observedAt, SESSION_RECENT_MS)
+    val minutes = session.optLong("forecastMinutes", -1L)
+    val forecast = if (validForecast) BatteryDashboardPolicy.forecastLabel(kind, minutes) else null
     val detail = buildString {
         appendLine("Celular Remoto · Sessão automática de $type")
         appendLine("Início: ${formatDate(session.optLong("startedAt"))}")
@@ -817,34 +729,91 @@ private fun MainActivity.showBatteryAutomaticReport(session: JSONObject) {
         appendLine("Duração: ${batteryDuration(session.optLong("durationMs"))}")
         appendLine("Tempo com leituras consecutivas válidas: ${batteryDuration(session.optLong("observedMs"))}")
         appendLine("Cobertura das medições: ${session.safeDouble("coveragePercent")?.let { "%.0f%%".format(Locale.getDefault(), it) } ?: "indisponível"}")
-        appendLine("Corrente média líquida: ${BatteryPresentationMath.currentText(session.safeDouble("meanCurrentMa"), kind = session.optString("kind"))}")
-        appendLine("Fonte Android: ${session.optString("powerSource", "").ifBlank { "não identificada" }}")
+        appendLine("Corrente média líquida: ${BatteryPresentationMath.currentText(session.safeDouble("meanCurrentMa"), kind = kind)}")
+        appendLine("Fonte Android: ${session.optString("powerSource", "").takeUnless { it.isBlank() || it == "null" } ?: "não identificada"}")
         appendLine("Temperatura máxima observada: ${session.safeDouble("maxTemperatureC")?.let { "%.1f °C".format(Locale.getDefault(), it) } ?: "indisponível"}")
-        appendLine("Término: ${session.optString("stopReason").ifBlank { "Em andamento" }}")
-        append("Previsões são estimativas baseadas na variação real do percentual, não medições de capacidade.")
+        appendLine("Término: ${session.optString("stopReason").ifBlank {
+            if (session.optBoolean("active")) "Em andamento" else "Concluída"
+        }}")
+        if (forecast != null) {
+            appendLine("Previsão: $forecast")
+            if (minutes > 0) appendLine("Horário aproximado: ${formatDate(observedAt + minutes * 60_000L)}")
+            if (kind == "CHARGE") {
+                listOf(80 to "forecast80Minutes", 90 to "forecast90Minutes").forEach { (goal, key) ->
+                    val remaining = session.optLong(key, -1L)
+                    if (remaining >= 0) appendLine("Até $goal%: " + if (remaining == 0L) "alcançado"
+                        else "≈ ${BatteryDashboardPolicy.minutesLabel(remaining)}")
+                }
+            }
+            session.safeDouble("forecastRatePercentHour")?.let { rate ->
+                appendLine("Ritmo usado na previsão: ${"%.1f p.p./h".format(Locale.getDefault(), rate)}")
+            }
+            session.optString("forecastBasis").takeIf { it.isNotBlank() }?.let { appendLine("Base da estimativa: $it") }
+        }
+        append("Previsões são estimativas baseadas na variação do percentual, não medições de capacidade.")
     }
     val (wrapper, body) = dialogWrapper()
-    body.addView(label(detail, 12.5f))
-    val points = session.optJSONArray("points")
-    if (points != null && points.length() >= 2) {
-        listOf("percent" to "Nível (%)", "ma" to "Corrente (mA)", "temp" to "Temperatura (°C)").forEach { (metric, title) ->
-            body.addView(label(title, 12f, strong = true))
-            body.addView(BatteryLabChart(this, points, metric, ink, highlight), LinearLayout.LayoutParams(-1, dp(110)))
-        }
-    }
+    batterySessionHeader(body, session, type, forecast)
+    showBatteryChartSelector(body, session)
+    batteryDisclosure(body, "Mais detalhes", "Ocultar detalhes") { addView(label(detail, 12.5f)) }
     showManagedDialog(themedPopup(this).setTitle("Sessão automática").setView(wrapper)
         .setNegativeButton("Fechar", null)
-        .setPositiveButton("Compartilhar") { _, _ ->
-            startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                this.type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, detail)
-            }, "Compartilhar sessão"))
-        }.create())
+        .setPositiveButton("Compartilhar") { _, _ -> shareBatteryReport(detail, "Compartilhar sessão") })
+}
+
+private fun MainActivity.batterySessionHeader(body: LinearLayout, session: JSONObject, type: String,
+    forecast: String? = null) {
+    val started = session.optLong("startedAt", 0L)
+    val date = started.takeIf { it > 0 }?.let { formatDate(it) }
+    val status = "Em andamento".takeIf { session.optBoolean("active") }
+    val meta = listOfNotNull(type, date, status).joinToString(" · ")
+    body.addView(label(meta, 12f, muted = true))
+    val progress = "${session.batteryPercent("initialPercent")} → ${session.batteryPercent("finalPercent")}"
+    body.addView(label("$progress · ${batteryDuration(session.optLong("durationMs"))}", 19f, strong = true))
+    if (forecast != null) body.addView(label(forecast, 13f, strong = true))
+}
+
+private fun MainActivity.showBatteryChartSelector(body: LinearLayout, session: JSONObject) {
+    val points = session.optJSONArray("points")
+    if (points == null || points.length() < 2) {
+        body.addView(label("Sem amostras suficientes para exibir o gráfico.", 11.5f, muted = true))
+        return
+    }
+    val metrics = listOf("percent" to "Nível (%)", "ma" to "Corrente líquida (mA)", "temp" to "Temperatura (°C)")
+    val chartHost = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+    val selector = Spinner(themedPopup(this).context, Spinner.MODE_DROPDOWN).apply {
+        contentDescription = "Métrica do gráfico"
+        minimumHeight = dp(48)
+        adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, metrics.map { it.second }).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val (metric, title) = metrics[position]
+                chartHost.removeAllViews()
+                val chart = BatteryLabChart(this@showBatteryChartSelector, points, metric, ink, highlight,
+                    session.optLong("startedAt", 0L)).apply {
+                    contentDescription = "$title ao longo da sessão"
+                }
+                chartHost.addView(chart, LinearLayout.LayoutParams(-1, dp(122)))
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+        }
+    }
+    body.addView(selector, LinearLayout.LayoutParams(-1, -2))
+    body.addView(chartHost, LinearLayout.LayoutParams(-1, -2))
+}
+
+private fun MainActivity.shareBatteryReport(text: String, title: String) {
+    startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+        this.type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, text)
+    }, title))
 }
 
 /** Gráfico com eixos, faixas e lacunas: nunca conecta amostras com diferença >90s. */
 private class BatteryLabChart(context: Context, private val samples: JSONArray, private val metric: String,
-    private val ink: Int, private val accent: Int) : View(context) {
+    ink: Int, accent: Int, private val sessionStartMs: Long) : View(context) {
     private val density = resources.displayMetrics.density
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = accent; style = Paint.Style.STROKE; strokeWidth = 2.5f * density
@@ -857,11 +826,11 @@ private class BatteryLabChart(context: Context, private val samples: JSONArray, 
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val left = 43f * density
-        val right = width.toFloat() - 7f * density
-        val top = 7f * density
-        val bottom = height.toFloat() - 19f * density
-        if (right <= left || bottom <= top) return
+        val right = width.toFloat() - 8f * density
+        val top = 5f * density + axisText.textSize / 2
+        val timeBaseline = height - 3f * density - axisText.descent()
+        val bottom = timeBaseline - axisText.textSize - 3f * density
+        if (right <= 0 || bottom <= top) return
         val entries = (0 until samples.length()).mapNotNull { samples.optJSONObject(it) }
             .map { sample ->
                 val value = when (metric) {
@@ -874,12 +843,15 @@ private class BatteryLabChart(context: Context, private val samples: JSONArray, 
             }
         val valid = entries.filter { it.second != null && it.first.optLong("wall", 0L) > 0L }
         if (valid.size < 2) {
-            canvas.drawText("Sem amostras suficientes", left, (bottom + top) / 2f, axisText)
+            drawInsufficient(canvas, (bottom + top) / 2f)
             return
         }
         val minT = valid.minOf { it.first.optLong("wall") }
         val maxT = valid.maxOf { it.first.optLong("wall") }
-        if (maxT <= minT) return
+        if (maxT <= minT) {
+            drawInsufficient(canvas, (bottom + top) / 2f)
+            return
+        }
         val values = valid.mapNotNull { it.second }
         val minimum = values.minOrNull() ?: return
         val maximum = values.maxOrNull() ?: return
@@ -887,19 +859,24 @@ private class BatteryLabChart(context: Context, private val samples: JSONArray, 
         val low = minimum - pad
         val high = maximum + pad
         val span = high - low
-        for (fraction in 0..2) {
-            val ratio = fraction / 2f
+        val locale = Locale.getDefault()
+        val ticks = listOf(0f, 1f, 0.5f).mapNotNull { ratio ->
+            BatteryDashboardPolicy.axisLabel(metric, low + ratio * span, locale)?.let { ratio to it }
+        }.distinctBy { it.second }
+        val left = (ticks.maxOfOrNull { axisText.measureText(it.second) } ?: 0f) + 12f * density
+        if (right <= left) return
+        ticks.forEach { (ratio, tick) ->
             val y = bottom - ratio * (bottom - top)
             canvas.drawLine(left, y, right, y, grid)
-            val value = low + ratio * span
-            val label = if (metric == "percent") "%.0f%%".format(Locale.getDefault(), value)
-                else "%.0f".format(Locale.getDefault(), value)
-            canvas.drawText(label, 2f * density, y + 4f * density, axisText)
+            canvas.drawText(tick, 2f * density, y - (axisText.ascent() + axisText.descent()) / 2, axisText)
         }
-        val firstTime = java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(java.util.Date(minT))
-        val lastTime = java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(java.util.Date(maxT))
-        canvas.drawText(firstTime, left, height - 3f * density, axisText)
-        canvas.drawText(lastTime, (right - axisText.measureText(lastTime)).coerceAtLeast(left), height - 3f * density, axisText)
+        val origin = sessionStartMs.takeIf { it in 1..minT } ?: minT
+        val firstTime = batteryDuration(minT - origin)
+        val lastTime = batteryDuration(maxT - origin)
+        val endX = right - axisText.measureText(lastTime)
+        canvas.drawText(firstTime, left, timeBaseline, axisText)
+        if (lastTime != firstTime && endX >= left + axisText.measureText(firstTime) + 6f * density)
+            canvas.drawText(lastTime, endX, timeBaseline, axisText)
         fun x(t: Long): Float = left + (t - minT).toFloat() / (maxT - minT) * (right - left)
         fun y(v: Double): Float = bottom - ((v - low) / span).toFloat() * (bottom - top)
         var previous: Pair<JSONObject, Double>? = null
@@ -921,5 +898,9 @@ private class BatteryLabChart(context: Context, private val samples: JSONArray, 
             canvas.drawCircle(x(t), y(value), 1.65f * density, mark)
             previous = item to value
         }
+    }
+    private fun drawInsufficient(canvas: Canvas, y: Float) {
+        val text = "Poucas amostras"
+        canvas.drawText(text, ((width - axisText.measureText(text)) / 2).coerceAtLeast(0f), y, axisText)
     }
 }

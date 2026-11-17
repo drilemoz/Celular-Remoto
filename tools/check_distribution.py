@@ -1714,12 +1714,12 @@ print('PASSOU: alpha.119 controles/telemetria compactos; consentimentos e callba
 # Alpha.120 — Bateria: hierarquia compacta sem reduzir a segurança e sem mudar os cálculos.
 battery120 = (ui_root / "BatteryScreenUi.kt").read_text()
 compact120 = (ui_root / "BatteryCompactUi.kt").read_text()
-assert "batteryHero(level, state, source)" in battery120
-assert "batteryMetricGrid(content, listOf(" in battery120
+assert "batteryHero(level," in battery120
+assert "batteryMetricGrid(summary, listOf(" in battery120
 assert "batterySessionListRow(historyList," in battery120 and "showBatteryCompareDialog(completedLabs)" in battery120
 assert "renderBatteryTests(running)" in battery120 and "showBatteryCurrentDiagnostic(battery)" in battery120
 assert "forecast80Minutes" in battery120 and "forecast90Minutes" in battery120
-assert 'optJSONArray("points")' in battery120 and 'BatteryLabChart(this, points, "percent"' in battery120
+assert 'optJSONArray("points")' in battery120 and 'BatteryLabChart(this@showBatteryChartSelector, points, metric' in battery120
 assert "BatteryDashboardPolicy.metricColumns(" in compact120
 assert "widthDp < 360 || fontScale > 1.20f" in (ui_root / "BatteryDashboardPolicy.kt").read_text()
 assert "minimumHeight = dp(49)" in compact120 and "contentDescription =" in compact120
@@ -2049,3 +2049,20 @@ print('PASSOU: alpha.142 correção de teste Double?, UI preservada, consulta m�
 _presentation_test = (root / "app/src/test/java/br/dev/celularremoto/core/BatteryPresentationMathTest.kt").read_text()
 assert _presentation_test.count("requireNotNull(BatteryPresentationMath.visualCurrentMa(") == 3, "Alpha.142: testes numéricos devem exigir Double não nulo"
 print("PASSOU: alpha.142 testes numéricos da corrente usam Double não nulo")
+
+# Alpha.143 — resumo sem duplicar listas, leitura anterior identificada e relatório expansível.
+battery143 = (ui_root / "BatteryScreenUi.kt").read_text(encoding="utf-8")
+policy143 = (ui_root / "BatteryDashboardPolicy.kt").read_text(encoding="utf-8")
+assert all(key in battery143 for key in (
+    'renderMobileHeader { anchor -> showBatteryMenu', 'isRecent(now, reportedAt, REMOTE_REPORT_RECENT_MS)',
+    '"Última leitura às ', '"Metas e alertas"', '"Diagnóstico elétrico"', '"Ativar coleta contínua local"',
+    '"Ver sessão"', '"Ver teste em andamento"', 'matchesSession(', '"Valores brutos e médias"',
+    'shareBatteryReport(detail', 'shareBatteryReport(text', 'if (isAuto) showBatteryAutomaticReport(item)',
+    'chartHost.removeAllViews()', 'batteryDuration(maxT - origin)', 'distinctBy { it.second }',
+))
+assert all(key not in battery143 for key in ('renderAutomaticBatterySummary(', 'Últimas cargas e descargas', 'Testes recentes'))
+assert battery143.count('val chart = BatteryLabChart(') == 1
+assert '"DISCHARGE" -> 0' in policy143 and '"CHARGE" -> 100' in policy143
+assert (root / 'app/src/test/java/br/dev/celularremoto/ui/BatteryDashboardPolicyTest.kt').is_file()
+assert (root / 'docs/VALIDATION_ALPHA143.md').is_file()
+print('PASSOU: alpha.143 Bateria compacta, previsão explícita, dados brutos e relatório preservados')
