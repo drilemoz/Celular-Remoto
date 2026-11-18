@@ -4,18 +4,20 @@ import java.security.MessageDigest
 
 /** Regras determinísticas para avisos genéricos; nenhuma mensagem é persistida. */
 internal object RemoteEventNoticePolicy {
-    enum class Category { SMS, WHATSAPP, OTHER }
+    enum class Category { SMS, WHATSAPP, OTHER, CALL }
     private const val MAX_AGE_MS = 60 * 60_000L
     private const val FUTURE_TOLERANCE_MS = 60_000L
 
     fun classify(kind: String, packageName: String): Category = when {
         kind == "sms" -> Category.SMS
+        kind == "call" -> Category.CALL
         packageName == "com.whatsapp" || packageName == "com.whatsapp.w4b" -> Category.WHATSAPP
         else -> Category.OTHER
     }
 
-    fun enabled(category: Category, sms: Boolean, whatsapp: Boolean, other: Boolean): Boolean = when (category) {
+    fun enabled(category: Category, sms: Boolean, whatsapp: Boolean, other: Boolean, call: Boolean = false): Boolean = when (category) {
         Category.SMS -> sms
+        Category.CALL -> call
         Category.WHATSAPP -> whatsapp
         Category.OTHER -> other
     }

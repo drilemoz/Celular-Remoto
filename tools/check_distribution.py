@@ -191,8 +191,9 @@ assert 'Acesso remoto detectado' in module_ui['IncomingAccessScreenUi.kt'] and '
 assert 'Quem está?' not in incoming and 'showWho(' not in incoming
 assert 'android:name=".ui.IncomingAccessActivity"' in manifest and 'android:exported="false"' in manifest
 assert 'ACCESS_CHANNEL' in service and 'IMPORTANCE_DEFAULT' in service
-assert 'SettingsStore.isMonitorEnabled(this)' in ui and 'MonitorService.isServiceActive' in ui and 'MonitorService.isBatteryMonitoringActive' in ui
-assert 'private fun recoverAuthorizedServiceIfStopped()' in ui
+recovery_ui = (ui_root / 'AuthorizedServiceRecovery.kt').read_text()
+assert all(term in recovery_ui for term in ('SettingsStore.isMonitorEnabled(this)', 'MonitorService.isServiceActive', 'MonitorService.isBatteryMonitoringActive'))
+assert 'fun recoverAuthorizedServiceIfStopped(activity: MainActivity)' in recovery_ui
 assert 'renderSettingsModule()' in ui and 'openSettingsModule()' in ui
 assert 'private fun MainActivity.mobileMetricCard(' in ui and 'minimumHeight = dp(91)' in ui
 assert (root / 'app/src/test/java/br/dev/celularremoto/transport/AppVersionTest.kt').is_file()
@@ -518,7 +519,7 @@ assert 'recoveryJobsEnabled' in settings and 'RecoveryScheduler.refresh(context)
 assert 'RecoveryDecision.shouldAttempt(' in recovery_job and 'showManualResumeNotification()' in recovery_job
 assert 'override fun onStopJob' in recovery_job and 'override fun onStartJob' in recovery_job
 assert 'isServiceActive' in monitor_service and 'RecoveryScheduler.refresh(this)' in monitor_service
-assert 'recoverAuthorizedServiceIfStopped()' in main_ui and 'mode == 0' in main_ui
+assert 'recoverAuthorizedServiceIfStopped(this)' in main_ui and 'mode == 0' in main_ui
 assert 'Recuperação agendada (15 min)' in settings_ui and 'Último evento de recuperação' in settings_ui
 assert 'br.dev.celularremoto.capture.ScreenShareService.start' not in recovery_job
 assert (root / 'app/src/test/java/br/dev/celularremoto/service/RecoveryDecisionTest.kt').exists()
@@ -750,12 +751,12 @@ print('PASSOU: alpha.53, reboot ADB de sistema, consentimento reforçado, aviso 
 
 # Alpha.54: o workflow 52 falhou por referência inexistente em MainActivity.
 # A análise sintática PSI não detecta símbolos indefinidos; exigir propriedade declarada.
-assert len(re.findall(r'\bprivate\s+var\s+lastRecoveryAttemptMs\s*=\s*0L\b', main_ui)) == 1, (
-    'alpha.54: declarar uma única vez lastRecoveryAttemptMs na MainActivity'
+assert len(re.findall(r'\bprivate\s+var\s+lastRecoveryAttemptMs\s*=\s*0L\b', recovery_ui)) == 1, (
+    'alpha.54: declarar uma única vez lastRecoveryAttemptMs na recuperação da Activity'
 )
-assert 'SystemClock.elapsedRealtime()' in main_ui
-assert 'now - lastRecoveryAttemptMs < 60_000L' in main_ui
-assert 'lastRecoveryAttemptMs = now' in main_ui
+assert 'SystemClock.elapsedRealtime()' in recovery_ui
+assert 'now - lastRecoveryAttemptMs < 60_000L' in recovery_ui
+assert 'lastRecoveryAttemptMs = now' in recovery_ui
 print('PASSOU: alpha.54, timestamp monotônico para recuperação autorizada declarado e utilizado')
 
 # Alpha.55: falha de teste unitário do workflow 53 por contagem de allowlist antiga.
@@ -1610,7 +1611,7 @@ remote_preferences = (root / 'app/src/main/java/br/dev/celularremoto/updates/Upd
 remote_ui = (ui_root / 'UpdatesSettingsUi.kt').read_text()
 assert 'const val WIRE_COMPAT = "0.1.0-alpha.111"' in remote_version
 assert 'AppVersion.WIRE_COMPAT' in client and 'AppVersion.WIRE_COMPAT' in server
-assert '"appUpdate", "heartbeat", "eventWatch", "batteryProbe")) return' in server and 'UpdateController.remoteAction(context, action)' in server
+assert '"appUpdate", "heartbeat", "eventWatch", "batteryProbe", "callHistory")) return' in server and 'UpdateController.remoteAction(context, action)' in server
 assert 'fun appUpdate(' in client and '"checkDownload"' in client
 assert 'fun remoteAction(context: Context, action: String)' in update
 assert 'UpdatePreferences.remoteRequests(context)' in update and 'REMOTE_COOLDOWN_MS' in update
@@ -2066,3 +2067,42 @@ assert '"DISCHARGE" -> 0' in policy143 and '"CHARGE" -> 100' in policy143
 assert (root / 'app/src/test/java/br/dev/celularremoto/ui/BatteryDashboardPolicyTest.kt').is_file()
 assert (root / 'docs/VALIDATION_ALPHA143.md').is_file()
 print('PASSOU: alpha.143 Bateria compacta, previsão explícita, dados brutos e relatório preservados')
+
+# Alpha.144 — verificação de retomada e download local sem ampliar pedidos remotos.
+updates_root = root / 'app/src/main/java/br/dev/celularremoto/updates'
+update_controller144 = (updates_root / 'UpdateController.kt').read_text()
+update_job144 = (updates_root / 'UpdateCheckJobService.kt').read_text()
+update_ui144 = (ui_root / 'UpdatesSettingsUi.kt').read_text()
+update_triggers144 = (updates_root / 'UpdateCheckTrigger.kt').read_text()
+assert 'UpdateController.checkOnForeground(this)' in main_ui.split('override fun onResume()', 1)[1].split('override fun onPause()', 1)[0]
+assert 'UpdateCheckTrigger.FOREGROUND' in update_controller144 and 'UpdateCheckTrigger.SCHEDULED' in update_job144
+assert 'UpdateCheckTrigger.LOCAL_MANUAL' in update_ui144 and 'UpdateCheckTrigger.REMOTE' in update_controller144
+assert 'action == "checkDownload"' in update_controller144 and 'enabled && this != REMOTE' in update_triggers144
+assert 'UpdateRules.alphaCodeFromTag(tag)' in update_controller144 and 'APK elegível' in update_controller144
+assert '!layout.isAttachedToWindow' in update_ui144 and 'snapshot() != shown' in update_ui144
+assert 'MIN_AUTO_GAP_MS = 60_000L' in update_triggers144
+assert (root / 'docs/VALIDATION_ALPHA144.md').is_file()
+print('PASSOU: alpha.144 consulta ao abrir, download local conforme opção, progresso e política remota preservada')
+
+# Alpha.145: chamada sob demanda e avisos mínimos pelo único canal autorizado.
+calls145 = (core_root / 'CallLogSharing.kt').read_text()
+observe145 = (root / 'app/src/main/java/br/dev/celularremoto/service/CallLogObserver.kt').read_text()
+watch145 = (ui_root / 'ForegroundEventWatcher.kt').read_text()
+calls_ui145 = (ui_root / 'RemoteCallsUi.kt').read_text()
+assert 'android.permission.READ_CALL_LOG' in manifest
+assert 'getBoolean("share_call_history", false)' in settings135
+assert 'getBoolean("controller_live_alerts", false)' in settings135
+assert 'SettingsStore.isMonitorEnabled(context) && SettingsStore.shareCallHistory(context) && hasPermission(context)' in calls145
+assert 'Calls.LIMIT_PARAM_KEY' in calls145 and 'private const val LIMIT = 30' in calls145
+assert '.put("number"' not in calls145.split('fun alerts(', 1)[1]
+assert 'registerContentObserver(Calls.CONTENT_URI, true, candidate)' in observe145 and 'unregisterContentObserver' in observe145
+assert 'CallLogSharing.history(context)' in server and 'CallLogSharing.allowed(context)' in server
+assert 'if (regular.optBoolean("includeCallAlerts"))' in server
+assert 'isControllerLiveAlertsActive' in watch145 and 'liveNoticeWatcher.start()' in svc140
+assert 'stopLiveNoticeAction()' in svc140 and 'callObserver.close()' in svc140
+assert 'RemoteClient.callHistory(host, key, app)' in calls_ui145 and 'MessageDigest.isEqual(it, key)' in calls_ui145
+assert 'AlertDelivery.publish(context, channel' in remote_alerts
+assert 'EXTRA_NOTICE_SCOPE' in remote_alerts and 'noticeMatchesSelectedPair(intent)' in calls_ui145
+assert (root / 'app/src/test/java/br/dev/celularremoto/core/CallNoticePolicyTest.kt').is_file()
+assert (root / 'docs/VALIDATION_ALPHA145.md').is_file()
+print('PASSOU: alpha.145 registro autorizado, observador descartável, avisos mínimos e serviço visível')

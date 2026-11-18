@@ -13,7 +13,8 @@ import java.net.Socket
 
 object RemoteClient {
     /** Executar somente fora da thread principal. */
-    fun snapshot(host: String, key: ByteArray, context: Context, method: String = "Chave salva", includeSms: Boolean = false): JSONObject {
+    fun snapshot(host: String, key: ByteArray, context: Context, method: String = "Chave salva", includeSms: Boolean = false,
+        includeCallAlerts: Boolean = false): JSONObject {
         require(host.isNotBlank() && host.length <= 253)
         require(!host.contains('/') && !host.contains(':') && !host.contains(' ')) {
             "Informe apenas o IP IPv4 ou hostname (sem http:// ou porta)."
@@ -22,6 +23,7 @@ object RemoteClient {
             .put("v", WireProtocol.VERSION)
             .put("op", "snapshot")
             .put("includeSms", includeSms)
+            .put("includeCallAlerts", includeCallAlerts)
             .put("appVersion", AppVersion.WIRE_COMPAT)
             .put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
@@ -76,16 +78,17 @@ object RemoteClient {
         }
     }
 
-    /** Consulta longa de metadados, opcional e somente enquanto o controlador está visível.
-     * Um único socket por observador, prazo máximo e nenhum conteúdo de mensagens.
+    /** Consulta longa de metadados. Usa a mesma conexão pareada em tela ou por serviço visível.
+     * Prazo máximo e nenhum conteúdo de mensagens ou número de chamadas.
      */
     fun watchEvents(host: String, key: ByteArray, context: Context, revision: Long,
-        onSocket: (Socket) -> Unit): JSONObject {
+        includeCallAlerts: Boolean = false, onSocket: (Socket) -> Unit): JSONObject {
         require(host.isNotBlank() && host.length <= 253 &&
             '/' !in host && ':' !in host && ' ' !in host) { "Host inválido." }
         require(revision >= 0L)
         val request = JSONObject().put("v", WireProtocol.VERSION)
             .put("op", "eventWatch").put("revision", revision)
+            .put("includeCallAlerts", includeCallAlerts)
             .put("appVersion", AppVersion.WIRE_COMPAT)
             .put("ts", System.currentTimeMillis())
             .put("clientId", SettingsStore.controllerId(context))
@@ -106,6 +109,28 @@ object RemoteClient {
                     reply.optJSONArray("events") != null && reply.optJSONArray("smsAlertEvents") != null) {
                     "Metadados de eventos incompletos."
                 }
+            }
+            reply
+        }
+    }
+
+    /** Histórico sob demanda, nunca solicitado pelo serviço de avisos. */
+    fun callHistory(host: String, key: ByteArray, context: Context): JSONObject {
+        require(host.isNotBlank() && host.length <= 253 &&
+            '/' !in host && ':' !in host && ' ' !in host) { "Host inválido." }
+        val request = JSONObject().put("v", WireProtocol.VERSION).put("op", "callHistory")
+            .put("appVersion", AppVersion.WIRE_COMPAT).put("ts", System.currentTimeMillis())
+            .put("clientId", SettingsStore.controllerId(context))
+            .put("clientName", listOf(Build.MANUFACTURER, Build.MODEL).joinToString(" ").take(72))
+            .put("accessMethod", "Histórico de chamadas")
+        return Socket().use { socket ->
+            socket.connect(InetSocketAddress(host, WireProtocol.PORT), 3_500)
+            socket.soTimeout = 6_000
+            WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(key, request))
+            val reply = WireProtocol.decode(key, WireProtocol.receive(socket.getInputStream(), 24 * 1024))
+            check(reply.optString("op") == "callHistory" && reply.optInt("v") == WireProtocol.VERSION &&
+                AppVersion.compatible(reply.optString("appVersion")) && reply.has("ok")) {
+                "Resposta de chamadas inválida."
             }
             reply
         }

@@ -1,4 +1,12 @@
-# Validação mais recente — alpha.143 (17/11/2026)
+# Validação mais recente — alpha.145 (18/11/2026)
+
+- Base alpha.144. Resultados e roteiro em `docs/VALIDATION_ALPHA145.md`.
+
+# Validação mais recente — alpha.144 (18/11/2026)
+
+- Base alpha.143. Testes e roteiro em `docs/VALIDATION_ALPHA144.md`.
+
+# Validação anterior — alpha.143 (17/11/2026)
 
 - Base alpha.142. Plano, resultados e verificações em `docs/VALIDATION_ALPHA143.md`.
 

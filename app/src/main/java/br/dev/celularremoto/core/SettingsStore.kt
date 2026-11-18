@@ -40,8 +40,29 @@ object SettingsStore {
             // Evita avisar eventos criados enquanto o controlador estava desativado.
             RemoteEventAlerts.resetCursors(context)
         }
-        prefs(context).edit().putBoolean("controller_notifications_enabled", enabled).apply()
+        prefs(context).edit().putBoolean("controller_notifications_enabled", enabled)
+            .apply { if (!enabled) putBoolean("controller_live_alerts", false) }.apply()
         br.dev.celularremoto.service.RemoteHealthScheduler.refresh(context)
+    }
+
+    /** Avisos pela conexão pareada mesmo quando a interface não está aberta. */
+    fun controllerLiveAlerts(context: Context) = prefs(context).getBoolean("controller_live_alerts", false)
+    fun setControllerLiveAlerts(context: Context, enabled: Boolean) =
+        prefs(context).edit().putBoolean("controller_live_alerts", enabled).apply()
+
+    fun controllerCallAlerts(context: Context) = prefs(context).getBoolean("controller_call_alerts", true)
+    fun controllerCallAlertsSince(context: Context) = prefs(context).getLong("controller_call_alerts_since", 0L)
+    fun setControllerCallAlerts(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean("controller_call_alerts", enabled)
+            .putLong("controller_call_alerts_since", System.currentTimeMillis()).apply()
+    }
+
+    /** Só muda por ação no próprio monitorado. Não é concedida pelo pareamento. */
+    fun shareCallHistory(context: Context) = prefs(context).getBoolean("share_call_history", false)
+    fun setShareCallHistory(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean("share_call_history", enabled).apply()
+        if (!enabled) CallLogSharing.clear()
+        RemoteEventSignal.changed()
     }
 
     /** Owner-enabled recovery location: configured locally, never by a remote command. */
@@ -77,6 +98,7 @@ object SettingsStore {
             EventJournal.clear()
             NotificationReplyActions.clear()
             SmsLiveJournal.clear()
+            CallLogSharing.clear()
             SmsDeliveryJournal.clear()
             br.dev.celularremoto.capture.NotificationCaptureStatus.resetCaptureMetrics()
         }

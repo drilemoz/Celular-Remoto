@@ -157,14 +157,15 @@ private fun MainActivity.fillNotificationSettings(layout: LinearLayout) {
     })
     sectionGap(layout, 9)
     val remoteAlerts = SettingsStore.controllerNotificationAlerts(this)
-    layout.addView(iconMenuRow(R.drawable.ic_bell, "Avisos de mensagens do aparelho remoto",
-        if (remoteAlerts) "Ativos · configure SMS, WhatsApp e outros avisos abaixo" else "Desligados · ativar neste controlador",
+    layout.addView(iconMenuRow(R.drawable.ic_bell, "Avisos do aparelho remoto",
+        if (remoteAlerts) "Ativos · configure chamadas, SMS e outros avisos" else "Desligados · ativar neste controlador",
         badge = SettingsBadgeKind.forEnabled(remoteAlerts)) {
         if (remoteAlerts) {
             SettingsStore.setControllerNotificationAlerts(this, false)
+            runCatching { MonitorService.refreshModes(this) }
             openSettingsSection("notifications")
-        } else showAppConfirm("Avisar sobre mensagens remotas?",
-            "O controlador consulta a conexão pareada quando Controlar está visível e periodicamente em segundo plano (mínimo 15 minutos, podendo atrasar). Mantém eventos recebidos até 60 minutos antes da consulta quando ainda estiverem no buffer. Não garante entrega instantânea. Mostra apenas alertas genéricos, sem texto de SMS, WhatsApp ou remetentes. Exige autorização de notificações no Android controlador e permissões locais no monitorado.",
+        } else showAppConfirm("Ativar avisos do aparelho remoto?",
+            "Mostra avisos genéricos de eventos autorizados no outro celular. O Android pode atrasar a consulta periódica. Para receber pela conexão pareada com a tela apagada, ative o modo em tempo real.",
             R.drawable.ic_bell, "Ativar avisos") {
             SettingsStore.setControllerNotificationAlerts(this, true)
             openSettingsSection("notifications")
@@ -172,8 +173,21 @@ private fun MainActivity.fillNotificationSettings(layout: LinearLayout) {
         }
     })
     sectionGap(layout, 8)
+    val liveAlerts = SettingsStore.controllerLiveAlerts(this)
+    layout.addView(iconMenuRow(R.drawable.ic_bell, "Avisos em tempo real",
+        if (liveAlerts) "Modo ativado · toque para parar" else "Receber com a tela apagada",
+        badge = SettingsBadgeKind.forEnabled(liveAlerts)) { toggleLiveNoticeMode() })
+    sectionGap(layout, 8)
     if (remoteAlerts) {
         layout.addView(label("Tipos de avisos no controlador", 12.5f, strong = true))
+        sectionGap(layout, 6)
+        val callAlerts = SettingsStore.controllerCallAlerts(this)
+        layout.addView(iconMenuRow(R.drawable.ic_phone, "Novas chamadas",
+            if (callAlerts) "Avisar sobre chamadas registradas no outro celular" else "Avisos de chamadas desativados",
+            badge = SettingsBadgeKind.forEnabled(callAlerts)) {
+            SettingsStore.setControllerCallAlerts(this, !callAlerts)
+            openSettingsSection("notifications")
+        })
         sectionGap(layout, 6)
         val smsAlerts = SettingsStore.controllerSmsAlerts(this)
         layout.addView(iconMenuRow(R.drawable.ic_message, "Novos SMS",
@@ -199,7 +213,7 @@ private fun MainActivity.fillNotificationSettings(layout: LinearLayout) {
             openSettingsSection("notifications")
         })
         sectionGap(layout, 8)
-        layout.addView(label("Somente eventos novos observados depois do pareamento e autorizados no monitorado. O Android pode atrasar a consulta em segundo plano.", 11.5f, muted = true))
+        layout.addView(label("Somente eventos novos observados depois do pareamento e autorizados no monitorado. O tempo real precisa que os celulares se alcancem pela rede.", 11.5f, muted = true))
         sectionGap(layout, 8)
     }
 }
@@ -239,6 +253,7 @@ private fun MainActivity.fillAppsSettings(layout: LinearLayout) {
 }
 
 private fun MainActivity.fillSmsSettings(layout: LinearLayout) {
+    addCallSharingSetting(layout)
     dialogIntro(layout, "A leitura e o envio de SMS dependem da autorização local e das permissões do Android. Ative somente o necessário.")
     val smsRead = SettingsStore.shareSmsInbox(this) &&
         checkSelfPermission(Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED

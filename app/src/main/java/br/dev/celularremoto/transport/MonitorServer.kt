@@ -3,6 +3,7 @@ package br.dev.celularremoto.transport
 import br.dev.celularremoto.service.MonitorService
 
 import android.content.Context
+import br.dev.celularremoto.core.CallLogSharing
 import br.dev.celularremoto.core.BatteryReader
 import br.dev.celularremoto.core.NetworkReader
 import br.dev.celularremoto.core.DeviceInfoReader
@@ -140,7 +141,7 @@ class MonitorServer(private val context: Context) {
                 val regular = runCatching { WireProtocol.decode(permanentKey, encrypted) }.getOrNull()
                 if (regular != null) {
                     if (regular.optInt("v") != WireProtocol.VERSION ||
-                        regular.optString("op") !in setOf("snapshot", "disconnect", "notificationReply", "smsReply", "screenFrame", "screenCapture", "remoteTouch", "audioChunk", "requestScreen", "videoFrame", "wakeScreen", "dataList", "dataChunk", "dataChunks", "dataHash", "dataRead", "dataStream", "dataManage", "dataUploadStart", "dataUploadChunk", "dataUploadFinish", "dataUploadAbort", "dataUploadStatus", "appsList", "appsIcons", "appLaunch", "deviceControl", "cameraFrame", "cameraSwitch", "photoTake", "thermalDiagnostics", "locationSnapshot", "batteryLab", "appUpdate", "heartbeat", "eventWatch", "batteryProbe")) return
+                        regular.optString("op") !in setOf("snapshot", "disconnect", "notificationReply", "smsReply", "screenFrame", "screenCapture", "remoteTouch", "audioChunk", "requestScreen", "videoFrame", "wakeScreen", "dataList", "dataChunk", "dataChunks", "dataHash", "dataRead", "dataStream", "dataManage", "dataUploadStart", "dataUploadChunk", "dataUploadFinish", "dataUploadAbort", "dataUploadStatus", "appsList", "appsIcons", "appLaunch", "deviceControl", "cameraFrame", "cameraSwitch", "photoTake", "thermalDiagnostics", "locationSnapshot", "batteryLab", "appUpdate", "heartbeat", "eventWatch", "batteryProbe", "callHistory")) return
                     if (abs(now - regular.optLong("ts")) > 5 * 60 * 1000L) return
                     synchronized(seenNonces) {
                         // Retenção compatível com ±5 minutos de validade do envelope.
@@ -198,11 +199,32 @@ class MonitorServer(private val context: Context) {
                                 .put("revision", revision).put("epoch", EventJournal.epoch)
                                 .put("events", events)
                                 .put("smsAlertEvents", if (smsAllowed) SmsLiveJournal.alerts() else org.json.JSONArray())
+                            if (regular.optBoolean("includeCallAlerts"))
+                                reply.put("callAlertEvents", CallLogSharing.alerts(context))
                             WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, reply))
                             AuthenticatedAccess.authenticated(socket.inetAddress?.hostAddress.orEmpty(),
                                 regular.optString("clientId"), regular.optString("clientName"),
                                 regular.optString("accessMethod"))
                         } finally { eventWatchSlot.release() }
+                        return
+                    }
+                    if (regular.optString("op") == "callHistory") {
+                        val items = CallLogSharing.history(context)
+                        val currentKey = SecretVault.load(context, SecretVault.MONITOR_KEY)
+                        if (!running || currentKey == null || !MessageDigest.isEqual(currentKey, permanentKey)) return
+                        val available = items != null && CallLogSharing.allowed(context)
+                        val reply = JSONObject().put("v", WireProtocol.VERSION).put("op", "callHistory")
+                            .put("appVersion", AppVersion.WIRE_COMPAT).put("ok", available)
+                            .put("reason", when {
+                                !SettingsStore.isMonitorEnabled(context) -> "MONITOR_OFF"
+                                !SettingsStore.shareCallHistory(context) -> "SHARING_OFF"
+                                !CallLogSharing.hasPermission(context) -> "PERMISSION"
+                                else -> if (available) "" else "UNAVAILABLE"
+                            })
+                        if (available) reply.put("items", items)
+                        WireProtocol.send(socket.getOutputStream(), WireProtocol.encode(permanentKey, reply))
+                        AuthenticatedAccess.authenticated(socket.inetAddress?.hostAddress.orEmpty(),
+                            regular.optString("clientId"), regular.optString("clientName"), regular.optString("accessMethod"))
                         return
                     }
                     if (regular.optString("op") == "batteryProbe") {
@@ -719,6 +741,8 @@ class MonitorServer(private val context: Context) {
                             context.checkSelfPermission(android.Manifest.permission.RECEIVE_SMS) ==
                                 android.content.pm.PackageManager.PERMISSION_GRANTED)
                             SmsLiveJournal.alerts() else org.json.JSONArray())
+                        if (regular.optBoolean("includeCallAlerts"))
+                            put("callAlertEvents", CallLogSharing.alerts(context))
                         put("smsInbox", if (regular.optBoolean("includeSms")) SmsInboxReader.snapshot(context) else org.json.JSONArray())
                         put("smsLive", if (regular.optBoolean("includeSms") && SettingsStore.shareSmsInbox(context) &&
                             SettingsStore.receiveSmsEvents(context) && SettingsStore.isMonitorEnabled(context)) SmsLiveJournal.snapshot() else org.json.JSONArray())

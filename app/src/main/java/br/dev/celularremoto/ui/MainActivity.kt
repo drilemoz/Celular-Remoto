@@ -36,6 +36,11 @@ import java.util.Locale
 /** Interface Android Views sem dependências adicionais; ambos os modos no mesmo APK. */
 class MainActivity : Activity() {
     internal var activeUiDialog: AlertDialog? = null
+    internal var remoteCallsDialog: AlertDialog? = null
+    internal var pendingLiveNoticeEnable = false
+    private val controllerNoticeListener: (String, String) -> Unit = { host, scope -> onControllerNoticeChanged(host, scope) }
+    internal val liveNoticePermissionRequest = 9269
+    internal val callLogPermissionRequest = 4322
     internal fun darkTheme(): Boolean = AppearancePolicy.isDark(
         SettingsStore.theme(this),
         (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
@@ -88,6 +93,7 @@ class MainActivity : Activity() {
     internal var settingsSection = "home"
     internal var updatePollingUntilMs = 0L
     internal var updatePollingBusy = false
+    internal var localUpdateCheckBusy = false
     internal val remoteUpdateStatusPoller = Runnable { pollRemoteUpdateOnce() }
     private var settingsReturnMode = 1
     internal val cameraPermissionRequest = 4317
@@ -101,8 +107,7 @@ class MainActivity : Activity() {
     internal val smsSimPermissionRequest = 107
     internal val audioPermissionRequest = 108
     @Volatile internal var active = false
-    // Última tentativa monotônica de retomar serviço autorizado; somente em RAM.
-    private var lastRecoveryAttemptMs = 0L
+    private val serviceRecovery = AuthorizedServiceRecovery()
     // Mantém o conteúdo e a posição de rolagem intactos quando nenhum estado mudou.
     internal var displayedMonitorState: MonitorUiRefreshPolicy.State? = null
     private var firstResume = true
@@ -124,11 +129,13 @@ class MainActivity : Activity() {
         const val EXTRA_OPEN_BATTERY = "br.dev.celularremoto.OPEN_BATTERY"
         const val EXTRA_OPEN_UPDATES = "br.dev.celularremoto.OPEN_UPDATES"
         const val EXTRA_OPEN_MESSAGES = "br.dev.celularremoto.OPEN_MESSAGES"
+        const val EXTRA_OPEN_CALLS = "br.dev.celularremoto.OPEN_CALLS"
+        const val EXTRA_NOTICE_SCOPE = "br.dev.celularremoto.NOTICE_SCOPE"
     }
     // Alpha.53: acesso autenticado permanece visível no cartão Monitorado e na
     // notificação do sistema; nunca abre Activity por cima das tarefas do usuário.
     private val incomingListener: () -> Unit = monitorAccessListener(monitorUiInvalidation)
-    private val monitorStatusPoll = monitorStatusPoller { recoverAuthorizedServiceIfStopped() }
+    private val monitorStatusPoll = monitorStatusPoller { serviceRecovery.recoverAuthorizedServiceIfStopped(this) }
     internal var currentStatus: TextView? = null
     internal var currentDeviceTitle: TextView? = null
     internal var currentUpdated: TextView? = null
@@ -147,7 +154,7 @@ class MainActivity : Activity() {
         val firstPermissionWelcome = savedInstanceState == null && PermissionCenter.needsWelcome(this)
         mode = if (intent.getBooleanExtra(EXTRA_OPEN_BATTERY, false)) 5
             else if (intent.getBooleanExtra(EXTRA_OPEN_MONITOR, false)) 0
-            else if (intent.getBooleanExtra(EXTRA_OPEN_MESSAGES, false)) 4
+            else if (intent.getBooleanExtra(EXTRA_OPEN_MESSAGES, false) && noticeMatchesSelectedPair(intent)) 4
             else savedInstanceState?.getInt("active_mode", 1)?.takeIf { it in setOf(0, 1, 3, 4, 5) } ?: 1
         settingsSection = savedInstanceState?.getString("settings_section", "home") ?: "home"
         permissionCenterQueue.addAll(savedInstanceState?.getStringArrayList("pending_permission_groups")
@@ -232,7 +239,12 @@ class MainActivity : Activity() {
                 batteryRemote = false
                 render()
             }
+            intent.getBooleanExtra(EXTRA_OPEN_CALLS, false) -> consumeCallNotice(intent)
             intent.getBooleanExtra(EXTRA_OPEN_MESSAGES, false) -> {
+                if (!noticeMatchesSelectedPair(intent)) {
+                    message("Este aviso é de outro pareamento.")
+                    return
+                }
                 // Uma notificação pode chegar quando a Activity ainda guarda mensagens de
                 // outro aparelho. Reiniciar a central sempre elimina o texto antigo da RAM.
                 openRemoteMessagesScreen()
@@ -277,12 +289,14 @@ class MainActivity : Activity() {
         br.dev.celularremoto.core.VisibleMonitorUi.changed(true)
         super.onResume()
         active = true
+        br.dev.celularremoto.updates.UpdateController.checkOnForeground(this)
         AuthenticatedAccess.subscribe(incomingListener)
-        // A primeira renderização já ocorreu no onCreate; evitar montar tudo duas vezes.
-        if (firstResume) firstResume = false else render()
+        if (firstResume) firstResume = false else render() // onCreate já montou a primeira tela.
         refreshPermissionsNotice()
-        recoverAuthorizedServiceIfStopped()
+        serviceRecovery.recoverAuthorizedServiceIfStopped(this)
         if (mode == 4) loadRemoteMessages()
+        ControllerNoticeFeed.subscribe(controllerNoticeListener)
+        resumeRemoteNoticeActions()
         eventWatcher.start()
         handler.removeCallbacks(monitorStatusPoll)
         if (mode == 0) handler.postDelayed(monitorStatusPoll, 5_000L)
@@ -297,28 +311,9 @@ class MainActivity : Activity() {
             android.os.SystemClock.elapsedRealtime() < updatePollingUntilMs)
             handler.postDelayed(remoteUpdateStatusPoller, 15_000L)
     }
-    /** Retomada somente com Activity visível: respeita as três autorizações independentes. */
-    private fun recoverAuthorizedServiceIfStopped() {
-        fun needsRecovery(): Boolean = when {
-            SettingsStore.isMonitorEnabled(this) -> !MonitorService.isServiceActive
-            SettingsStore.localBatteryMonitoring(this) -> !MonitorService.isBatteryMonitoringActive
-            SettingsStore.controllerBatteryPolling(this) -> !MonitorService.isControllerBatteryPollingActive
-            else -> false
-        }
-        if (!needsRecovery()) return
-        val now = SystemClock.elapsedRealtime()
-        if (lastRecoveryAttemptMs != 0L && now - lastRecoveryAttemptMs < 60_000L) return
-        lastRecoveryAttemptMs = now
-        handler.postDelayed({
-            if (active && !isFinishing && !isDestroyed && needsRecovery()) {
-                runCatching { MonitorService.start(this) }.onFailure {
-                    SettingsStore.recordRecoveryEvent(this, "Retomada negada pelo sistema")
-                }
-                handler.postDelayed({ if (active && mode == 0) render() }, 1_000L)
-            }
-        }, 800L)
-    }
     override fun onPause() {
+        ControllerNoticeFeed.unsubscribe(controllerNoticeListener)
+        remoteCallsDialog?.dismiss()
         eventWatcher.stop()
         br.dev.celularremoto.core.VisibleMonitorUi.changed(false)
         active = false
@@ -457,6 +452,7 @@ class MainActivity : Activity() {
                 SettingsStore.setReceiveSmsEvents(this, granted)
                 message(if (granted) "Recepção SMS habilitada no monitorado." else "RECEIVE_SMS não autorizada pelo Android.")
             }
+            callLogPermissionRequest, liveNoticePermissionRequest -> onRemoteNoticePermission(requestCode, granted)
             audioPermissionRequest -> {
                 SettingsStore.setCaptureInternalAudio(this, granted)
                 message(if (granted) "Áudio interno habilitado. Inicie uma nova sessão de compartilhamento de tela."

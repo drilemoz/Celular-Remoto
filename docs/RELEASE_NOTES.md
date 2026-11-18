@@ -1,3 +1,14 @@
+# Celular Remoto v0.1.0-alpha.145 — chamadas e avisos em tempo real
+
+- Novo atalho Chamadas em Controlar → Mensagens. O próprio monitorado autoriza o histórico e os avisos em Ajustes → SMS e telefonia.
+- O controlador pode ativar o modo em tempo real para avisos do Android de SMS e chamadas registradas, sem enviar conteúdo nas notificações. Filtros independentes em Ajustes → Notificações.
+- O modo depende da conexão já pareada e de serviço visível. Não usa FCM nem funciona sem rota entre os aparelhos. Chamadas são informadas quando o Android registra a ligação, não enquanto ela toca.
+
+# Celular Remoto v0.1.0-alpha.144 — atualizações ao abrir
+- Com verificação automática ligada, o app pesquisa ao abrir ou voltar. O botão **Verificar agora** também inicia o download se **Download automático** estiver ligado.
+- **Configurações → Atualizações** acompanha status, progresso e liberação do botão Instalar. A instalação pede confirmação no próprio Android.
+- O GitHub Releases continua com um APK direto. A atualização dentro do app exige APK assinado com o mesmo certificado da instalação e manifesto de atualização compatível.
+
 # Celular Remoto v0.1.0-alpha.143 — bateria mais enxuta
 
 - Um cartão reúne percentual, estado, previsão e temperatura/corrente/potência líquidas da bateria. Horário e atualização remota estão numa linha.

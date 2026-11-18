@@ -14,6 +14,7 @@ import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Environment
+import android.os.SystemClock
 import android.provider.Settings
 import br.dev.celularremoto.BuildConfig
 import br.dev.celularremoto.R
@@ -34,6 +35,8 @@ internal data class UpdateRelease(val version: String, val code: Int, val sha256
 /** Verificação online e download durável; a instalação só é acionada pela Activity local. */
 object UpdateController {
     private val checkLock = Any()
+    private val foregroundBusy = AtomicBoolean(false)
+    private var lastCheckElapsedMs: Long? = null // protegido por checkLock
     private val remoteBusy = AtomicBoolean(false)
     private val remoteThrottle = Any()
     private var lastRemoteRequestAt = 0L
@@ -123,7 +126,7 @@ object UpdateController {
         }
         thread(name = "CelularRemoto-remote-update") {
             try {
-                check(context.applicationContext, automatic = false)
+                check(context.applicationContext, UpdateCheckTrigger.REMOTE)
                 if (action == "checkDownload" &&
                     (UpdatePreferences.getString(context, "available_code").toIntOrNull() ?: 0) > BuildConfig.VERSION_CODE)
                     download(context.applicationContext)
@@ -157,15 +160,6 @@ object UpdateController {
     /** Reagendamento após atualização/cold start; sem rede na thread principal. */
     fun initialize(context: Context) {
         UpdateScheduler.refresh(context)
-        // Primeira abertura ou retorno após várias horas: conferir sem depender
-        // da próxima janela imprecisa do JobScheduler. Nunca abrir Activity.
-        val now = System.currentTimeMillis()
-        if (UpdatePreferences.checking(context) &&
-            (lastCheck(context) <= 0L || now - lastCheck(context) >= UpdatePreferences.intervalMinutes(context) * 60_000L)) {
-            thread(name = "CelularRemoto-update-cold-start") {
-                check(context.applicationContext, automatic = true)
-            }
-        }
         val code = UpdatePreferences.getLong(context, "download_code")
         if ((UpdatePreferences.getString(context, "available_code").toIntOrNull() ?: 0) <= BuildConfig.VERSION_CODE) {
             UpdatePreferences.putString(context, "available_version", "")
@@ -183,22 +177,40 @@ object UpdateController {
         }
     }
 
-    /** Verifica tanto prereleases como releases, mas só aceita uma Release com manifesto assinado na CI. */
-    fun check(context: Context, automatic: Boolean): String = synchronized(checkLock) {
-        if (automatic && !UpdatePreferences.checking(context)) return@synchronized "Verificação desativada"
+    /** Retomada da Activity: não bloqueia a tela nem acumula consultas ao alternar apps. */
+    fun checkOnForeground(context: Context) {
+        if (!UpdatePreferences.checking(context) || !foregroundBusy.compareAndSet(false, true)) return
+        val app = context.applicationContext
+        thread(name = "CelularRemoto-update-foreground") {
+            try {
+                check(app, UpdateCheckTrigger.FOREGROUND)
+            } finally {
+                foregroundBusy.set(false)
+            }
+        }
+    }
+
+    /** Aceita prereleases, mas somente com manifesto publicado pela CI de assinatura estável. */
+    internal fun check(context: Context, trigger: UpdateCheckTrigger): String = synchronized(checkLock) {
+        if (!trigger.canCheck(UpdatePreferences.checking(context), lastCheckElapsedMs, SystemClock.elapsedRealtime()))
+            return@synchronized state(context)
         UpdatePreferences.putLong(context, "last_check", System.currentTimeMillis())
-        UpdatePreferences.putString(context, "state", "Consultando GitHub Releases…")
+        // Não trocar a etapa de um APK já pronto ou em transferência por "Consultando".
+        if (UpdatePreferences.getLong(context, "download_id") <= 0L) {
+            UpdatePreferences.putString(context, "state_code", "checking")
+            UpdatePreferences.putString(context, "state", "Consultando GitHub Releases…")
+        }
         try {
-            val release = findUpdate()
+            val (release, newerAlphaSeen) = findUpdate()
             if (release == null) {
                 if (UpdatePreferences.getLong(context, "download_id") > 0L && !prepared(context)) {
-                    UpdatePreferences.putString(context, "state_code", "downloading")
-                    UpdatePreferences.putString(context, "state", "Download anterior mantido; verificando transferência")
-                }
-                if (!prepared(context) && UpdatePreferences.getLong(context, "download_id") <= 0) {
+                    reconcilePending(context)
+                } else if (!prepared(context)) {
                     UpdatePreferences.clearAvailable(context)
-                    UpdatePreferences.putString(context, "state_code", "current")
-                    UpdatePreferences.putString(context, "state", "Nenhuma atualização assinada mais recente")
+                    UpdatePreferences.putString(context, "state_code", if (newerAlphaSeen) "unavailable" else "current")
+                    UpdatePreferences.putString(context, "state", if (newerAlphaSeen)
+                        "Existe uma Release mais nova, mas sem APK elegível para atualização"
+                    else "Nenhuma atualização assinada mais recente")
                 }
             } else {
                 UpdatePreferences.putString(context, "available_version", release.version)
@@ -206,26 +218,37 @@ object UpdateController {
                 UpdatePreferences.putString(context, "available_sha", release.sha256)
                 UpdatePreferences.putString(context, "available_url", release.apkUrl)
                 UpdatePreferences.putString(context, "available_name", release.apkName)
-                if (UpdatePreferences.getLong(context, "download_code") == release.code.toLong() &&
-                    UpdatePreferences.getLong(context, "download_id") > 0L) {
-                    reconcileDownload(context, UpdatePreferences.getLong(context, "download_id"))
-                } else if (prepared(context) && !automatic) {
-                    // Uma versão mais antiga verificada continua instalável; permitir baixar a nova por gesto.
-                    UpdatePreferences.putString(context, "state", "Nova versão ${release.version} encontrada; APK anterior ainda pronto")
-                } else {
+                val downloadedCode = UpdatePreferences.getLong(context, "download_code")
+                val downloadId = UpdatePreferences.getLong(context, "download_id")
+                val shouldDownload = trigger.autoDownloads(UpdatePreferences.autoDownload(context)) &&
+                    (!trigger.automatic || UpdatePreferences.checking(context))
+                if (downloadId > 0L && downloadedCode == release.code.toLong()) {
+                    if (!prepared(context)) reconcileDownload(context, downloadId)
+                } else if (prepared(context) && (downloadedCode > release.code || !shouldDownload)) {
+                    if (release.code > downloadedCode)
+                        UpdatePreferences.putString(context, "state", "Nova versão ${release.version} encontrada; APK anterior ainda pronto")
+                } else if (shouldDownload) {
+                    if (!prepared(context)) {
+                        UpdatePreferences.putString(context, "state_code", "available")
+                        UpdatePreferences.putString(context, "state", "Nova versão ${release.version} disponível")
+                    }
+                    return@synchronized download(context)
+                } else if (downloadId <= 0L) {
                     UpdatePreferences.putString(context, "state_code", "available")
                     UpdatePreferences.putString(context, "state", "Nova versão ${release.version} disponível")
-                    if (automatic && UpdatePreferences.autoDownload(context)) download(context)
                 }
             }
             state(context)
         } catch (e: Exception) {
-            // Não apagar uma atualização pronta quando a consulta falhar por falta de internet.
-            if (!prepared(context)) {
+            // Não apagar uma atualização pronta ou na fila quando a consulta falhar.
+            val failure = "Não foi possível verificar: ${e.message?.take(100) ?: "erro de rede"}"
+            if (UpdatePreferences.getLong(context, "download_id") <= 0L) {
                 UpdatePreferences.putString(context, "state_code", "error")
-                UpdatePreferences.putString(context, "state", "Não foi possível verificar: ${e.message?.take(100) ?: "erro de rede"}")
+                UpdatePreferences.putString(context, "state", failure)
             }
-            state(context)
+            failure
+        } finally {
+            lastCheckElapsedMs = SystemClock.elapsedRealtime()
         }
     }
 
@@ -256,13 +279,20 @@ object UpdateController {
         return out.toByteArray()
     }
 
-    private fun findUpdate(): UpdateRelease? {
+    private fun findUpdate(): Pair<UpdateRelease?, Boolean> {
         val releases = JSONArray(readLimited(API))
         var best: UpdateRelease? = null
+        var newerAlphaSeen = false
         for (i in 0 until releases.length()) {
             val item = releases.optJSONObject(i) ?: continue
             if (item.optBoolean("draft", false)) continue
             val tag = item.optString("tag_name")
+            val alphaCode = UpdateRules.alphaCodeFromTag(tag)
+            if (alphaCode != null) {
+                if (alphaCode <= BuildConfig.VERSION_CODE) continue
+                newerAlphaSeen = true
+                if (alphaCode <= (best?.code ?: 0)) continue
+            }
             val assets = item.optJSONArray("assets") ?: continue
             var metaUrl = ""
             var apkUrl = ""
@@ -288,7 +318,7 @@ object UpdateController {
                     sha, meta.optString("packageName"), meta.optBoolean("stableSigned", false), tag, apkName)) continue
             if (best == null || code > best.code) best = UpdateRelease(version, code, sha.lowercase(), apkUrl, apkName)
         }
-        return best
+        return best to newerAlphaSeen
     }
 
     private fun enoughBattery(context: Context): Boolean {
@@ -319,13 +349,13 @@ object UpdateController {
         if (UpdatePreferences.batteryCare(context) &&
             runCatching { br.dev.celularremoto.core.BatteryLabStore.report(context)
                 .optJSONObject("active")?.optBoolean("active", false) == true }.getOrDefault(false)) {
-            UpdatePreferences.putString(context, "state_code", "waiting")
+            if (!prepared(context)) UpdatePreferences.putString(context, "state_code", "waiting")
             UpdatePreferences.putString(context, "state", "Aguardando o fim do teste de bateria em andamento")
             return state(context)
         }
         if (!enoughBattery(context)) {
-            UpdatePreferences.putString(context, "state_code", "waiting")
-            UpdatePreferences.putString(context, "state", "Aguardando bateria acima de 25% ou carregador")
+            if (!prepared(context)) UpdatePreferences.putString(context, "state_code", "waiting")
+            UpdatePreferences.putString(context, "state", "Aguardando bateria de pelo menos 25% ou carregador")
             return state(context)
         }
         return try {
@@ -363,7 +393,7 @@ object UpdateController {
             UpdateVerifyJobService.scheduleFallback(context)
             state(context)
         } catch (e: Exception) {
-            UpdatePreferences.putString(context, "state_code", "error")
+            if (!prepared(context)) UpdatePreferences.putString(context, "state_code", "error")
             UpdatePreferences.putString(context, "state", "Falha ao iniciar download: ${e.message?.take(90)}")
             state(context)
         }
@@ -403,7 +433,7 @@ object UpdateController {
         return File(File(parent, "updates"), name)
     }
 
-    internal fun reconcileDownload(context: Context, id: Long) {
+    internal fun reconcileDownload(context: Context, id: Long): Unit = synchronized(checkLock) {
         if (id != UpdatePreferences.getLong(context, "download_id")) return
         val dm = context.getSystemService(DownloadManager::class.java) ?: return
         val status = runCatching {
@@ -412,7 +442,7 @@ object UpdateController {
             }
         }.getOrElse { return } // Erro temporário na consulta não apaga a transferência.
         when (status) {
-            DownloadManager.STATUS_SUCCESSFUL -> verifyDownload(context, id)
+            DownloadManager.STATUS_SUCCESSFUL -> { verifyDownload(context, id) }
             DownloadManager.STATUS_FAILED, null -> {
                 if (id != UpdatePreferences.getLong(context, "download_id")) return
                 // Falha do DownloadManager não é um APK validado. Mantemos a Release para nova tentativa.
@@ -424,6 +454,7 @@ object UpdateController {
                 UpdatePreferences.putString(context, "state", message)
                 UpdateVerifyJobService.stopFallback(context)
             }
+            else -> Unit
         }
     }
 

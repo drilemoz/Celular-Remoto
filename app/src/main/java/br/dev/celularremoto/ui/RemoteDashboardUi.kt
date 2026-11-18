@@ -220,7 +220,7 @@ private fun MainActivity.renderRemoteActions(container: LinearLayout, snapshot: 
                 putExtra(RemoteCatalogActivity.EXTRA_TYPE, "apps")
             })
         },
-        actionTile(R.drawable.ic_message, "Mensagens", "SMS e respostas", enabled = true) {
+        actionTile(R.drawable.ic_message, "Mensagens", "SMS e chamadas", enabled = true) {
             openRemoteMessagesScreen()
         },
         actionTile(R.drawable.ic_monitor, "Tela", "Ao vivo · autorizado", enabled = true) {

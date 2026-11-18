@@ -1,4 +1,12 @@
-# Estado atual — alpha.143
+# Estado atual — alpha.145
+
+`callHistory` consulta até 30 linhas do provedor de chamadas do monitorado sob demanda, somente com pareamento autenticado, Monitorado ativo, opt-in local e permissão Android. O observador do provedor transporta ao buffer volátil apenas tipo e instante de registro com uma sequência própria. O relógio de referência para distinguir chamada recente considera início e duração. Nenhum número, nome ou conteúdo de SMS vai na espera de eventos. O servidor revalida a sessão e o cliente revalida host e chave antes de exibir dados.
+
+O controlador usa uma espera de até 11 s pela porta AES-GCM existente. Quando o modo em tempo real estiver explicitamente habilitado, o serviço existente mantém a espera enquanto o Android o permitir. A Activity não duplica esse observador. O JobScheduler continua como alternativa periódica e divide a mesma política de cursor/deduplicação. A notificação visível permite parar somente o modo em tempo real. Não há Firebase, wake lock novo, instalação automática ou alteração de WIRE_COMPAT.
+
+# Estado atual — alpha.144
+
+`MainActivity.onResume` chama `UpdateController.checkOnForeground`, em worker, com intervalo monotônico de um minuto compartilhado com o job periódico. `UpdateCheckTrigger` separa verificações automáticas, manuais locais e pedidos remotos. A tela Atualizações acompanha estado e progresso somente quando visível. Assinatura, instalação local e fluxo remoto permanecem os mesmos.
 
 No controlador há um opt-in independente em Ajustes → Bateria remota contínua. O único `MonitorService` aceita modo `CONTROLLER_ONLY` via FGS `connectedDevice` (sem listener local, histórico de bateria, câmera, GPS ou ADB), além dos modos existentes. `ControllerBatteryBackgroundPoller` faz no máximo uma consulta compacta AES-GCM por minuto, com reconexão 2/3/5 min e revalidação host+chave; não mantém wake lock. O monitorado expõe `batteryProbe` na porta 37842 somente com percentual, temperatura, corrente, estado e carimbo de observação, sem SMS/notificações ou fallback por snapshot completo. A notificação usa a última telemetria do par corrente, salvo só resumo mínimo/escopo hash em armazenamento privado. Exibição de medidas expira em 3 min, armazenamento histórico de última leitura expira em 24h. `WIRE_COMPAT` permanece na alpha.111. Desde a alpha.141, o sinal da corrente só pode ser ajustado na apresentação, preservando a leitura bruta no diagnóstico. A documentação desta versão corresponde a versionCode=143. Build Android real e testes em dois aparelhos pendentes.
 
@@ -86,7 +94,7 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 O mesmo APK atende aos modos Monitorado, Bateria local contínua e Controle. MonitorService usa FGS connectedDevice no modo remoto e specialUse no modo bateria sem abrir o servidor TCP; as amostras são feitas pelo mesmo executor serial a cada 30 s, e apenas um ID de notificação é usado.
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.143` e `versionCode=143`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.145` e `versionCode=145`.
 
 - GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.139.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.

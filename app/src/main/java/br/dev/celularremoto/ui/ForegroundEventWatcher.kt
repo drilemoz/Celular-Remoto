@@ -6,14 +6,13 @@ import br.dev.celularremoto.core.RemoteMessageSessionPolicy
 import br.dev.celularremoto.core.RemoteEventAlerts
 import br.dev.celularremoto.core.SettingsStore
 import br.dev.celularremoto.transport.RemoteClient
+import br.dev.celularremoto.service.MonitorService
+import java.util.concurrent.CopyOnWriteArraySet
 import java.net.Socket
 import java.security.MessageDigest
 import kotlin.concurrent.thread
 
-/** Uma espera AES-GCM de no máximo 11s, somente com Activity visível.
- * NÃO inicia serviço, não pede isenção de Doze e não promete eventos em segundo plano.
- * As consultas periódicas existentes continuam sendo o fallback.
- */
+/** Um socket autenticado com espera limitada. O dono é a Activity ou o serviço autorizado. */
 internal class ForegroundEventWatcher(
     context: Context,
     private val shouldWatch: () -> Boolean,
@@ -67,7 +66,8 @@ internal class ForegroundEventWatcher(
             }
             val before = revision
             val response = runCatching {
-                RemoteClient.watchEvents(host, key, appContext, revision) { connected ->
+                RemoteClient.watchEvents(host, key, appContext, revision, includeCallAlerts =
+                    SettingsStore.controllerNotificationAlerts(appContext) && SettingsStore.controllerCallAlerts(appContext)) { connected ->
                     synchronized(lock) {
                         if (running && id == session && shouldWatch()) socket = connected else connected.close()
                     }
@@ -82,7 +82,7 @@ internal class ForegroundEventWatcher(
                 } else if (running && id == session && shouldWatch() && host == SettingsStore.getRemoteHost(appContext) &&
                     RecentDevices.key(appContext, host)?.let { MessageDigest.isEqual(it, key) } == true) {
                     revision = reply.optLong("revision", 0L)
-                    RemoteEventAlerts.onSnapshot(appContext, host, reply)
+                    RemoteEventAlerts.onSnapshot(appContext, host, reply, key)
                     if (before != 0L && revision != before && running && id == session) onEventsChanged(host, scope)
                 }
             }.onFailure {
@@ -101,21 +101,28 @@ internal class ForegroundEventWatcher(
     }
 }
 
-/** A Activity fornece contexto e estados; o observador nunca segura uma View. */
+/** Sinal intra-app: só host/escopo, jamais chamadas, remetentes ou texto de SMS. */
+internal object ControllerNoticeFeed {
+    private val listeners = CopyOnWriteArraySet<(String, String) -> Unit>()
+    fun subscribe(listener: (String, String) -> Unit) { listeners.add(listener) }
+    fun unsubscribe(listener: (String, String) -> Unit) { listeners.remove(listener) }
+    fun changed(host: String, scope: String) { listeners.forEach { it(host, scope) } }
+}
+
 internal fun MainActivity.makeForegroundEventWatcher() = ForegroundEventWatcher(applicationContext,
-    shouldWatch = { active && (SettingsStore.controllerNotificationAlerts(this) ||
-        (mode == 4 && messagesAutoRefresh)) },
-    onEventsChanged = { notifiedHost, notifiedScope ->
-        handler.post {
-            // A mensagem de evento pode ficar na fila principal enquanto o usuário
-            // troca de aparelho, chave ou página. Nunca atualizar a sessão nova.
-            val currentKey = RecentDevices.key(applicationContext, notifiedHost)
-            val validSelection = currentKey != null &&
-                br.dev.celularremoto.core.RemoteEventNoticePolicy.pairingScope(notifiedHost, currentKey) == notifiedScope &&
-                RemoteMessageSessionPolicy.matches(messagesHost, messagesPairingScope,
-                    SettingsStore.getRemoteHost(this), notifiedScope) && messagesHost == notifiedHost
-            if (active && mode == 4 && messagesAutoRefresh && validSelection) {
-                if (messagesLoading) messagesRefreshPending = true else loadRemoteMessages()
-            }
+    shouldWatch = { active && !MonitorService.isControllerLiveAlertsActive &&
+        (SettingsStore.controllerNotificationAlerts(this) || (mode == 4 && messagesAutoRefresh)) },
+    onEventsChanged = { host, scope -> onControllerNoticeChanged(host, scope) })
+
+internal fun MainActivity.onControllerNoticeChanged(notifiedHost: String, notifiedScope: String) {
+    handler.post {
+        val currentKey = RecentDevices.key(applicationContext, notifiedHost)
+        val validSelection = currentKey != null &&
+            br.dev.celularremoto.core.RemoteEventNoticePolicy.pairingScope(notifiedHost, currentKey) == notifiedScope &&
+            RemoteMessageSessionPolicy.matches(messagesHost, messagesPairingScope,
+                SettingsStore.getRemoteHost(this), notifiedScope) && messagesHost == notifiedHost
+        if (active && mode == 4 && messagesAutoRefresh && validSelection) {
+            if (messagesLoading) messagesRefreshPending = true else loadRemoteMessages()
         }
-    })
+    }
+}

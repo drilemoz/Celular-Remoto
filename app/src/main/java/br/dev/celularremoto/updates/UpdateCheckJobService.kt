@@ -12,7 +12,7 @@ class UpdateCheckJobService : JobService() {
         stopped = false
         thread(name = "CelularRemoto-update-check") {
             try {
-                if (!stopped) UpdateController.check(applicationContext, automatic = true)
+                if (!stopped) UpdateController.check(applicationContext, UpdateCheckTrigger.SCHEDULED)
             } finally {
                 if (!stopped) jobFinished(params, false)
             }

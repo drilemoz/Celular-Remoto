@@ -1,3 +1,16 @@
+## 0.1.0-alpha.145 (versionCode 145) | 18/11/2026
+
+- Controlar → Mensagens → Chamadas consulta até 30 ligações do outro celular, após autorização naquele aparelho.
+- Modo opcional em tempo real para chamadas registradas, SMS e outros avisos já autorizados, com a tela apagada, enquanto o serviço visível e a conexão pareada estiverem ativos.
+- Avisos de chamada não incluem número, nome ou áudio. SMS mantém filtros de dados sensíveis. O toque consulta o mesmo pareamento e o modo pode ser parado da notificação de serviço.
+- A espera autenticada usa a porta e o serviço existentes, sem Firebase, sem alteração de `WIRE_COMPAT` e sem segundo servidor.
+
+## 0.1.0-alpha.144 (versionCode 144) | 18/11/2026
+- Consulta o GitHub Releases ao iniciar ou retomar o app, com intervalo mínimo de um minuto entre consultas automáticas no mesmo processo. JobScheduler segue a frequência configurada.
+- Verificar agora inicia o download se a opção estiver ligada. A página de Atualizações mostra mudanças de estado e progresso sem precisar sair dela.
+- Distingue Release alpha mais nova sem APK elegível de ausência de atualização. Ignora manifestos de alphas já instaladas ou anteriores.
+- Mantidos assinatura, hash, pacote, política de rede e bateria, consentimento remoto e instalação local. O workflow já publica um APK direto, sem ZIP como asset.
+
 ## 0.1.0-alpha.143 (versionCode 143) | 17/11/2026
 - Resumo da bateria em um cartão, com previsão até 0% em descarga e até 100% em carga. O remoto indica o horário da leitura e distingue dados anteriores.
 - Testes e Histórico em abas próprias. Atalho para teste em andamento e menu de metas, diagnóstico e coleta local.

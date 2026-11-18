@@ -238,6 +238,15 @@ internal fun MainActivity.renderRemoteMessagesPage() {
     top.addView(refresh, LinearLayout.LayoutParams(dp(48), dp(48)))
     content.addView(top)
     sectionGap(content, 12)
+    val shortcuts = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+    shortcuts.addView(actionButton("Chamadas") { showRemoteCallHistory() }.apply { minimumHeight = dp(48) },
+        LinearLayout.LayoutParams(0, -2, 1f).apply { rightMargin = dp(6) })
+    val liveEnabled = SettingsStore.controllerLiveAlerts(this)
+    shortcuts.addView(actionButton(if (liveEnabled) "Avisos em tempo real: ativos" else "Ativar avisos em tempo real",
+        emphasis = liveEnabled) { toggleLiveNoticeMode() }.apply { minimumHeight = dp(48) },
+        LinearLayout.LayoutParams(0, -2, 1.35f))
+    content.addView(shortcuts)
+    sectionGap(content, 8)
     val info = panel(14).apply {
         background = shape(fieldColor, 19, true)
         val row = LinearLayout(this@renderRemoteMessagesPage).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
@@ -258,7 +267,7 @@ internal fun MainActivity.renderRemoteMessagesPage() {
         eventWatcher.reconsider()
         render()
     })
-    content.addView(label("Enquanto esta tela estiver aberta, novos eventos autorizados podem atualizar as conversas. Com o app em segundo plano, vale a consulta periódica do Android.", 11f, muted = true))
+    content.addView(label("Novas mensagens podem atualizar esta tela. O modo em tempo real também mostra avisos do Android com a tela apagada, se houver conexão.", 11f, muted = true))
     sectionGap(content, 12)
 
     val root = messagesData

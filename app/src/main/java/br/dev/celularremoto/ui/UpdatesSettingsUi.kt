@@ -6,6 +6,7 @@ import br.dev.celularremoto.core.RecentDevices
 import br.dev.celularremoto.core.SettingsStore
 import br.dev.celularremoto.transport.RemoteClient
 import org.json.JSONObject
+import br.dev.celularremoto.updates.UpdateCheckTrigger
 import br.dev.celularremoto.updates.UpdateController
 import br.dev.celularremoto.updates.UpdatePreferences
 import br.dev.celularremoto.updates.UpdateScheduler
@@ -13,22 +14,33 @@ import java.text.DateFormat
 import java.util.Date
 import kotlin.concurrent.thread
 
-/** Atualizações disponíveis só na tela local; nenhum comando remoto inicia instalação. */
+private data class LocalUpdateSnapshot(
+    val status: String, val checkedAt: Long, val availableVersion: String, val progress: String?,
+    val stateCode: String, val downloadId: Long
+)
+
+/** Atualizações disponíveis só nesta tela; nenhum comando remoto inicia instalação. */
 internal fun MainActivity.fillUpdatesSettings(layout: LinearLayout) {
-    val status = UpdateController.state(this)
+    fun snapshot() = LocalUpdateSnapshot(
+        UpdateController.state(this), UpdateController.lastCheck(this), UpdateController.availableVersion(this),
+        UpdateController.downloadProgress(this), UpdatePreferences.getString(this, "state_code"),
+        UpdatePreferences.getLong(this, "download_id")
+    )
+    val shown = snapshot()
+    val status = shown.status
     layout.addView(settingsSummaryBand("Atualizações online",
         "Instalado: ${br.dev.celularremoto.transport.AppVersion.NAME} · $status",
         R.drawable.ic_folder_download))
     sectionGap(layout, 8)
-    val last = UpdateController.lastCheck(this)
+    val last = shown.checkedAt
     val lastText = if (last > 0) DateFormat.getDateTimeInstance().format(Date(last)) else "Nunca"
     layout.addView(dialogMetricRow("Última consulta", lastText))
-    val version = UpdateController.availableVersion(this)
+    val version = shown.availableVersion
     if (version.isNotBlank()) layout.addView(dialogMetricRow("Nova versão", version))
-    UpdateController.downloadProgress(this)?.let {
+    shown.progress?.let {
         layout.addView(dialogMetricRow("Download", it))
     }
-    val localCode = UpdatePreferences.getString(this, "state_code")
+    val localCode = shown.stateCode
     if (UpdateController.prepared(this)) {
         layout.addView(dialogMetricRow("Origem de instalação",
             if (android.os.Build.VERSION.SDK_INT < 26 || packageManager.canRequestPackageInstalls())
@@ -61,15 +73,38 @@ internal fun MainActivity.fillUpdatesSettings(layout: LinearLayout) {
         layout.addView(label("O APK instalado foi preservado. Confira a rede e tente baixar novamente.", 11.5f, muted = true))
     sectionGap(layout, 8)
     fun verifyNow() {
+        if (localUpdateCheckBusy) return
+        localUpdateCheckBusy = true
         message("Consultando as Releases do GitHub…")
         thread(name = "CelularRemoto-update-manual") {
-            val result = UpdateController.check(applicationContext, automatic = false)
-            runOnUiThread { if (!isFinishing && !isDestroyed) {
-                if (mode == 3 && settingsSection == "updates") openSettingsSection("updates")
-                message(result)
-            } }
+            try {
+                val result = UpdateController.check(applicationContext, UpdateCheckTrigger.LOCAL_MANUAL)
+                runOnUiThread {
+                    if (active && !isFinishing && !isDestroyed && mode == 3 && settingsSection == "updates")
+                        message(result)
+                }
+            } finally {
+                runOnUiThread { localUpdateCheckBusy = false }
+            }
         }
     }
+    // Atualiza status, progresso e a ação Instalar enquanto a página fica visível.
+    // Cada renderização descarta o observador da View anterior.
+    val observeLocalUpdate = object : Runnable {
+        override fun run() {
+            if (!active || isFinishing || isDestroyed || mode != 3 ||
+                settingsSection != "updates" || !layout.isAttachedToWindow) return
+            if (snapshot() != shown) {
+                val scroll = content.parent as? android.widget.ScrollView
+                val y = scroll?.scrollY ?: 0
+                render()
+                scroll?.post { scroll.scrollTo(0, y) }
+            } else {
+                handler.postDelayed(this, 2_000L)
+            }
+        }
+    }
+    handler.postDelayed(observeLocalUpdate, 2_000L)
     if (UpdateController.prepared(this)) {
         val downloadedCode = UpdatePreferences.getLong(this, "download_code")
         val availableCode = UpdatePreferences.getString(this, "available_code").toLongOrNull() ?: 0L
@@ -118,13 +153,14 @@ internal fun MainActivity.fillUpdatesSettings(layout: LinearLayout) {
         layout.addView(settingsToggleRow(R.drawable.ic_settings, title, hint, current) {
             UpdatePreferences.update(this, key, !current)
             UpdateScheduler.refresh(this)
+            if (key == "checking" && !current) UpdateController.checkOnForeground(this)
             openSettingsSection("updates")
         })
         compactDivider(layout, 33)
     }
-    toggle("checking", "Verificação automática", "Consultas sem abrir o aplicativo",
+    toggle("checking", "Verificação automática", "Consulta ao abrir ou voltar ao app e também em segundo plano",
         UpdatePreferences.checking(this))
-    toggle("auto_download", "Download automático", "Prepara o APK sem instalar",
+    toggle("auto_download", "Download automático", "Baixa quando uma consulta encontra versão compatível. Você confirma a instalação.",
         UpdatePreferences.autoDownload(this))
     toggle("unmetered", "Somente Wi-Fi não tarifado", "Não usar dados móveis",
         UpdatePreferences.unmetered(this))
@@ -134,7 +170,7 @@ internal fun MainActivity.fillUpdatesSettings(layout: LinearLayout) {
     val choices = listOf(30, 60, 180, 360, 720, 1440)
     fun frequency(value: Int): String =
         if (value < 60) "$value minutos" else "${value / 60} hora${if (value == 60) "" else "s"}"
-    layout.addView(settingsSlimRow(R.drawable.ic_activity, "Intervalo de consulta",
+    layout.addView(settingsSlimRow(R.drawable.ic_activity, "Intervalo em segundo plano",
         "Aproximadamente a cada ${frequency(minutes)}", "Alterar") {
         showSettingsChoiceDialog("Periodicidade de verificação",
             "O Android pode atrasar a execução para economizar energia.",

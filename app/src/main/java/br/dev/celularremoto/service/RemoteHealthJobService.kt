@@ -20,13 +20,17 @@ class RemoteHealthJobService : JobService() {
                 val host = SettingsStore.getRemoteHost(applicationContext)
                 val key = RecentDevices.key(applicationContext, host)
                 if (!stopped && host.isNotBlank() && key != null) {
-                    runCatching { RemoteClient.snapshot(host, key, applicationContext) }
+                    runCatching {
+                        RemoteClient.snapshot(host, key, applicationContext,
+                            includeCallAlerts = SettingsStore.controllerNotificationAlerts(applicationContext) &&
+                                SettingsStore.controllerCallAlerts(applicationContext))
+                    }
                         .onSuccess { snap -> if (!stopped &&
                             SettingsStore.getRemoteHost(applicationContext) == host &&
                             RecentDevices.key(applicationContext, host)?.let { MessageDigest.isEqual(it, key) } == true) {
                             ControllerHealthAlerts.onSnapshot(applicationContext, host, snap)
                             br.dev.celularremoto.core.ControllerBatteryEvents.onReport(applicationContext, host, snap)
-                            br.dev.celularremoto.core.RemoteEventAlerts.onSnapshot(applicationContext, host, snap)
+                            br.dev.celularremoto.core.RemoteEventAlerts.onSnapshot(applicationContext, host, snap, key)
                             br.dev.celularremoto.core.ControllerRemoteTelemetry.onSnapshot(applicationContext, host, snap)
                         } }
                 }

@@ -14,9 +14,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Resumo da bateria em um cartão" to "Percentual, previsão e métricas juntos. Agora está claro quando a autonomia estimada vai até 0%.",
-        "Aba mais curta" to "Abra Testes ou Histórico para consultar os registros. Use o menu da bateria para metas, diagnóstico ou coleta contínua local.",
-        "Um gráfico por vez" to "Nos relatórios, alterne entre nível, corrente e temperatura. Os detalhes e o compartilhamento completo continuam disponíveis."
+        "Histórico de chamadas" to "Em Controlar → Mensagens → Chamadas, consulte as ligações registradas no outro celular.",
+        "Avisos em tempo real" to "Ative nesta mesma tela para receber avisos de chamadas e SMS mesmo com a tela apagada enquanto houver conexão.",
+        "Autorize no monitorado" to "No outro aparelho, procure Compartilhar registro de chamadas em Ajustes → SMS e telefonia."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))
@@ -45,6 +45,7 @@ internal fun MainActivity.renderVersionHistory(layout: android.widget.LinearLayo
 }
 
 private val PREVIOUS_NEWS = listOf(
+        "Bateria compacta (alpha.143)" to "O Resumo reúne percentual e previsão num cartão. Testes e Histórico ficam em abas próprias. Cada relatório mostra um gráfico por vez.",
         "Bateria organizada (alpha.141)" to "Leitura atual e resumo separados, corrente com sinal visual de descarga e leitura bruta preservada no diagnóstico.",
         "Notificação compacta (alpha.139)" to "Percentual, temperatura, corrente coerente e previsão no resumo; telemetria remota vinculada à chave.",
         "Segurança de mensagens (alpha.138)" to "Isolamento por host e chave, mDNS TLS estrito e encerramento de espera no servidor.",

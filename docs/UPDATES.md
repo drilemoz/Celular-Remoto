@@ -1,9 +1,9 @@
-# Atualizador online do Celular Remoto (alpha.132)
+# Atualizador online do Celular Remoto (alpha.144)
 
 ## Como usar
 
 1. No celular com `br.dev.celularremoto`, abra **Configurações → Atualizações**.
-2. Deixe **Verificação automática** e **Download automático** ligados (padrão), ou toque **Verificar agora**.
+2. Deixe **Verificação automática** e **Download automático** ligados (padrão). A pesquisa roda ao abrir ou voltar ao app, com intervalo mínimo de um minuto entre verificações automáticas no mesmo processo. **Verificar agora** não espera esse intervalo e inicia o download se a opção estiver ligada.
 3. Escolha rede não tarifada (padrão), proteção de bateria (padrão) e periodicidade 30 min/1 h/3 h/6 h/12 h/24 h (1 h por padrão).
 4. Quando o download terminar, o Android executará o verificador. O estado ficará **Pronto para instalar** e, se as notificações estiverem liberadas, será emitido um aviso.
 5. Toque **Instalar APK verificado** e confirme a instalação pelo instalador oficial do Android. Se necessário, autorize instalação desta origem nas configurações e volte para tocar novamente em Instalar.
@@ -19,7 +19,7 @@
 
 ## Restrições de execução
 
-- A verificação usa JobScheduler periódico com rede, sem garantia de horário exato (Doze e restrições do fabricante podem adiar).
+- Em segundo plano a verificação usa JobScheduler periódico com rede, sem garantia de horário exato (Doze e restrições do fabricante podem adiar). Build concluído no Actions não é uma atualização até a Release conter o APK e o manifesto de assinatura estável.
 - O download usa DownloadManager, que pode continuar com a tela apagada e ao trocar de rede, sem despertar a Activity. O receptor de conclusão agenda a validação; uma checagem de contingência de 30 minutos evita depender exclusivamente da entrega do broadcast Android.
 - Com proteção de bateria ligada, abaixo de 25% sem carregador ou durante teste Labs ativo, o download é adiado. Ao acabar essa condição, a próxima verificação ou busca manual poderá iniciar a transferência.
 - Mesmo com o APK pronto, não há instalação silenciosa. O usuário do aparelho decide quando instalar; a instalação pode reiniciar o serviço e interromper transmissão/medição.

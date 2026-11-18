@@ -1,3 +1,16 @@
+# Celular Remoto v0.1.0-alpha.145 — histórico de chamadas e avisos
+
+- Próxima versão alpha.146/versionCode 146. Sincronize Gradle, AppVersion, README, CHANGELOG, arquitetura, notas, Novidades e validação.
+- Chamadas ficam em Controlar → Mensagens. Registro sob demanda exige opt-in e READ_CALL_LOG concedida pelo Android no próprio monitorado. Não incluir números ou conteúdo nas notificações nem gravar o histórico no controlador.
+- Avisos em tempo real são opt-in, via espera autenticada no serviço visível existente. Não duplicar o observador da Activity, manter JobScheduler, revalidar pareamento e preservar WIRE_COMPAT alpha.111.
+- Não prometer FCM, entrega sem rede, funcionamento após parada forçada ou aviso durante o toque.
+
+# Celular Remoto v0.1.0-alpha.144 — atualizações ao abrir
+
+- Próxima versão alpha.145/versionCode 145. Sincronizar Gradle, AppVersion, README, CHANGELOG, arquitetura, notas, Novidades e validação.
+- A consulta de retomada respeita a preferência automática e é limitada por relógio monotônico. A consulta manual local respeita a preferência de download, sem ampliar ações remotas.
+- Manter APK direto, manifesto da CI estável, SHA-256, pacote, versão e certificado instalados. Instalação somente local e confirmada. WIRE_COMPAT alpha.111 preservado.
+
 # Celular Remoto v0.1.0-alpha.143 — aba Bateria compacta
 
 - Próxima versão alpha.144/versionCode 144. Manter Gradle, AppVersion, README, CHANGELOG, notas, arquitetura, Novidades e validação sincronizados.

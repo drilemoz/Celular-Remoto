@@ -27,6 +27,8 @@ import br.dev.celularremoto.transport.AccessAlertWindow
 import br.dev.celularremoto.transport.MonitorServer
 import br.dev.celularremoto.transport.PairingSession
 import br.dev.celularremoto.ui.MainActivity
+import br.dev.celularremoto.ui.ControllerNoticeFeed
+import br.dev.celularremoto.ui.ForegroundEventWatcher
 import br.dev.celularremoto.ui.IncomingAccessActivity
 import br.dev.celularremoto.ui.MonitorStatusActivity
 import android.os.Handler
@@ -44,6 +46,7 @@ class MonitorService : Service() {
         const val ACTION_STOP = "br.dev.celularremoto.STOP"
         const val ACTION_STOP_BATTERY = "br.dev.celularremoto.STOP_BATTERY"
         const val ACTION_STOP_CONTROLLER = "br.dev.celularremoto.STOP_CONTROLLER_BATTERY"
+        private const val ACTION_STOP_LIVE_NOTICES = "br.dev.celularremoto.STOP_LIVE_NOTICES"
         private const val ACTION_SYNC_MODE = "br.dev.celularremoto.SYNC_MODE"
         private const val ACTION_REFRESH_POWER = "br.dev.celularremoto.REFRESH_POWER"
         /** Só notifica serviço existente; não o inicia se estiver desligado. */
@@ -64,12 +67,15 @@ class MonitorService : Service() {
         @Volatile var isControllerBatteryPollingActive = false
             private set
 
+        @Volatile var isControllerLiveAlertsActive = false
+            private set
+
         /** Reconfigura o serviço existente após ação local, preservando a coleta única. */
         fun refreshModes(context: Context) {
-            if (isServiceActive || isBatteryMonitoringActive || isControllerBatteryPollingActive) {
+            if (isServiceActive || isBatteryMonitoringActive || isControllerBatteryPollingActive || isControllerLiveAlertsActive) {
                 context.startService(Intent(context, MonitorService::class.java).setAction(ACTION_SYNC_MODE))
             } else if (SettingsStore.isMonitorEnabled(context) || SettingsStore.localBatteryMonitoring(context) ||
-                SettingsStore.controllerBatteryPolling(context)) {
+                SettingsStore.controllerBatteryPolling(context) || SettingsStore.controllerLiveAlerts(context)) {
                 start(context)
             }
         }
@@ -98,9 +104,21 @@ class MonitorService : Service() {
         }
     }
 
+    private val callObserver by lazy { CallLogObserver(applicationContext, mainHandler) }
+    private val liveNoticeWatcher by lazy {
+        ForegroundEventWatcher(applicationContext,
+            shouldWatch = { isControllerLiveAlertsActive && SettingsStore.controllerLiveAlerts(this) &&
+                SettingsStore.controllerNotificationAlerts(this) },
+            onEventsChanged = ControllerNoticeFeed::changed)
+    }
+
     private fun syncRemoteBatteryPoller() {
         if (foregroundStarted) remoteBatteryPoller.sync()
         isControllerBatteryPollingActive = foregroundStarted && SettingsStore.controllerBatteryPolling(this)
+        val live = foregroundStarted && SettingsStore.controllerLiveAlerts(this) &&
+            SettingsStore.controllerNotificationAlerts(this)
+        isControllerLiveAlertsActive = live
+        if (live) liveNoticeWatcher.start() else liveNoticeWatcher.stop()
     }
     @Volatile private var serviceActive = false
     private var consecutiveFailures = 0
@@ -131,6 +149,7 @@ class MonitorService : Service() {
             MonitorContinuityStore.heartbeat(this@MonitorService, nowElapsed)
             connectionPower.sync(active = true)
             ensureServerReady()
+            callObserver.sync()
             refreshMainNotification()
             mainHandler.postDelayed(this, ConnectionPowerPolicy.WATCHDOG_INTERVAL_MS)
         }
@@ -255,10 +274,11 @@ class MonitorService : Service() {
             ACTION_STOP -> SettingsStore.setMonitorEnabled(this, false)
             ACTION_STOP_BATTERY -> SettingsStore.setLocalBatteryMonitoring(this, false)
             ACTION_STOP_CONTROLLER -> SettingsStore.setControllerBatteryPolling(this, false)
+            ACTION_STOP_LIVE_NOTICES -> SettingsStore.setControllerLiveAlerts(this, false)
         }
         return when (MonitorServiceModePolicy.resolve(
             SettingsStore.isMonitorEnabled(this), SettingsStore.localBatteryMonitoring(this),
-            SettingsStore.controllerBatteryPolling(this))) {
+            SettingsStore.controllerBatteryPolling(this) || SettingsStore.controllerLiveAlerts(this))) {
             MonitorServiceModePolicy.Mode.REMOTE -> {
                 activateRemoteMode()
                 START_STICKY
@@ -273,11 +293,14 @@ class MonitorService : Service() {
             }
             MonitorServiceModePolicy.Mode.OFF -> {
                 stoppedExplicitly = true
+                if (serviceActive) stopRemoteMode()
                 serviceActive = false
                 batteryOnlyActive = false
                 controllerOnlyActive = false
                 remoteBatteryPoller.sync()
                 isControllerBatteryPollingActive = false
+                isControllerLiveAlertsActive = false
+                liveNoticeWatcher.stop()
                 isServiceActive = false
                 isBatteryMonitoringActive = false
                 connectionPower.release()
@@ -298,6 +321,7 @@ class MonitorService : Service() {
     private fun activateRemoteMode() {
         if (serviceActive) {
             ensureServerReady()
+            callObserver.sync()
             syncRemoteBatteryPoller()
             refreshMainNotification()
             return
@@ -339,6 +363,7 @@ class MonitorService : Service() {
         mainHandler.removeCallbacks(alertCleanup)
         mainHandler.postDelayed(alertCleanup, 10_000L)
         startBatteryLoops()
+        callObserver.sync()
         syncRemoteBatteryPoller()
     }
 
@@ -346,6 +371,7 @@ class MonitorService : Service() {
         if (!serviceActive) return
         serviceActive = false
         isServiceActive = false
+        callObserver.stop()
         connectionPower.release()
         mainHandler.removeCallbacks(serverWatchdog)
         mainHandler.removeCallbacks(alertCleanup)
@@ -377,6 +403,8 @@ class MonitorService : Service() {
     private fun activateBatteryOnlyMode() {
         if (serviceActive) stopRemoteMode()
         if (batteryOnlyActive) {
+            if (Build.VERSION.SDK_INT >= 34 && isControllerLiveAlertsActive != SettingsStore.controllerLiveAlerts(this))
+                startForeground(mainNotificationId, buildBatteryOnlyNotification(), batteryOnlyForegroundType())
             syncRemoteBatteryPoller()
             refreshMainNotification()
             return
@@ -384,7 +412,7 @@ class MonitorService : Service() {
         // Não abrir porta TCP, preparar captura, iniciar localização ou reter Wi-Fi/CPU.
         val note = buildBatteryOnlyNotification()
         if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(mainNotificationId, note, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            startForeground(mainNotificationId, note, batteryOnlyForegroundType())
         } else startForeground(mainNotificationId, note)
         foregroundStarted = true
         lastNotificationSignature = null
@@ -396,9 +424,11 @@ class MonitorService : Service() {
         refreshMainNotification()
     }
 
-    /** Somente consulta a bateria do celular pareado. Não abre servidor local nem
-     * cria sessões/histórico de bateria ou ativa permissões de captura.
-     */
+    @android.annotation.TargetApi(34)
+    private fun batteryOnlyForegroundType() = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE or
+        (if (SettingsStore.controllerLiveAlerts(this)) ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE else 0)
+
+    /** Consulta bateria e/ou recebe avisos do celular pareado. Não abre servidor local. */
     private fun activateControllerOnlyMode() {
         if (serviceActive) stopRemoteMode()
         if (controllerOnlyActive) {
@@ -424,6 +454,8 @@ class MonitorService : Service() {
     }
 
     private fun buildBatteryOnlyNotification(controllerOnly: Boolean = false): Notification {
+        val live = SettingsStore.controllerLiveAlerts(this)
+        if (controllerOnly && live && !SettingsStore.controllerBatteryPolling(this)) return buildLiveOnlyNotification()
         val battery = MonitorNotificationContent.valid(batteryNotification, System.currentTimeMillis())
         val line = MonitorNotificationContent.batteryLine(battery)
         val open = PendingIntent.getActivity(this, 130,
@@ -443,7 +475,8 @@ class MonitorService : Service() {
             .setSmallIcon(br.dev.celularremoto.R.drawable.ic_stat_shield)
             .setContentTitle(MonitorNotificationContent.title(battery))
             .setContentText(text.removePrefix("Este aparelho: "))
-            .setStyle(Notification.BigTextStyle().bigText("${MonitorNotificationContent.title(battery)}\n$text\n${ControllerRemoteTelemetry.line(this)}"))
+            .setStyle(Notification.BigTextStyle().bigText("${MonitorNotificationContent.title(battery)}\n$text\n${ControllerRemoteTelemetry.line(this)}" +
+                if (live) "\nAvisos remotos em tempo real ativados" else ""))
             .setContentIntent(open)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -452,6 +485,30 @@ class MonitorService : Service() {
             .setPublicVersion(public)
             .addAction(Notification.Action.Builder(null,
                 if (controllerOnly) "Parar remoto" else "Parar bateria", stop).build())
+            .apply { if (live) addAction(stopLiveNoticeAction()) }
+            .build()
+    }
+
+    private fun stopLiveNoticeAction(): Notification.Action {
+        val stop = PendingIntent.getService(this, 146,
+            Intent(this, MonitorService::class.java).setAction(ACTION_STOP_LIVE_NOTICES),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        return Notification.Action.Builder(null, "Parar tempo real", stop).build()
+    }
+
+    private fun buildLiveOnlyNotification(): Notification {
+        val open = PendingIntent.getActivity(this, 147,
+            Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_OPEN_MESSAGES, true),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        return Notification.Builder(this, CHANNEL)
+            .setSmallIcon(br.dev.celularremoto.R.drawable.ic_stat_shield)
+            .setContentTitle("Avisos do aparelho pareado")
+            .setContentText("Modo em tempo real ativado")
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .setContentIntent(open)
+            .addAction(stopLiveNoticeAction())
             .build()
     }
 
@@ -471,7 +528,9 @@ class MonitorService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         // Somente bateria local e remota. A última leitura remota expira após 3 minutos.
         val localLine = MonitorNotificationContent.batteryLine(battery)
-        val expanded = "${MonitorNotificationContent.title(battery)}\n$localLine\n${ControllerRemoteTelemetry.line(this)}"
+        val live = SettingsStore.controllerLiveAlerts(this)
+        val expanded = "${MonitorNotificationContent.title(battery)}\n$localLine\n${ControllerRemoteTelemetry.line(this)}" +
+            if (live) "\nAvisos remotos em tempo real ativados" else ""
         val privateNotification = Notification.Builder(this, CHANNEL)
             .setSmallIcon(br.dev.celularremoto.R.drawable.ic_stat_shield)
             .setContentTitle(MonitorNotificationContent.title(battery))
@@ -484,6 +543,7 @@ class MonitorService : Service() {
             .setVisibility(Notification.VISIBILITY_PRIVATE)
             .addAction(Notification.Action.Builder(null, "Parar", stop).build())
             .addAction(Notification.Action.Builder(null, "Detalhes", details).build())
+            .apply { if (live) addAction(stopLiveNoticeAction()) }
         // Tela de bloqueio recebe texto genérico, sem nome/IP do controlador ou módulos.
         val publicNotification = Notification.Builder(this, CHANNEL)
             .setSmallIcon(br.dev.celularremoto.R.drawable.ic_stat_shield)
@@ -497,7 +557,8 @@ class MonitorService : Service() {
         if (!foregroundStarted || (!isBatteryMonitoringActive && !controllerOnlyActive)) return
         if ((batteryOnlyActive || controllerOnlyActive) && !serviceActive) {
             val current = MonitorNotificationContent.valid(batteryNotification, System.currentTimeMillis())
-            val key = "BATTERY|$controllerOnlyActive|$current|${ControllerRemoteTelemetry.line(this)}"
+            val key = "BATTERY|$controllerOnlyActive|$current|${ControllerRemoteTelemetry.line(this)}|" +
+                "${SettingsStore.controllerLiveAlerts(this)}|${SettingsStore.controllerBatteryPolling(this)}"
             if (key != lastNotificationSignature) runCatching {
                 getSystemService(NotificationManager::class.java)?.notify(mainNotificationId,
                     buildBatteryOnlyNotification(controllerOnlyActive))
@@ -530,7 +591,8 @@ class MonitorService : Service() {
         val selected = SettingsStore.getRemoteHost(this)
         val peer = RecentDevices.list(this).firstOrNull { it.host == selected }
         val remoteLine = MonitorNotificationContent.remoteLine(peer?.name, peer?.lastSuccessMs ?: 0L, now)
-        val key = listOf(state, battery, ControllerRemoteTelemetry.line(this)).joinToString("|")
+        val key = listOf(state, battery, ControllerRemoteTelemetry.line(this),
+            SettingsStore.controllerLiveAlerts(this)).joinToString("|")
         if (key == lastNotificationSignature) return
         // Falhas no gerenciador não devem derrubar o serviço; tentar novamente no próximo ciclo.
         runCatching {
@@ -636,6 +698,9 @@ class MonitorService : Service() {
         isServiceActive = false
         isBatteryMonitoringActive = false
         isControllerBatteryPollingActive = false
+        isControllerLiveAlertsActive = false
+        liveNoticeWatcher.stop()
+        callObserver.close()
         remoteBatteryPoller.close()
         connectionPower.release()
         MonitorContinuityStore.stopped(this)

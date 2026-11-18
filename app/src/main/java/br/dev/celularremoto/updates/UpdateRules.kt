@@ -9,6 +9,12 @@ object UpdateRules {
     val VALID_VERSION = Regex("[0-9]+\\.[0-9]+\\.[0-9]+(?:-(?:alpha|beta|rc)\\.[1-9][0-9]*)?")
     private val SHA256 = Regex("[0-9a-fA-F]{64}")
 
+    fun alphaCodeFromTag(tag: String): Int? {
+        val version = tag.removePrefix("v")
+        if (!tag.startsWith("v") || !VALID_VERSION.matches(version) || "-alpha." !in version) return null
+        return version.substringAfterLast('.').toIntOrNull()
+    }
+
     fun apkName(version: String): String? = if (VALID_VERSION.matches(version))
         "CelularRemoto-v$version.apk" else null
 

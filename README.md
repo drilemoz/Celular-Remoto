@@ -1,9 +1,15 @@
+<!-- alpha.145 -->
+**Chamadas e avisos em tempo real (alpha.145):** no controlador, abra **Controlar → Mensagens → Chamadas** para consultar o registro. Na mesma tela, ative **Avisos em tempo real** para receber chamadas registradas e SMS com a tela apagada enquanto os celulares se alcançarem. No Monitorado, autorize **Ajustes → SMS e telefonia → Compartilhar registro de chamadas** e, para SMS, **Ler caixa de SMS** e **Receber SMS em tempo real**. O aviso não inclui número, remetente, áudio ou texto. O modo usa a rede do pareamento, sem Firebase.
+
+<!-- alpha.144 -->
+**Atualizações online (alpha.144):** pesquisa na entrada ou retorno, download conforme a opção também na verificação manual e progresso na tela Atualizações. A instalação continua local.
+
 <!-- alpha.143 -->
 **Bateria compacta (alpha.143):** o Resumo reúne percentual, estado, previsão e métricas da bateria em um cartão. Testes e Histórico ficam em abas próprias. Use **Ver sessão** para alternar Nível, Corrente e Temperatura no mesmo gráfico, ou **⋮** para Metas e alertas, Diagnóstico elétrico e Coleta contínua local. A previsão de descarga indica explicitamente que o cálculo vai até 0%, separado do alerta de bateria baixa. Leituras remotas antigas são identificadas e não mostram previsão atual.
 **Correção de compilação (alpha.142):** corrigidos três testes Kotlin em `BatteryPresentationMathTest.kt` usando `requireNotNull()` antes de `assertEquals(Double, Double, delta)`, conforme falha do workflow 32. Coleta, armazenamento e exibição de corrente permanecem os mesmos da alpha.141. A execução integral do build da alpha.142 em GitHub Actions continua pendente.
 **Bateria mais clara (alpha.141):** a aba Bateria separa leitura atual, ferramentas/alertas e resumos automáticos para reduzir confusão visual. Corrente e potência continuam líquidas na bateria; quando o Android reportar valor positivo durante descarga, a interface mostra visualmente o sentido de saída, enquanto o diagnóstico preserva a leitura bruta. As taxas de ritmo/autonomia permanecem calculadas por variação de percentual ao longo do tempo. Build e testes físicos pendentes.
 
-# Celular Remoto v0.1.0-alpha.143
+# Celular Remoto v0.1.0-alpha.145
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -13,7 +19,7 @@
 
 **Foto remota (alpha.131):** no monitorado, abra **Ativar + Foto** ou **Fotografia remota** e toque uma vez em **Ativar Monitorado e preparar câmera**; permissões Android continuam locais. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.143 / versionCode 143** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.145 / versionCode 145** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
 
 ## Bateria mais clara e coerente (alpha.141)
 
@@ -232,9 +238,9 @@
 - Compatibilidade sem exigir número do APK igual: alpha.111 ↔ alpha.112 em operações comuns; operação nova somente entre alpha.112+. Versões anteriores à alpha.111 podem recusar a conexão.
 - Download respeita rede não tarifada e proteção de bateria; APK conferido e instalado somente mediante toque local no aparelho.
 
-## Atualizações online (alpha.111)
+## Atualizações online
 
-- Em **Configurações → Atualizações**, o app consulta `drilemoz/Celular-Remoto` via HTTPS e lista inclusive prereleases. A verificação periódica usa JobScheduler (6, 12 ou 24 horas; padrão 24 h) e pode ser atrasada pelo Android.
+- Em **Configurações → Atualizações**, o app consulta `drilemoz/Celular-Remoto` via HTTPS e lista inclusive prereleases. Com verificação automática ligada, consulta ao abrir ou retornar ao app, com proteção de um minuto contra repetição. Em segundo plano, o JobScheduler usa a frequência escolhida (1 h por padrão). **Verificar agora** funciona sem esperar e respeita a preferência de **Download automático**.
 - Se aparecer uma Release com `celular-remoto-update.json` gerado pela CI **com assinatura estável**, o DownloadManager pode baixar o APK com tela apagada. Por padrão usa apenas rede não tarifada, verifica bateria >= 25% ou conectado à fonte e evita downloads durante testes Labs ativos.
 - Antes de oferecer instalação, confere SHA-256, nome do pacote `br.dev.celularremoto`, `versionCode` e assinatura do APK instalada. Instalação somente após toque local e confirmação do Android. Configurações de fontes desconhecidas continuam sendo autorizadas no próprio aparelho.
 - O workflow **único** acrescenta manifesto JSON somente às Releases com os quatro Secrets válidos. Builds Debug não podem ser ofertados como atualizações automáticas. A transferência de APK entre aparelhos por Wi-Fi **ainda não foi implementada**.
