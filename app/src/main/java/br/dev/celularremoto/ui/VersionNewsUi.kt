@@ -14,9 +14,8 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "O que mudou nesta versão"))
     sectionGap(layout, 10)
     val current = listOf(
-        "Histórico de chamadas" to "Em Controlar → Mensagens → Chamadas, consulte as ligações registradas no outro celular.",
-        "Avisos em tempo real" to "Ative nesta mesma tela para receber avisos de chamadas e SMS mesmo com a tela apagada enquanto houver conexão.",
-        "Autorize no monitorado" to "No outro aparelho, procure Compartilhar registro de chamadas em Ajustes → SMS e telefonia."
+        "Pesquisa em qualquer aba principal" to "Toque na lupa à direita e procure funções como chamadas, teste solar, GPS ou tema escuro.",
+        "O caminho aparece em cada resultado" to "Abra o recurso ou vá até o ajuste correspondente. Autorizações e confirmações continuam iguais."
     )
     current.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))

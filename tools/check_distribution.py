@@ -1501,7 +1501,7 @@ print('PASSOU: sockets encerrados, alertas de acesso limitados e resposta antiga
 mobile = (ui_root / 'MobileNavigationUi.kt').read_text()
 home105 = (ui_root / 'HomeScreenUi.kt').read_text()
 dashboard105 = (ui_root / 'RemoteDashboardUi.kt').read_text()
-assert 'root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))' in main_ui
+assert 'root.addView(withFloatingFunctionSearch(scroll), LinearLayout.LayoutParams(-1, 0, 1f))' in main_ui
 assert 'bottomNavigation.minimumHeight = dp(70)' in main_ui and 'root.addView(bottomNavigation, LinearLayout.LayoutParams(-1, -2))' in main_ui
 assert all(phrase in mobile for phrase in ['"Controlar"', '"Monitorado"', '"Bateria"', '"Ajustes"'])
 assert 'Triple(2,' not in mobile, 'A antiga Home não deve aparecer na barra inferior' 
@@ -2106,3 +2106,17 @@ assert 'EXTRA_NOTICE_SCOPE' in remote_alerts and 'noticeMatchesSelectedPair(inte
 assert (root / 'app/src/test/java/br/dev/celularremoto/core/CallNoticePolicyTest.kt').is_file()
 assert (root / 'docs/VALIDATION_ALPHA145.md').is_file()
 print('PASSOU: alpha.145 registro autorizado, observador descartável, avisos mínimos e serviço visível')
+
+# Alpha.146 — pesquisa navega pelas funções existentes, sem acionar operações sensíveis.
+search_ui146 = (ui_root / "AppFunctionSearchUi.kt").read_text(encoding="utf-8")
+catalog146 = (ui_root / "AppFunctionCatalog.kt").read_text(encoding="utf-8")
+assert 'Gravity.BOTTOM or Gravity.END' in search_ui146 and 'dp(48), dp(48)' in search_ui146
+assert 'withFloatingFunctionSearch(scroll)' in main_ui and 'openAppFunction(item.destination)' in search_ui146
+assert 'openControllerTool(destination.tool)' in search_ui146 and 'focusFunctionRow(destination.anchors)' in search_ui146
+assert 'regular.optString("op")' not in search_ui146 and 'performClick(' not in search_ui146
+assert 'settingGroups.forEachIndexed' in catalog146 and 'PermissionCenter.entries()' in catalog146
+assert dashboard105.count('openControllerTool(ControllerTool.') == 12
+assert 'RecentDevices.key(this, host) == null' in dashboard105.split('fun MainActivity.openControllerTool', 1)[1]
+assert (root / 'app/src/test/java/br/dev/celularremoto/ui/AppFunctionSearchTest.kt').is_file()
+assert (root / 'docs/VALIDATION_ALPHA146.md').is_file()
+print('PASSOU: alpha.146 pesquisa global, navegação única por comando e nenhuma execução por busca')

@@ -240,6 +240,33 @@ private fun MainActivity.renderBatteryOverview(battery: JSONObject, session: JSO
 private fun formatBatteryTime(timestamp: Long): String =
     java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(java.util.Date(timestamp))
 
+/** O atalho entra na aba existente. Controles de gravação/alerta continuam no fluxo normal. */
+internal fun MainActivity.openBatterySearchDestination(destination: FunctionDestination.Battery) {
+    val host = SettingsStore.getRemoteHost(this)
+    if (destination.remote == true && (host.isBlank() || RecentDevices.key(this, host) == null)) {
+        showConnectionChooser()
+        return
+    }
+    batterySection = destination.page.tab
+    if (destination.page == BatterySearchPage.HISTORY) {
+        batteryHistoryType = "ALL"
+        batteryHistoryPeriod = "ALL"
+    }
+    if (mode != 5) {
+        if (destination.remote != null) batteryRemote = destination.remote
+        navigateMainTab(5)
+    } else if (destination.remote != null && destination.remote != batteryRemote) {
+        selectBatteryDevice(destination.remote)
+    } else render()
+    val data = batteryData
+    when (destination.page) {
+        BatterySearchPage.DIAGNOSTIC -> data?.optJSONObject("battery")?.let { showBatteryCurrentDiagnostic(it) }
+        BatterySearchPage.GOALS -> data?.optJSONObject("goalAlerts")?.let { showBatteryAlertDialog(it) }
+        BatterySearchPage.SESSION -> focusFunctionRow(listOf("Ver sessão"))
+        else -> destination.focus?.let { focusFunctionRow(listOf(it)) }
+    }
+}
+
 private fun MainActivity.selectBatteryDevice(remote: Boolean) {
     if (remote == batteryRemote) return
     batteryRemote = remote

@@ -200,7 +200,7 @@ class MainActivity : Activity() {
         scroll.addView(content)
         permissionsNoticeHost = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(permissionsNoticeHost, LinearLayout.LayoutParams(-1, -2))
-        root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        root.addView(withFloatingFunctionSearch(scroll), LinearLayout.LayoutParams(-1, 0, 1f))
         bottomNavigation = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL

@@ -1,3 +1,9 @@
+# Celular Remoto v0.1.0-alpha.146 — busca pelas funções
+
+- Toque na lupa à direita. O catálogo inclui funções de Controlar, Monitorado, Bateria, Mensagens e Ajustes.
+- O resultado informa o caminho e abre a ferramenta ou indica o controle na seção correspondente. Opções que dependem do estado continuam aparecendo somente quando disponíveis.
+- A indexação é local e não inclui SMS, chamadas, arquivos, contatos ou dados do outro celular.
+
 # Celular Remoto v0.1.0-alpha.145 — chamadas e avisos em tempo real
 
 - Novo atalho Chamadas em Controlar → Mensagens. O próprio monitorado autoriza o histórico e os avisos em Ajustes → SMS e telefonia.

@@ -1,3 +1,7 @@
+# Validação mais recente — alpha.146 (18/11/2026)
+
+- Base alpha.145. Resultados e roteiro em `docs/VALIDATION_ALPHA146.md`.
+
 # Validação mais recente — alpha.145 (18/11/2026)
 
 - Base alpha.144. Resultados e roteiro em `docs/VALIDATION_ALPHA145.md`.

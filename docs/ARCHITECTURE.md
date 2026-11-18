@@ -1,3 +1,9 @@
+# Estado atual — alpha.146
+
+O conteúdo já protegido pelos insets é envolvido em um FrameLayout. A lupa tem área tocável de 48 dp e a rolagem deixa espaço no fim da lista. O popup usa um ListView para reutilizar linhas. AppFunctionCatalog usa o índice real das categorias de Ajustes e das permissões, com atalhos adicionais e termos alternativos. AppFunctionSearch normaliza texto e ordena correspondências por título, termos alternativos e caminho, com tolerância de uma edição por palavra.
+
+As 12 ações de Controlar e seus resultados de busca passam pela mesma rota, que revalida a chave do dispositivo selecionado. Alterações, transferência, bloqueio e demais operações ainda passam pelos controles e confirmações da interface existente. A busca não coleta dados nem altera os serviços ou o protocolo.
+
 # Estado atual — alpha.145
 
 `callHistory` consulta até 30 linhas do provedor de chamadas do monitorado sob demanda, somente com pareamento autenticado, Monitorado ativo, opt-in local e permissão Android. O observador do provedor transporta ao buffer volátil apenas tipo e instante de registro com uma sequência própria. O relógio de referência para distinguir chamada recente considera início e duração. Nenhum número, nome ou conteúdo de SMS vai na espera de eventos. O servidor revalida a sessão e o cliente revalida host e chave antes de exibir dados.
@@ -94,7 +100,7 @@ A interface de arquivos mantém limite 2 GiB, até 20 itens por lote e diretóri
 
 O mesmo APK atende aos modos Monitorado, Bateria local contínua e Controle. MonitorService usa FGS connectedDevice no modo remoto e specialUse no modo bateria sem abrir o servidor TCP; as amostras são feitas pelo mesmo executor serial a cada 30 s, e apenas um ID de notificação é usado.
 
-O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.145` e `versionCode=145`.
+O mesmo APK atende aos modos Monitorado e Controle. A fonte de versionamento é `app/build.gradle.kts`, com `versionName=0.1.0-alpha.146` e `versionCode=146`.
 
 - GitHub Actions compila e testa; copia o `.apk` compilado para `dist/CelularRemoto-v0.1.0-alpha.139.apk`.
 - `upload-artifact` sempre distribui um ZIP; GitHub Releases recebe o **arquivo APK direto**.

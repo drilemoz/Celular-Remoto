@@ -200,64 +200,18 @@ private fun MainActivity.renderRemoteActions(container: LinearLayout, snapshot: 
     }
     val actionsPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     val cards = listOf(
-        actionTile(R.drawable.ic_folder_download, "Arquivos", "Downloads fixos", enabled = true) {
-            startActivity(Intent(this, RemoteFilesActivity::class.java).apply {
-                putExtra(RemoteFilesActivity.EXTRA_HOST, br.dev.celularremoto.core.SettingsStore.getRemoteHost(this@renderRemoteActions))
-                putExtra(RemoteFilesActivity.EXTRA_METHOD, remoteConnection.method)
-            })
-        },
-        actionTile(R.drawable.ic_bell, "Alertas", if (eventCount > 0) "$eventCount evento(s)" else "", enabled = true) {
-            startActivity(Intent(this, RemoteCatalogActivity::class.java).apply {
-                putExtra(RemoteCatalogActivity.EXTRA_HOST, br.dev.celularremoto.core.SettingsStore.getRemoteHost(this@renderRemoteActions))
-                putExtra(RemoteCatalogActivity.EXTRA_METHOD, remoteConnection.method)
-                putExtra(RemoteCatalogActivity.EXTRA_TYPE, "notifications")
-            })
-        },
-        actionTile(R.drawable.ic_phone, "Apps", "Instalados · autorizados", enabled = true) {
-            startActivity(Intent(this, RemoteCatalogActivity::class.java).apply {
-                putExtra(RemoteCatalogActivity.EXTRA_HOST, br.dev.celularremoto.core.SettingsStore.getRemoteHost(this@renderRemoteActions))
-                putExtra(RemoteCatalogActivity.EXTRA_METHOD, remoteConnection.method)
-                putExtra(RemoteCatalogActivity.EXTRA_TYPE, "apps")
-            })
-        },
-        actionTile(R.drawable.ic_message, "Mensagens", "SMS e chamadas", enabled = true) {
-            openRemoteMessagesScreen()
-        },
-        actionTile(R.drawable.ic_monitor, "Tela", "Ao vivo · autorizado", enabled = true) {
-            startActivity(Intent(this, RemoteScreenActivity::class.java).apply {
-                putExtra(RemoteScreenActivity.EXTRA_HOST, br.dev.celularremoto.core.SettingsStore.getRemoteHost(this@renderRemoteActions))
-                putExtra(RemoteScreenActivity.EXTRA_METHOD, remoteConnection.method)
-            })
-        },
-        actionTile(R.drawable.ic_remote_camera, "Foto", "JPEG único · sem vídeo", enabled = true) {
-            startActivity(Intent(this, RemotePhotoActivity::class.java).apply {
-                putExtra(RemotePhotoActivity.EXTRA_HOST, br.dev.celularremoto.core.SettingsStore.getRemoteHost(this@renderRemoteActions))
-                putExtra(RemotePhotoActivity.EXTRA_METHOD, remoteConnection.method)
-            })
-        },
-        actionTile(R.drawable.ic_remote_camera, "Câmeras", "Ao vivo · início local", enabled = true) {
-            startActivity(Intent(this, RemoteCameraActivity::class.java).apply {
-                putExtra(RemoteCameraActivity.EXTRA_HOST, br.dev.celularremoto.core.SettingsStore.getRemoteHost(this@renderRemoteActions))
-                putExtra(RemoteCameraActivity.EXTRA_METHOD, remoteConnection.method)
-            })
-        },
-        actionTile(R.drawable.ic_bell, "Sirene", "Alerta sonoro · até 30 s", enabled = true) {
-            showRemotePhysicalDialog(sound = true)
-        },
-        actionTile(R.drawable.ic_flashlight, "Lanterna", "Ligar e desligar", enabled = true) {
-            showRemotePhysicalDialog(sound = false)
-        },
-        actionTile(R.drawable.ic_shield, "Bloquear", "Confirmação + PIN", enabled = true) {
-            showRemoteLockDialog()
-        },
-        actionTile(R.drawable.ic_settings, "Energia", "Bloqueio e manutenção", enabled = true) {
-            showRemoteMaintenance()
-        },
-        actionTile(R.drawable.ic_pin, "Localização", "Consulta autorizada") {
-            startActivity(Intent(this, RemoteLocationActivity::class.java)
-                .putExtra(RemoteLocationActivity.EXTRA_HOST, br.dev.celularremoto.core.SettingsStore.getRemoteHost(this))
-                .putExtra(RemoteLocationActivity.EXTRA_METHOD, "Chave salva"))
-        },
+        actionTile(R.drawable.ic_folder_download, "Arquivos", "Downloads fixos", enabled = true) { openControllerTool(ControllerTool.FILES) },
+        actionTile(R.drawable.ic_bell, "Alertas", if (eventCount > 0) "$eventCount evento(s)" else "", enabled = true) { openControllerTool(ControllerTool.ALERTS) },
+        actionTile(R.drawable.ic_phone, "Apps", "Instalados · autorizados", enabled = true) { openControllerTool(ControllerTool.APPS) },
+        actionTile(R.drawable.ic_message, "Mensagens", "SMS e chamadas", enabled = true) { openControllerTool(ControllerTool.MESSAGES) },
+        actionTile(R.drawable.ic_monitor, "Tela", "Ao vivo · autorizado", enabled = true) { openControllerTool(ControllerTool.SCREEN) },
+        actionTile(R.drawable.ic_remote_camera, "Foto", "JPEG único · sem vídeo", enabled = true) { openControllerTool(ControllerTool.PHOTO) },
+        actionTile(R.drawable.ic_remote_camera, "Câmeras", "Ao vivo · início local", enabled = true) { openControllerTool(ControllerTool.CAMERAS) },
+        actionTile(R.drawable.ic_bell, "Sirene", "Alerta sonoro · até 30 s", enabled = true) { openControllerTool(ControllerTool.SIREN) },
+        actionTile(R.drawable.ic_flashlight, "Lanterna", "Ligar e desligar", enabled = true) { openControllerTool(ControllerTool.TORCH) },
+        actionTile(R.drawable.ic_shield, "Bloquear", "Confirmação + PIN", enabled = true) { openControllerTool(ControllerTool.LOCK) },
+        actionTile(R.drawable.ic_settings, "Energia", "Bloqueio e manutenção", enabled = true) { openControllerTool(ControllerTool.POWER) },
+        actionTile(R.drawable.ic_pin, "Localização", "Consulta autorizada") { openControllerTool(ControllerTool.LOCATION) },
     )
 
     fun guarded(tiles: List<LinearLayout>) {
@@ -277,6 +231,36 @@ private fun MainActivity.renderRemoteActions(container: LinearLayout, snapshot: 
     sectionGap(actionsPanel, 9)
     remoteActionsUiCache = cacheKey to actionsPanel
     container.addView(actionsPanel)
+}
+
+/** Mesma rota para o painel e para a pesquisa, com a autorização revalidada no clique. */
+internal fun MainActivity.openControllerTool(tool: ControllerTool) {
+    val host = SettingsStore.getRemoteHost(this)
+    if (host.isBlank() || br.dev.celularremoto.core.RecentDevices.key(this, host) == null) {
+        showConnectionChooser()
+        return
+    }
+    val method = remoteConnection.method
+    when (tool) {
+        ControllerTool.FILES -> startActivity(Intent(this, RemoteFilesActivity::class.java)
+            .putExtra(RemoteFilesActivity.EXTRA_HOST, host).putExtra(RemoteFilesActivity.EXTRA_METHOD, method))
+        ControllerTool.ALERTS, ControllerTool.APPS -> startActivity(Intent(this, RemoteCatalogActivity::class.java)
+            .putExtra(RemoteCatalogActivity.EXTRA_HOST, host).putExtra(RemoteCatalogActivity.EXTRA_METHOD, method)
+            .putExtra(RemoteCatalogActivity.EXTRA_TYPE, if (tool == ControllerTool.ALERTS) "notifications" else "apps"))
+        ControllerTool.MESSAGES -> openRemoteMessagesScreen()
+        ControllerTool.SCREEN -> startActivity(Intent(this, RemoteScreenActivity::class.java)
+            .putExtra(RemoteScreenActivity.EXTRA_HOST, host).putExtra(RemoteScreenActivity.EXTRA_METHOD, method))
+        ControllerTool.PHOTO -> startActivity(Intent(this, RemotePhotoActivity::class.java)
+            .putExtra(RemotePhotoActivity.EXTRA_HOST, host).putExtra(RemotePhotoActivity.EXTRA_METHOD, method))
+        ControllerTool.CAMERAS -> startActivity(Intent(this, RemoteCameraActivity::class.java)
+            .putExtra(RemoteCameraActivity.EXTRA_HOST, host).putExtra(RemoteCameraActivity.EXTRA_METHOD, method))
+        ControllerTool.SIREN -> showRemotePhysicalDialog(sound = true)
+        ControllerTool.TORCH -> showRemotePhysicalDialog(sound = false)
+        ControllerTool.LOCK -> showRemoteLockDialog()
+        ControllerTool.POWER -> showRemoteMaintenance()
+        ControllerTool.LOCATION -> startActivity(Intent(this, RemoteLocationActivity::class.java)
+            .putExtra(RemoteLocationActivity.EXTRA_HOST, host).putExtra(RemoteLocationActivity.EXTRA_METHOD, "Chave salva"))
+    }
 }
 
 /** Informações de rede da última resposta autenticada. Nenhuma medição nova é presumida. */

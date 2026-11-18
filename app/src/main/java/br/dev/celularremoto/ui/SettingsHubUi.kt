@@ -17,12 +17,12 @@ import java.text.Normalizer
 import java.util.Locale
 
 /** Alpha.88: índice pesquisável, sem mudar consentimentos nem abrir permissões automaticamente. */
-private data class SettingsDestination(
+internal data class SettingsDestination(
     val icon: Int, val title: String, val hint: String, val section: String,
 )
-private data class SettingsGroup(val title: String, val entries: List<SettingsDestination>)
+internal data class SettingsGroup(val title: String, val entries: List<SettingsDestination>)
 
-private val settingGroups = listOf(
+internal val settingGroups = listOf(
     SettingsGroup("SEGURANÇA E PERMISSÕES", listOf(
         SettingsDestination(R.drawable.ic_shield, "Preparar aparelho monitorado", "Autorizações, atualização e prontidão dos comandos", "preparation"),
         SettingsDestination(R.drawable.ic_shield, "Central de permissões", "Solicite todos os acessos e confira pendências", "permissions"),

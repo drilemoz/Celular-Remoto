@@ -1,3 +1,10 @@
+## 0.1.0-alpha.146 (versionCode 146) | 18/11/2026
+
+- Lupa flutuante no lado direito das páginas principais, inclusive Mensagens e nas categorias de Ajustes.
+- Busca global com caminhos visíveis, sinônimos, normalização de acentos e tolerância a pequenos erros.
+- Resultados abrem ferramentas ou destacam controles existentes. Pareamento, consentimento local e confirmações permanecem intactos.
+- O índice não contém histórico ou conteúdo do usuário. Sem permissões, dependências ou protocolo novos.
+
 ## 0.1.0-alpha.145 (versionCode 145) | 18/11/2026
 
 - Controlar → Mensagens → Chamadas consulta até 30 ligações do outro celular, após autorização naquele aparelho.

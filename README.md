@@ -1,3 +1,6 @@
+<!-- alpha.146 -->
+**Pesquisa global:** toque na lupa flutuante à direita em Controlar, Monitorado, Bateria, Mensagens ou Ajustes. Pesquise funções por nome ou palavras relacionadas, como `painel solar`, `chamadas`, `GPS`, `escuro` ou `download automático`. O resultado abre a ferramenta ou destaca a opção na seção. Não pesquisa seus dados nem executa comandos por você.
+
 <!-- alpha.145 -->
 **Chamadas e avisos em tempo real (alpha.145):** no controlador, abra **Controlar → Mensagens → Chamadas** para consultar o registro. Na mesma tela, ative **Avisos em tempo real** para receber chamadas registradas e SMS com a tela apagada enquanto os celulares se alcançarem. No Monitorado, autorize **Ajustes → SMS e telefonia → Compartilhar registro de chamadas** e, para SMS, **Ler caixa de SMS** e **Receber SMS em tempo real**. O aviso não inclui número, remetente, áudio ou texto. O modo usa a rede do pareamento, sem Firebase.
 
@@ -9,7 +12,7 @@
 **Correção de compilação (alpha.142):** corrigidos três testes Kotlin em `BatteryPresentationMathTest.kt` usando `requireNotNull()` antes de `assertEquals(Double, Double, delta)`, conforme falha do workflow 32. Coleta, armazenamento e exibição de corrente permanecem os mesmos da alpha.141. A execução integral do build da alpha.142 em GitHub Actions continua pendente.
 **Bateria mais clara (alpha.141):** a aba Bateria separa leitura atual, ferramentas/alertas e resumos automáticos para reduzir confusão visual. Corrente e potência continuam líquidas na bateria; quando o Android reportar valor positivo durante descarga, a interface mostra visualmente o sentido de saída, enquanto o diagnóstico preserva a leitura bruta. As taxas de ritmo/autonomia permanecem calculadas por variação de percentual ao longo do tempo. Build e testes físicos pendentes.
 
-# Celular Remoto v0.1.0-alpha.145
+# Celular Remoto v0.1.0-alpha.146
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -19,7 +22,7 @@
 
 **Foto remota (alpha.131):** no monitorado, abra **Ativar + Foto** ou **Fotografia remota** e toque uma vez em **Ativar Monitorado e preparar câmera**; permissões Android continuam locais. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.145 / versionCode 145** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.146 / versionCode 146** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
 
 ## Bateria mais clara e coerente (alpha.141)
 

@@ -1,3 +1,10 @@
+# Celular Remoto v0.1.0-alpha.146 — pesquisa global
+
+- Próxima versão alpha.147/versionCode 147. Sincronize Gradle, AppVersion, README, CHANGELOG, arquitetura, notas, Novidades e validação.
+- A lupa flutuante fica na área de conteúdo abaixo das barras do Android e acima da navegação do app. O índice é local, inclui categorias e permissões reais e não consulta dados de usuário.
+- Ao criar ou renomear uma função, atualize seu caminho/termos em AppFunctionCatalog e mantenha as rotas existentes de autorização. A busca não executa comandos, muda preferências ou concede permissões.
+- Manter WIRE_COMPAT alpha.111, SDK 36 e fluxo de distribuição existente.
+
 # Celular Remoto v0.1.0-alpha.145 — histórico de chamadas e avisos
 
 - Próxima versão alpha.146/versionCode 146. Sincronize Gradle, AppVersion, README, CHANGELOG, arquitetura, notas, Novidades e validação.
